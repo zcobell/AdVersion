@@ -9,6 +9,8 @@
 #include <QCryptographicHash>
 #include <QDebug>
 
+//int hashMethod = QCryptographicHash::Sha1;
+
 //...Structure for the boundary arrays
 struct adcirc_boundary
 {
@@ -24,34 +26,36 @@ struct adcirc_boundary
     QVector<QString> boundary_hash;            //...hash for the full boundary
 };
 
+struct adcirc_node
+{
+    QByteArray locationHash;
+    double x,y,z;
+};
+
+struct adcirc_element
+{
+    QByteArray elementHash;
+    int c1,c2,c3;
+    QByteArray h1,h2,h3;
+};
+
 //...Structure for housing an entire adcirc mesh and its hashes
 struct adcirc_mesh
 {
-    int status;                                    //...variable to hold the status
+    int status;                                    //...error status
     QString header;                                //...file header
     int NumNodes;                                  //...Number of nodes in mesh
     int NumElements;                               //...Number of elements in mesh
-    int NumOpenBoundaries;                         //...Number of open boundary segments
-    int NumLandBoundaries;                         //...Number of land boundary segments
-    QString mesh_hash;                             //...hash for the entire mesh
-    QVector<double> x_location;                    //...x nodal locations
-    QVector<double> y_location;                    //...y nodal locations
-    QVector<double> z_elevation;                   //...z nodal elevations
-    QVector< QVector<int> >  connectivity;         //...nodal connectivity
-    QVector< QVector<QString> > conn_node_hash;    //...node hashes for connectivity
-    QVector<adcirc_boundary> OpenBoundaries;       //...open boundary array
-    QVector<adcirc_boundary> LandBoundaries;       //...land boundary array
-    QVector<QString> location_hash;                //...location sha1 hash
-    QVector<QString> connectivity_hash;            //...nodal connectivity sha1 hash
-    QVector<QString> openBoundaryHash;             //...open boundary sha1 hashes
-    QVector<QString> landBoundaryHash;             //...land boundary sha1 hashes
+    QByteArray mesh_hash;                          //...hash for the entire mesh
+    QVector<adcirc_node> node;                     //...adcirc node vector
+    QVector<adcirc_element> element;               //...adcirc element vector
 };
 
-class adcircio : public QObject
+class adcirc_io : public QObject
 {
     Q_OBJECT
 public:
-    explicit adcircio(QObject *parent = 0);
+    explicit adcirc_io(QObject *parent = 0);
 
     adcirc_mesh readAdcircMesh(QString fileName);
     adcirc_mesh readAdcircSha1Mesh(QString fileName);

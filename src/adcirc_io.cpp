@@ -1,11 +1,29 @@
 #include "adcirc_io.h"
 
-adcircio::adcircio(QObject *parent) : QObject(parent)
+adcirc_io::adcirc_io(QObject *parent) : QObject(parent)
 {
 
 }
 
-adcirc_mesh adcircio::readAdcircMesh(QString fileName)
+//...Comparison operator used in the sorting of nodes
+bool operator< (const adcirc_node &first, const adcirc_node &second)
+{
+    if(QString(first.locationHash.toHex())<QString(second.locationHash.toHex()))
+        return true;
+    else
+        return false;
+}
+
+//...Comparison operator used in the sorting of elements
+bool operator< (const adcirc_element &first, const adcirc_element &second)
+{
+    if(QString(first.elementHash.toHex())<QString(second.elementHash.toHex()))
+        return true;
+    else
+        return false;
+}
+
+adcirc_mesh adcirc_io::readAdcircMesh(QString fileName)
 {
 
     //Variables
@@ -14,7 +32,6 @@ adcirc_mesh adcircio::readAdcircMesh(QString fileName)
     QString readData;
     QStringList readDataList;
 
-    QTextStream cout(stdout);
     QFile meshFile(fileName);
 
     adcirc_mesh myMesh;
@@ -24,7 +41,6 @@ adcirc_mesh adcircio::readAdcircMesh(QString fileName)
     //Check if we can open the file
     if(!meshFile.open(QIODevice::ReadOnly|QIODevice::Text))
     {
-        cout << "Error: Could not open the mesh file.";
         myMesh.status = -1;
         return myMesh;
     }
@@ -41,14 +57,8 @@ adcirc_mesh adcircio::readAdcircMesh(QString fileName)
     myMesh.NumElements = readData.toInt();
 
     //Begin sizing the arrays
-    myMesh.x_location.resize(myMesh.NumNodes);
-    myMesh.y_location.resize(myMesh.NumNodes);
-    myMesh.z_elevation.resize(myMesh.NumNodes);
-    myMesh.connectivity.resize(3);
-    for(i=0;i<3;i++)
-        myMesh.connectivity[i].resize(myMesh.NumElements);
-    myMesh.location_hash.resize(myMesh.NumNodes);
-    myMesh.connectivity_hash.resize(myMesh.NumElements);
+    myMesh.node.resize(myMesh.NumNodes);
+    myMesh.element.resize(myMesh.NumElements);
 
     //Begin reading the nodes
     for(i = 0; i < myMesh.NumNodes; i++)
@@ -56,11 +66,11 @@ adcirc_mesh adcircio::readAdcircMesh(QString fileName)
         readData = meshFile.readLine().simplified();
         readDataList = readData.split(" ");
         readData = readDataList.value(1);
-        myMesh.x_location[i] = readData.toDouble();
+        myMesh.node[i].x = readData.toDouble();
         readData = readDataList.value(2);
-        myMesh.y_location[i] = readData.toDouble();
+        myMesh.node[i].y = readData.toDouble();
         readData = readDataList.value(3);
-        myMesh.z_elevation[i] = readData.toDouble();
+        myMesh.node[i].z = readData.toDouble();
     }
 
     //Begin reading the elements
@@ -69,11 +79,11 @@ adcirc_mesh adcircio::readAdcircMesh(QString fileName)
         readData = meshFile.readLine().simplified();
         readDataList = readData.split(" ");
         readData = readDataList.value(2);
-        myMesh.connectivity[0][i] = readData.toInt();
+        myMesh.element[i].c1 = readData.toInt();
         readData = readDataList.value(3);
-        myMesh.connectivity[1][i] = readData.toInt();
+        myMesh.element[i].c2 = readData.toInt();
         readData = readDataList.value(4);
-        myMesh.connectivity[2][i] = readData.toInt();
+        myMesh.element[i].c3 = readData.toInt();
     }
 
     meshFile.close();
@@ -81,7 +91,7 @@ adcirc_mesh adcircio::readAdcircMesh(QString fileName)
     return myMesh;
 }
 
-int adcircio::createAdcircHashes(adcirc_mesh &myMesh)
+int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
 {
 
     //...variables
@@ -100,8 +110,8 @@ int adcircio::createAdcircHashes(adcirc_mesh &myMesh)
     for(i=0;i<myMesh.NumNodes;i++)
     {
         //...Create a formatted string for each x, y and z;
-        hashSeed1.sprintf("%+018.12e",myMesh.x_location[i]);
-        hashSeed2.sprintf("%+018.12e",myMesh.y_location[i]);
+        hashSeed1.sprintf("%+018.12e",myMesh.node[i].x);
+        hashSeed2.sprintf("%+018.12e",myMesh.node[i].y);
 
         //Currently, neglect the z-value so it does not alter
         //the connectivity hashes
@@ -116,7 +126,7 @@ int adcircio::createAdcircHashes(adcirc_mesh &myMesh)
         localHash.addData(hashCSeed,38);
 
         //...Save the local hash for this node into the array
-        myMesh.location_hash[i] = localHash.result().toHex();
+        myMesh.node[i].locationHash = localHash.result();
     }
 
     //...Now create the hash for each element which is based upon the
@@ -125,9 +135,9 @@ int adcircio::createAdcircHashes(adcirc_mesh &myMesh)
     {
         //...Create a formatted string for each vertex as a product
         //   of each location hash
-        hashSeed1 = myMesh.location_hash[myMesh.connectivity[0][i]-1];
-        hashSeed2 = myMesh.location_hash[myMesh.connectivity[1][i]-1];
-        hashSeed3 = myMesh.location_hash[myMesh.connectivity[2][i]-1];
+        hashSeed1 = QString(myMesh.node[myMesh.element[i].c1-1].locationHash.toHex());
+        hashSeed2 = QString(myMesh.node[myMesh.element[i].c2-1].locationHash.toHex());
+        hashSeed3 = QString(myMesh.node[myMesh.element[i].c3-1].locationHash.toHex());
 
         //...Concatenate the formatted strings together
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
@@ -138,106 +148,42 @@ int adcircio::createAdcircHashes(adcirc_mesh &myMesh)
         localHash.addData(hashCSeed,120);
 
         //...Save the local hash for this node into the array
-        myMesh.connectivity_hash[i] = localHash.result().toHex();
+        myMesh.element[i].elementHash = localHash.result();
     }
 
     return 0;
 }
 
-int adcircio::sortAdcircHashes(adcirc_mesh &myMesh)
+int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
 {
-    int i;
-    QVector<QString> dummyNodeList,dummyElementList;
-    QString dummyString, tempString;
-    QStringList dummy;
+    //...Sort the nodes
+    QVector<adcirc_node> nodeList;
+    nodeList.resize(myMesh.NumNodes);
+    nodeList = myMesh.node;
+    qSort(nodeList);
+    myMesh.node = nodeList;
+    nodeList.clear();
 
-    //...Make some dummy arrays that we
-    //   can decompose later
-    dummyNodeList.resize(myMesh.NumNodes);
-    dummyElementList.resize(myMesh.NumElements);
+    //...Sort the elements
+    QVector<adcirc_element> elementList;
+    elementList.resize(myMesh.NumElements);
+    elementList = myMesh.element;
+    qSort(elementList);
+    myMesh.element = elementList;
+    elementList.clear();
 
-    //...Build the dummy node array for decomposition later
-    for(i=0;i<myMesh.NumNodes;i++)
+    //...Hash the connectivity table
+    for(int i=0;i<myMesh.NumElements;i++)
     {
-        dummyString = "";
-        tempString = myMesh.location_hash[i];
-        dummyString = tempString;
-        tempString.sprintf("%10.10i,%+018.12e,%+018.12e,%+018.12e",
-                           i,
-                           myMesh.x_location[i],
-                           myMesh.y_location[i],
-                           myMesh.z_elevation[i]);
-        dummyString = dummyString + "," + tempString;
-        dummyNodeList[i] = dummyString;
+        myMesh.element[i].h1 = myMesh.node[myMesh.element[i].c1-1].locationHash;
+        myMesh.element[i].h2 = myMesh.node[myMesh.element[i].c2-1].locationHash;
+        myMesh.element[i].h3 = myMesh.node[myMesh.element[i].c3-1].locationHash;
     }
-
-
-    //...Build the dummy element array for decomposition later
-    for(i=0;i<myMesh.NumElements;i++)
-    {
-        dummyString = "";
-        tempString = myMesh.connectivity_hash[i];
-        dummyString = tempString;
-        tempString.sprintf("%10.10i",i);
-        dummyString = dummyString + "," + tempString;
-        tempString  = myMesh.location_hash[myMesh.connectivity[0][i]-1] + "," +
-                      myMesh.location_hash[myMesh.connectivity[1][i]-1] + "," +
-                      myMesh.location_hash[myMesh.connectivity[2][i]-1];
-        dummyString = dummyString + "," + tempString;
-        dummyElementList[i] = dummyString;
-    }
-
-    //...We no longer need the element table, so we can release
-    //   the memory
-    for(i=0;i<myMesh.connectivity.length();i++)
-        myMesh.connectivity[i].clear();
-    myMesh.connectivity.clear();
-
-    //...Sort the hashes
-    qSort(dummyNodeList);
-    qSort(dummyElementList);
-
-    //...Sorted nodes
-    for(i=0;i<myMesh.NumNodes;i++)
-    {
-        dummy = dummyNodeList[i].split(",");
-        myMesh.location_hash[i] = dummy.value(0);
-        tempString = dummy.value(2);
-        myMesh.x_location[i] = tempString.toDouble();
-        tempString = dummy.value(3);
-        myMesh.y_location[i] = tempString.toDouble();
-        tempString = dummy.value(4);
-        myMesh.z_elevation[i] = tempString.toDouble();
-    }
-
-    //...Free some memory
-    dummyNodeList.clear();
-
-    //...Allocate the memory for the element hashes
-    myMesh.conn_node_hash.resize(3);
-    myMesh.conn_node_hash[0].resize(myMesh.NumElements);
-    myMesh.conn_node_hash[1].resize(myMesh.NumElements);
-    myMesh.conn_node_hash[2].resize(myMesh.NumElements);
-
-    //...Sorted elements
-    for(i=0;i<myMesh.NumElements;i++)
-    {
-        dummy = dummyElementList[i].split(",");
-        myMesh.connectivity_hash[i] = dummy.value(0);
-        myMesh.conn_node_hash[0][i] = dummy.value(2);
-        myMesh.conn_node_hash[1][i] = dummy.value(3);
-        myMesh.conn_node_hash[2][i] = dummy.value(4);
-    }
-
-    //...Free some memory
-    dummyElementList.clear();
-
-    //...Boundaries not part of code yet
 
     return 0;
 }
 
-int adcircio::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
+int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
 {
     QString line,tempString;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3,hashSeed4;
@@ -257,38 +203,38 @@ int adcircio::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
     //   any way by checking the hash in the header
     for(i=0;i<myMesh.NumNodes;i++)
     {
-        hashSeed1.sprintf("%+018.12e",myMesh.x_location[i]);
-        hashSeed2.sprintf("%+018.12e",myMesh.y_location[i]);
-        hashSeed3.sprintf("%+018.12e",myMesh.z_elevation[i]);
+        hashSeed1.sprintf("%+018.12e",myMesh.node[i].x);
+        hashSeed2.sprintf("%+018.12e",myMesh.node[i].y);
+        hashSeed3.sprintf("%+018.12e",myMesh.node[i].z);
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
         hashCSeed = hashSeed.toStdString().c_str();
         fullHash.addData(hashCSeed,57);
     }
     for(i=0;i<myMesh.NumElements;i++)
     {
-        hashSeed1 = myMesh.connectivity_hash[i];
-        hashSeed2 = myMesh.conn_node_hash[0][i];
-        hashSeed3 = myMesh.conn_node_hash[1][i];
-        hashSeed4 = myMesh.conn_node_hash[2][i];
+        hashSeed1 = QString(myMesh.element[i].elementHash.toHex());
+        hashSeed2 = QString(myMesh.element[i].h1.toHex());
+        hashSeed3 = QString(myMesh.element[i].h2.toHex());
+        hashSeed4 = QString(myMesh.element[i].h3.toHex());
         hashSeed = hashSeed1+hashSeed2+hashSeed3+hashSeed4;
         hashCSeed = hashSeed.toStdString().c_str();
         fullHash.addData(hashCSeed,160);
     }
-    myMesh.mesh_hash = fullHash.result().toHex();
+    myMesh.mesh_hash = fullHash.result();
 
     output << myMesh.header << "\n";
-    output << myMesh.mesh_hash << "\n";
+    output << QString(myMesh.mesh_hash.toHex()) << "\n";
     output << myMesh.NumElements << " " << myMesh.NumNodes << "\n";
 
     //...Write the node positions and elevations
     for(i=0;i<myMesh.NumNodes;i++)
     {
         line = "";
-        line = myMesh.location_hash[i];
+        line = QString(myMesh.node[i].locationHash.toHex());
         line = line + " " + tempString.sprintf("%+18.12e %+18.12e %+18.12e \n",
-                                         myMesh.x_location[i],
-                                         myMesh.y_location[i],
-                                         myMesh.z_elevation[i]);
+                                         myMesh.node[i].x,
+                                         myMesh.node[i].y,
+                                         myMesh.node[i].z);
         output << line;
     }
 
@@ -296,10 +242,11 @@ int adcircio::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
     for(i=0;i<myMesh.NumElements;i++)
     {
         line = "";
-        line = myMesh.connectivity_hash[i];
-        line = line + " " + myMesh.conn_node_hash[0][i] + " " +
-                myMesh.conn_node_hash[1][i] + " " +
-                myMesh.conn_node_hash[2][i] + "\n";
+        line = QString(myMesh.element[i].elementHash.toHex());
+        line = line + " " +
+                QString(myMesh.element[i].h1.toHex()) + " " +
+                QString(myMesh.element[i].h2.toHex()) + " " +
+                QString(myMesh.element[i].h3.toHex()) + "\n";
         output << line;
     }
 
@@ -308,9 +255,8 @@ int adcircio::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
     return 0;
 }
 
-adcirc_mesh adcircio::readAdcircSha1Mesh(QString fileName)
+adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName)
 {
-    QTextStream cout(stdout);
     QString tempString;
     QStringList tempList;
     int i;
@@ -319,7 +265,6 @@ adcirc_mesh adcircio::readAdcircSha1Mesh(QString fileName)
     QFile meshFile(fileName);
     if(!meshFile.open(QIODevice::ReadOnly|QIODevice::Text))
     {
-        cout << "Error: Could not open the mesh file.";
         myMesh.status = -1;
         return myMesh;
     }
@@ -333,33 +278,21 @@ adcirc_mesh adcircio::readAdcircSha1Mesh(QString fileName)
     tempString = tempList.value(0);
     myMesh.NumElements = tempString.toInt();
 
-    myMesh.x_location.resize(myMesh.NumNodes);
-    myMesh.y_location.resize(myMesh.NumNodes);
-    myMesh.z_elevation.resize(myMesh.NumNodes);
-    myMesh.location_hash.resize(myMesh.NumNodes);
-    myMesh.connectivity_hash.resize(myMesh.NumElements);
-    myMesh.connectivity.resize(3);
-    myMesh.connectivity[0].resize(myMesh.NumElements);
-    myMesh.connectivity[1].resize(myMesh.NumElements);
-    myMesh.connectivity[2].resize(myMesh.NumElements);
-    myMesh.conn_node_hash.resize(3);
-    myMesh.conn_node_hash[0].resize(myMesh.NumElements);
-    myMesh.conn_node_hash[1].resize(myMesh.NumElements);
-    myMesh.conn_node_hash[2].resize(myMesh.NumElements);
-
+    myMesh.node.resize(myMesh.NumNodes);
+    myMesh.element.resize(myMesh.NumElements);
 
     //...Reading the nodes
     for(i=0;i<myMesh.NumNodes;i++)
     {
         tempString = meshFile.readLine().simplified();
         tempList = tempString.split(" ");
-        myMesh.location_hash[i] = tempList.value(0);
+        myMesh.node[i].locationHash = QByteArray::fromHex(QString(tempList.value(0)).toUtf8());
         tempString = tempList.value(1);
-        myMesh.x_location[i] = tempString.toDouble();
+        myMesh.node[i].x = tempString.toDouble();
         tempString = tempList.value(2);
-        myMesh.y_location[i] = tempString.toDouble();
+        myMesh.node[i].y = tempString.toDouble();
         tempString = tempList.value(3);
-        myMesh.z_elevation[i] = tempString.toDouble();
+        myMesh.node[i].z = tempString.toDouble();
     }
 
     //...Reading the elements
@@ -367,17 +300,17 @@ adcirc_mesh adcircio::readAdcircSha1Mesh(QString fileName)
     {
         tempString = meshFile.readLine().simplified();
         tempList = tempString.split(" ");
-        myMesh.connectivity_hash[i] = tempList.value(0);
-        myMesh.conn_node_hash[0][i] = tempList.value(1);
-        myMesh.conn_node_hash[1][i] = tempList.value(2);
-        myMesh.conn_node_hash[2][i] = tempList.value(3);
+        myMesh.element[i].elementHash = QByteArray::fromHex(QString(tempList.value(0)).toUtf8());
+        myMesh.element[i].h1 = QByteArray::fromHex(QString(tempList.value(1)).toUtf8());
+        myMesh.element[i].h2 = QByteArray::fromHex(QString(tempList.value(2)).toUtf8());
+        myMesh.element[i].h3 = QByteArray::fromHex(QString(tempList.value(3)).toUtf8());
     }
 
     meshFile.close();
     return myMesh;
 }
 
-int adcircio::numberAdcircMesh(adcirc_mesh &myMesh)
+int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh)
 {
     QMap<QString,int> mapping_s2a;
     QMap<int,QString> mapping_a2s;
@@ -386,24 +319,23 @@ int adcircio::numberAdcircMesh(adcirc_mesh &myMesh)
     //...Create a mapping table
     for(i=0;i<myMesh.NumNodes;i++)
     {
-        mapping_s2a[myMesh.location_hash[i]] = i;
-        mapping_a2s[i] = myMesh.location_hash[i];
+        mapping_s2a[myMesh.node[i].locationHash] = i;
+        //mapping_a2s[i] = myMesh.node[i].locationHash;
     }
 
     //...Generate the element table
     for(i=0;i<myMesh.NumElements;i++)
     {
-        myMesh.connectivity[0][i] = mapping_s2a[myMesh.conn_node_hash[0][i]];
-        myMesh.connectivity[1][i] = mapping_s2a[myMesh.conn_node_hash[1][i]];
-        myMesh.connectivity[2][i] = mapping_s2a[myMesh.conn_node_hash[2][i]];
+        myMesh.element[i].c1 = mapping_s2a[myMesh.element[i].h1];
+        myMesh.element[i].c2 = mapping_s2a[myMesh.element[i].h2];
+        myMesh.element[i].c3 = mapping_s2a[myMesh.element[i].h3];
     }
 
     return 0;
 }
 
-int adcircio::writeAdcircMesh(QString fileName,adcirc_mesh &myMesh)
+int adcirc_io::writeAdcircMesh(QString fileName,adcirc_mesh &myMesh)
 {
-    QTextStream cout(stdout);
     QString line;
     int i;
     QFile outputFile(fileName);
@@ -414,14 +346,14 @@ int adcircio::writeAdcircMesh(QString fileName,adcirc_mesh &myMesh)
     output << myMesh.NumElements << " " << myMesh.NumNodes << "\n";
     for(i=0;i<myMesh.NumNodes;i++)
     {
-        line.sprintf("%10i %+18.12e %+18.12e %+18.12e \n",i+1,myMesh.x_location[i],
-                     myMesh.y_location[i],myMesh.z_elevation[i]);
+        line.sprintf("%10i %+18.12e %+18.12e %+18.12e \n",i+1,myMesh.node[i].x,
+                     myMesh.node[i].y,myMesh.node[i].z);
         output << line;
     }
     for(i=0;i<myMesh.NumElements;i++)
     {
-        line.sprintf("%10i %5i %10i %10i %10i \n",i+1,3,myMesh.connectivity[0][i]+1,
-                myMesh.connectivity[1][i]+1,myMesh.connectivity[2][i]+1);
+        line.sprintf("%10i %5i %10i %10i %10i \n",i+1,3,myMesh.element[i].c1+1,
+                myMesh.element[i].c2+1,myMesh.element[i].c3+1);
         output << line;
     }
     output << 0 << "\n";

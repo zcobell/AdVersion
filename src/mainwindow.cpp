@@ -105,11 +105,15 @@ void MainWindow::on_button_toSha_clicked()
         return;
     }
 
-    QPointer<adcircio> adc = new adcircio;
+    QPointer<adcirc_io> adc = new adcirc_io;
 
+    qDebug() << "Reading mesh...";
     mesh = adc->readAdcircMesh(adcircFile);
+    qDebug() << "Making hashes...";
     ierr = adc->createAdcircHashes(mesh);
+    qDebug() << "Sorting hashes...";
     ierr = adc->sortAdcircHashes(mesh);
+    qDebug() << "Writing mesh...";
     ierr = adc->writeAdcircHashMesh(sha1File,mesh);
 
     QMessageBox::information(this,"Success","The conversion to SHA1 is finished.");
@@ -145,7 +149,7 @@ void MainWindow::on_button_toAdc_clicked()
         return;
     }
 
-    QPointer<adcircio> adc = new adcircio;
+    QPointer<adcirc_io> adc = new adcirc_io;
     mesh = adc->readAdcircSha1Mesh(sha1File);
     ierr = adc->numberAdcircMesh(mesh);
     ierr = adc->writeAdcircMesh(adcircFile,mesh);
