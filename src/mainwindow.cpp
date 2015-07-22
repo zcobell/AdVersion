@@ -3,6 +3,7 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QMessageBox>
+#include <QPointer>
 
 QString PreviousDirectory;
 
@@ -79,7 +80,7 @@ void MainWindow::on_browse_toAdc_clicked()
 void MainWindow::on_button_toSha_clicked()
 {
     QString adcircFile,sha1File;
-    adcirc_mesh mesh,sorted_mesh;
+    adcirc_mesh mesh;
     int ierr;
 
     adcircFile = ui->text_fromAdcirc->text();
@@ -104,10 +105,12 @@ void MainWindow::on_button_toSha_clicked()
         return;
     }
 
-    mesh = readAdcircMesh(adcircFile);
-    ierr = createAdcircHashes(mesh);
-    ierr = sortAdcircHashes(mesh,sorted_mesh);
-    ierr = writeAdcircHashMesh(sha1File,sorted_mesh);
+    QPointer<adcircio> adc = new adcircio;
+
+    mesh = adc->readAdcircMesh(adcircFile);
+    ierr = adc->createAdcircHashes(mesh);
+    ierr = adc->sortAdcircHashes(mesh);
+    ierr = adc->writeAdcircHashMesh(sha1File,mesh);
 
     QMessageBox::information(this,"Success","The conversion to SHA1 is finished.");
 
@@ -142,11 +145,12 @@ void MainWindow::on_button_toAdc_clicked()
         return;
     }
 
-    mesh = readAdcircSha1Mesh(sha1File);
-    ierr = numberAdcircMesh(mesh);
-    ierr = writeAdcircMesh(adcircFile,mesh);
+    QPointer<adcircio> adc = new adcircio;
+    mesh = adc->readAdcircSha1Mesh(sha1File);
+    ierr = adc->numberAdcircMesh(mesh);
+    ierr = adc->writeAdcircMesh(adcircFile,mesh);
 
-    QMessageBox::information(this,"Success","The conversion to ADCIRC format is finished.");
+    QMessageBox::information(this,"Success","The conversion to ADCIRC format has finished.");
 
     return;
 }

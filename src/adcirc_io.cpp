@@ -1,6 +1,11 @@
-#include <adcirc_io.h>
+#include "adcirc_io.h"
 
-adcirc_mesh readAdcircMesh(QString fileName)
+adcircio::adcircio(QObject *parent) : QObject(parent)
+{
+
+}
+
+adcirc_mesh adcircio::readAdcircMesh(QString fileName)
 {
 
     //Variables
@@ -76,7 +81,7 @@ adcirc_mesh readAdcircMesh(QString fileName)
     return myMesh;
 }
 
-int createAdcircHashes(adcirc_mesh &myMesh)
+int adcircio::createAdcircHashes(adcirc_mesh &myMesh)
 {
 
     //...variables
@@ -139,7 +144,7 @@ int createAdcircHashes(adcirc_mesh &myMesh)
     return 0;
 }
 
-int sortAdcircHashes(adcirc_mesh &myMeshIn, adcirc_mesh &myMeshOut)
+int adcircio::sortAdcircHashes(adcirc_mesh &myMesh)
 {
     int i;
     QVector<QString> dummyNodeList,dummyElementList;
@@ -148,88 +153,91 @@ int sortAdcircHashes(adcirc_mesh &myMeshIn, adcirc_mesh &myMeshOut)
 
     //...Make some dummy arrays that we
     //   can decompose later
-    dummyNodeList.resize(myMeshIn.NumNodes);
-    dummyElementList.resize(myMeshIn.NumElements);
+    dummyNodeList.resize(myMesh.NumNodes);
+    dummyElementList.resize(myMesh.NumElements);
 
     //...Build the dummy node array for decomposition later
-    for(i=0;i<myMeshIn.NumNodes;i++)
+    for(i=0;i<myMesh.NumNodes;i++)
     {
         dummyString = "";
-        tempString = myMeshIn.location_hash[i];
+        tempString = myMesh.location_hash[i];
         dummyString = tempString;
         tempString.sprintf("%10.10i,%+018.12e,%+018.12e,%+018.12e",
                            i,
-                           myMeshIn.x_location[i],
-                           myMeshIn.y_location[i],
-                           myMeshIn.z_elevation[i]);
+                           myMesh.x_location[i],
+                           myMesh.y_location[i],
+                           myMesh.z_elevation[i]);
         dummyString = dummyString + "," + tempString;
         dummyNodeList[i] = dummyString;
     }
 
 
     //...Build the dummy element array for decomposition later
-    for(i=0;i<myMeshIn.NumElements;i++)
+    for(i=0;i<myMesh.NumElements;i++)
     {
         dummyString = "";
-        tempString = myMeshIn.connectivity_hash[i];
+        tempString = myMesh.connectivity_hash[i];
         dummyString = tempString;
         tempString.sprintf("%10.10i",i);
         dummyString = dummyString + "," + tempString;
-        tempString  = myMeshIn.location_hash[myMeshIn.connectivity[0][i]-1] + "," +
-                      myMeshIn.location_hash[myMeshIn.connectivity[1][i]-1] + "," +
-                      myMeshIn.location_hash[myMeshIn.connectivity[2][i]-1];
+        tempString  = myMesh.location_hash[myMesh.connectivity[0][i]-1] + "," +
+                      myMesh.location_hash[myMesh.connectivity[1][i]-1] + "," +
+                      myMesh.location_hash[myMesh.connectivity[2][i]-1];
         dummyString = dummyString + "," + tempString;
         dummyElementList[i] = dummyString;
     }
+
+    //...We no longer need the element table, so we can release
+    //   the memory
+    for(i=0;i<myMesh.connectivity.length();i++)
+        myMesh.connectivity[i].clear();
+    myMesh.connectivity.clear();
 
     //...Sort the hashes
     qSort(dummyNodeList);
     qSort(dummyElementList);
 
-    //...Build the new sorted mesh
-    myMeshOut.NumNodes = myMeshIn.NumNodes;
-    myMeshOut.NumElements = myMeshIn.NumElements;
-    myMeshOut.x_location.resize(myMeshIn.NumNodes);
-    myMeshOut.y_location.resize(myMeshIn.NumNodes);
-    myMeshOut.z_elevation.resize(myMeshIn.NumNodes);
-    myMeshOut.conn_node_hash.resize(3);
-    myMeshOut.conn_node_hash[0].resize(myMeshIn.NumElements);
-    myMeshOut.conn_node_hash[1].resize(myMeshIn.NumElements);
-    myMeshOut.conn_node_hash[2].resize(myMeshIn.NumElements);
-    myMeshOut.connectivity_hash.resize(myMeshIn.NumElements);
-    myMeshOut.location_hash.resize(myMeshIn.NumNodes);
-
     //...Sorted nodes
-    for(i=0;i<myMeshOut.NumNodes;i++)
+    for(i=0;i<myMesh.NumNodes;i++)
     {
         dummy = dummyNodeList[i].split(",");
-        myMeshOut.location_hash[i] = dummy.value(0);
+        myMesh.location_hash[i] = dummy.value(0);
         tempString = dummy.value(2);
-        myMeshOut.x_location[i] = tempString.toDouble();
+        myMesh.x_location[i] = tempString.toDouble();
         tempString = dummy.value(3);
-        myMeshOut.y_location[i] = tempString.toDouble();
+        myMesh.y_location[i] = tempString.toDouble();
         tempString = dummy.value(4);
-        myMeshOut.z_elevation[i] = tempString.toDouble();
+        myMesh.z_elevation[i] = tempString.toDouble();
     }
+
+    //...Free some memory
+    dummyNodeList.clear();
+
+    //...Allocate the memory for the element hashes
+    myMesh.conn_node_hash.resize(3);
+    myMesh.conn_node_hash[0].resize(myMesh.NumElements);
+    myMesh.conn_node_hash[1].resize(myMesh.NumElements);
+    myMesh.conn_node_hash[2].resize(myMesh.NumElements);
 
     //...Sorted elements
-    for(i=0;i<myMeshOut.NumElements;i++)
+    for(i=0;i<myMesh.NumElements;i++)
     {
         dummy = dummyElementList[i].split(",");
-        myMeshOut.connectivity_hash[i] = dummy.value(0);
-        myMeshOut.conn_node_hash[0][i] = dummy.value(2);
-        myMeshOut.conn_node_hash[1][i] = dummy.value(3);
-        myMeshOut.conn_node_hash[2][i] = dummy.value(4);
+        myMesh.connectivity_hash[i] = dummy.value(0);
+        myMesh.conn_node_hash[0][i] = dummy.value(2);
+        myMesh.conn_node_hash[1][i] = dummy.value(3);
+        myMesh.conn_node_hash[2][i] = dummy.value(4);
     }
 
-    myMeshOut.header = myMeshIn.header;
+    //...Free some memory
+    dummyElementList.clear();
 
     //...Boundaries not part of code yet
 
     return 0;
 }
 
-int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
+int adcircio::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
 {
     QString line,tempString;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3,hashSeed4;
@@ -300,7 +308,7 @@ int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
     return 0;
 }
 
-adcirc_mesh readAdcircSha1Mesh(QString fileName)
+adcirc_mesh adcircio::readAdcircSha1Mesh(QString fileName)
 {
     QTextStream cout(stdout);
     QString tempString;
@@ -369,7 +377,7 @@ adcirc_mesh readAdcircSha1Mesh(QString fileName)
     return myMesh;
 }
 
-int numberAdcircMesh(adcirc_mesh &myMesh)
+int adcircio::numberAdcircMesh(adcirc_mesh &myMesh)
 {
     QMap<QString,int> mapping_s2a;
     QMap<int,QString> mapping_a2s;
@@ -393,7 +401,7 @@ int numberAdcircMesh(adcirc_mesh &myMesh)
     return 0;
 }
 
-int writeAdcircMesh(QString fileName,adcirc_mesh &myMesh)
+int adcircio::writeAdcircMesh(QString fileName,adcirc_mesh &myMesh)
 {
     QTextStream cout(stdout);
     QString line;

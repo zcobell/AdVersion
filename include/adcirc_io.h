@@ -1,6 +1,7 @@
-#ifndef ADCIRC_IO_H
-#define ADCIRC_IO_H
+#ifndef ADCIRCIO_H
+#define ADCIRCIO_H
 
+#include <QObject>
 #include <QVector>
 #include <QString>
 #include <QFile>
@@ -46,12 +47,24 @@ struct adcirc_mesh
     QVector<QString> landBoundaryHash;             //...land boundary sha1 hashes
 };
 
-adcirc_mesh readAdcircMesh(QString fileName);
-int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh);
-int sortAdcircHashes(adcirc_mesh &myMeshIn, adcirc_mesh &myMeshOut);
-int createAdcircHashes(adcirc_mesh &myMesh);
-adcirc_mesh readAdcircSha1Mesh(QString fileName);
-int numberAdcircMesh(adcirc_mesh &myMesh);
-int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh);
+class adcircio : public QObject
+{
+    Q_OBJECT
+public:
+    explicit adcircio(QObject *parent = 0);
 
-#endif // ADCIRC_IO_H
+    adcirc_mesh readAdcircMesh(QString fileName);
+    adcirc_mesh readAdcircSha1Mesh(QString fileName);
+
+    int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh);
+    int sortAdcircHashes(adcirc_mesh &myMesh);
+    int createAdcircHashes(adcirc_mesh &myMesh);
+    int numberAdcircMesh(adcirc_mesh &myMesh);
+    int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh);
+
+signals:
+
+public slots:
+};
+
+#endif // ADCIRCIO_H
