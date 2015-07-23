@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -10,7 +10,8 @@ INCLUDEPATH += include
 SOURCES += src/main.cpp\
            src/mainwindow.cpp \
            src/adcirc_io.cpp \
-    src/pushbutton.cpp
+    src/pushbutton.cpp \
+    src/processing.cpp
 
 HEADERS  += include/mainwindow.h \
             include/adcirc_io.h
