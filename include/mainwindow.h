@@ -13,6 +13,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    QString PreviousDirectory;
     explicit MainWindow(QWidget *parent = 0);
     void GetLeadingPath(QString Input);
     ~MainWindow();
