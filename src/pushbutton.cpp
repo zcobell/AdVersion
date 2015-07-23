@@ -3,7 +3,9 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QMessageBox>
-#include <QPointer>
+#include <QFutureWatcher>
+#include <QtConcurrent>
+#include <QProgressDialog>
 
 void MainWindow::on_browse_fromAdcirc_clicked()
 {
@@ -85,18 +87,22 @@ void MainWindow::on_button_toSha_clicked()
         return;
     }
 
-    QPointer<adcirc_io> adc = new adcirc_io;
-
-    qDebug() << "Reading mesh...";
-    mesh = adc->readAdcircMesh(adcircFile);
-    qDebug() << "Making hashes...";
-    ierr = adc->createAdcircHashes(mesh);
-    qDebug() << "Sorting hashes...";
-    ierr = adc->sortAdcircHashes(mesh);
-    qDebug() << "Writing mesh...";
-    ierr = adc->writeAdcircHashMesh(sha1File,mesh);
-
-    QMessageBox::information(this,"Success","The conversion to SHA1 is finished.");
+    QProgressDialog dialog;
+    dialog.setLabelText("Converting ADCIRC --> SHA1");
+    dialog.setWindowTitle("Processing...");
+    dialog.setCancelButton(NULL);
+    QFutureWatcher<int> futureWatcher;
+    QObject::connect(&futureWatcher, SIGNAL(finished()), &dialog, SLOT(reset()));
+    QObject::connect(&dialog, SIGNAL(canceled()), &futureWatcher, SLOT(cancel()));
+    QObject::connect(&futureWatcher, SIGNAL(progressRangeChanged(int,int)), &dialog, SLOT(setRange(int,int)));
+    QObject::connect(&futureWatcher, SIGNAL(progressValueChanged(int)), &dialog, SLOT(setValue(int)));
+    futureWatcher.setFuture(QtConcurrent::run(process_a2s,adcircFile,sha1File));
+    dialog.exec();
+    futureWatcher.waitForFinished();
+    if(futureWatcher.result()==0)
+        QMessageBox::information(this,"Success","The conversion to SHA1 format has finished.");
+    else
+        QMessageBox::information(this,"ERROR","The conversion was not performed successfully.");
 
     return;
 }
@@ -129,12 +135,22 @@ void MainWindow::on_button_toAdc_clicked()
         return;
     }
 
-    QPointer<adcirc_io> adc = new adcirc_io;
-    mesh = adc->readAdcircSha1Mesh(sha1File);
-    ierr = adc->numberAdcircMesh(mesh);
-    ierr = adc->writeAdcircMesh(adcircFile,mesh);
-
-    QMessageBox::information(this,"Success","The conversion to ADCIRC format has finished.");
+    QProgressDialog dialog;
+    dialog.setLabelText("Converting SHA1 --> ADCIRC");
+    dialog.setWindowTitle("Processing...");
+    dialog.setCancelButton(NULL);
+    QFutureWatcher<int> futureWatcher;
+    QObject::connect(&futureWatcher, SIGNAL(finished()), &dialog, SLOT(reset()));
+    QObject::connect(&dialog, SIGNAL(canceled()), &futureWatcher, SLOT(cancel()));
+    QObject::connect(&futureWatcher, SIGNAL(progressRangeChanged(int,int)), &dialog, SLOT(setRange(int,int)));
+    QObject::connect(&futureWatcher, SIGNAL(progressValueChanged(int)), &dialog, SLOT(setValue(int)));
+    futureWatcher.setFuture(QtConcurrent::run(process_s2a,sha1File,adcircFile));
+    dialog.exec();
+    futureWatcher.waitForFinished();
+    if(futureWatcher.result()==0)
+        QMessageBox::information(this,"Success","The conversion to ADCIRC format has finished.");
+    else
+        QMessageBox::information(this,"ERROR","The conversion was not performed successfully.");
 
     return;
 }
