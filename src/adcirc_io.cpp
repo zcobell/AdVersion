@@ -156,6 +156,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
 
 int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
 {
+#if 0
     //...Sort the nodes
     QVector<adcirc_node> nodeList;
     nodeList.resize(myMesh.NumNodes);
@@ -179,6 +180,84 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
         myMesh.element[i].h2 = myMesh.node[myMesh.element[i].c2-1].locationHash;
         myMesh.element[i].h3 = myMesh.node[myMesh.element[i].c3-1].locationHash;
     }
+#else
+    int i;
+    QVector<QString> dummyNodeList,dummyElementList;
+    QString dummyString, tempString;
+    QStringList dummy;
+
+    //...Make some dummy arrays that we
+    //   can decompose later
+    dummyNodeList.resize(myMesh.NumNodes);
+    dummyElementList.resize(myMesh.NumElements);
+
+    //...Build the dummy node array for decomposition later
+    for(i=0;i<myMesh.NumNodes;i++)
+    {
+        dummyString = "";
+        tempString = myMesh.node[i].locationHash;
+        dummyString = tempString;
+        tempString.sprintf("%10.10i,%+018.12e,%+018.12e,%+018.12e",
+                           i,
+                           myMesh.node[i].x,
+                           myMesh.node[i].y,
+                           myMesh.node[i].z);
+        dummyString = dummyString + "," + tempString;
+        dummyNodeList[i] = dummyString;
+    }
+
+
+    //...Build the dummy element array for decomposition later
+    for(i=0;i<myMesh.NumElements;i++)
+    {
+        dummyString = "";
+        tempString = myMesh.element[i].elementHash;
+        dummyString = tempString;
+        tempString.sprintf("%10.10i",i);
+        dummyString = dummyString + "," + tempString;
+        tempString  = myMesh.node[myMesh.element[i].c1-1].locationHash + "," +
+                      myMesh.node[myMesh.element[i].c2-1].locationHash + "," +
+                      myMesh.node[myMesh.element[i].c3-1].locationHash;
+        dummyString = dummyString + "," + tempString;
+        dummyElementList[i] = dummyString;
+    }
+
+    //...Sort the hashes
+    qSort(dummyNodeList);
+    qSort(dummyElementList);
+
+    //...Sorted nodes
+    for(i=0;i<myMesh.NumNodes;i++)
+    {
+        dummy = dummyNodeList[i].split(",");
+        myMesh.node[i].locationHash = dummy.value(0);
+        tempString = dummy.value(2);
+        myMesh.node[i].x = tempString.toDouble();
+        tempString = dummy.value(3);
+        myMesh.node[i].y = tempString.toDouble();
+        tempString = dummy.value(4);
+        myMesh.node[i].z = tempString.toDouble();
+    }
+
+    //...Free some memory
+    dummyNodeList.clear();
+
+    //...Sorted elements
+    for(i=0;i<myMesh.NumElements;i++)
+    {
+        dummy = dummyElementList[i].split(",");
+        myMesh.element[i].elementHash = dummy.value(0);
+        myMesh.element[i].h1 = dummy.value(2);
+        myMesh.element[i].h2 = dummy.value(3);
+        myMesh.element[i].h3 = dummy.value(4);
+    }
+
+    //...Free some memory
+    dummyElementList.clear();
+
+    //...Boundaries not part of code yet
+
+#endif
 
     return 0;
 }
