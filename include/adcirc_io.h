@@ -28,15 +28,15 @@ struct adcirc_boundary
 
 struct adcirc_node
 {
-    QByteArray locationHash;
+    QString locationHash;
     double x,y,z;
 };
 
 struct adcirc_element
 {
-    QByteArray elementHash;
+    QString elementHash;
     int c1,c2,c3;
-    QByteArray h1,h2,h3;
+    QString h1,h2,h3;
 };
 
 //...Structure for housing an entire adcirc mesh and its hashes
@@ -46,7 +46,7 @@ struct adcirc_mesh
     QString header;                                //...file header
     int NumNodes;                                  //...Number of nodes in mesh
     int NumElements;                               //...Number of elements in mesh
-    QByteArray mesh_hash;                          //...hash for the entire mesh
+    QString mesh_hash;                          //...hash for the entire mesh
     QVector<adcirc_node> node;                     //...adcirc node vector
     QVector<adcirc_element> element;               //...adcirc element vector
 };

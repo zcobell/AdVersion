@@ -8,7 +8,7 @@ adcirc_io::adcirc_io(QObject *parent) : QObject(parent)
 //...Comparison operator used in the sorting of nodes
 bool operator< (const adcirc_node &first, const adcirc_node &second)
 {
-    if(QString(first.locationHash.toHex())<QString(second.locationHash.toHex()))
+    if(first.locationHash<second.locationHash)
         return true;
     else
         return false;
@@ -17,7 +17,7 @@ bool operator< (const adcirc_node &first, const adcirc_node &second)
 //...Comparison operator used in the sorting of elements
 bool operator< (const adcirc_element &first, const adcirc_element &second)
 {
-    if(QString(first.elementHash.toHex())<QString(second.elementHash.toHex()))
+    if(first.elementHash<second.elementHash)
         return true;
     else
         return false;
@@ -126,7 +126,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
         localHash.addData(hashCSeed,38);
 
         //...Save the local hash for this node into the array
-        myMesh.node[i].locationHash = localHash.result();
+        myMesh.node[i].locationHash = localHash.result().toHex();
     }
 
     //...Now create the hash for each element which is based upon the
@@ -135,9 +135,9 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
     {
         //...Create a formatted string for each vertex as a product
         //   of each location hash
-        hashSeed1 = QString(myMesh.node[myMesh.element[i].c1-1].locationHash.toHex());
-        hashSeed2 = QString(myMesh.node[myMesh.element[i].c2-1].locationHash.toHex());
-        hashSeed3 = QString(myMesh.node[myMesh.element[i].c3-1].locationHash.toHex());
+        hashSeed1 = myMesh.node[myMesh.element[i].c1-1].locationHash;
+        hashSeed2 = myMesh.node[myMesh.element[i].c2-1].locationHash;
+        hashSeed3 = myMesh.node[myMesh.element[i].c3-1].locationHash;
 
         //...Concatenate the formatted strings together
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
@@ -148,7 +148,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
         localHash.addData(hashCSeed,120);
 
         //...Save the local hash for this node into the array
-        myMesh.element[i].elementHash = localHash.result();
+        myMesh.element[i].elementHash = localHash.result().toHex();
     }
 
     return 0;
@@ -212,25 +212,25 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
     }
     for(i=0;i<myMesh.NumElements;i++)
     {
-        hashSeed1 = QString(myMesh.element[i].elementHash.toHex());
-        hashSeed2 = QString(myMesh.element[i].h1.toHex());
-        hashSeed3 = QString(myMesh.element[i].h2.toHex());
-        hashSeed4 = QString(myMesh.element[i].h3.toHex());
+        hashSeed1 = myMesh.element[i].elementHash;
+        hashSeed2 = myMesh.element[i].h1;
+        hashSeed3 = myMesh.element[i].h2;
+        hashSeed4 = myMesh.element[i].h3;
         hashSeed = hashSeed1+hashSeed2+hashSeed3+hashSeed4;
         hashCSeed = hashSeed.toStdString().c_str();
         fullHash.addData(hashCSeed,160);
     }
-    myMesh.mesh_hash = fullHash.result();
+    myMesh.mesh_hash = fullHash.result().toHex();
 
     output << myMesh.header << "\n";
-    output << QString(myMesh.mesh_hash.toHex()) << "\n";
+    output << myMesh.mesh_hash << "\n";
     output << myMesh.NumElements << " " << myMesh.NumNodes << "\n";
 
     //...Write the node positions and elevations
     for(i=0;i<myMesh.NumNodes;i++)
     {
         line = "";
-        line = QString(myMesh.node[i].locationHash.toHex());
+        line = myMesh.node[i].locationHash;
         line = line + " " + tempString.sprintf("%+18.12e %+18.12e %+18.12e \n",
                                          myMesh.node[i].x,
                                          myMesh.node[i].y,
@@ -242,11 +242,11 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
     for(i=0;i<myMesh.NumElements;i++)
     {
         line = "";
-        line = QString(myMesh.element[i].elementHash.toHex());
+        line = myMesh.element[i].elementHash;
         line = line + " " +
-                QString(myMesh.element[i].h1.toHex()) + " " +
-                QString(myMesh.element[i].h2.toHex()) + " " +
-                QString(myMesh.element[i].h3.toHex()) + "\n";
+               myMesh.element[i].h1 + " " +
+               myMesh.element[i].h2 + " " +
+               myMesh.element[i].h3 + "\n";
         output << line;
     }
 
@@ -286,7 +286,7 @@ adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName)
     {
         tempString = meshFile.readLine().simplified();
         tempList = tempString.split(" ");
-        myMesh.node[i].locationHash = QByteArray::fromHex(QString(tempList.value(0)).toUtf8());
+        myMesh.node[i].locationHash = tempList.value(0);
         tempString = tempList.value(1);
         myMesh.node[i].x = tempString.toDouble();
         tempString = tempList.value(2);
@@ -300,10 +300,10 @@ adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName)
     {
         tempString = meshFile.readLine().simplified();
         tempList = tempString.split(" ");
-        myMesh.element[i].elementHash = QByteArray::fromHex(QString(tempList.value(0)).toUtf8());
-        myMesh.element[i].h1 = QByteArray::fromHex(QString(tempList.value(1)).toUtf8());
-        myMesh.element[i].h2 = QByteArray::fromHex(QString(tempList.value(2)).toUtf8());
-        myMesh.element[i].h3 = QByteArray::fromHex(QString(tempList.value(3)).toUtf8());
+        myMesh.element[i].elementHash = tempList.value(0);
+        myMesh.element[i].h1 = tempList.value(1);
+        myMesh.element[i].h2 = tempList.value(2);
+        myMesh.element[i].h3 = tempList.value(3);
     }
 
     meshFile.close();
@@ -313,15 +313,11 @@ adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName)
 int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh)
 {
     QMap<QString,int> mapping_s2a;
-    QMap<int,QString> mapping_a2s;
     int i;
 
     //...Create a mapping table
     for(i=0;i<myMesh.NumNodes;i++)
-    {
         mapping_s2a[myMesh.node[i].locationHash] = i;
-        //mapping_a2s[i] = myMesh.node[i].locationHash;
-    }
 
     //...Generate the element table
     for(i=0;i<myMesh.NumElements;i++)
