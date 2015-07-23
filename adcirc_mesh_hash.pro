@@ -9,7 +9,8 @@ INCLUDEPATH += include
 
 SOURCES += src/main.cpp\
            src/mainwindow.cpp \
-           src/adcirc_io.cpp
+           src/adcirc_io.cpp \
+    src/pushbutton.cpp
 
 HEADERS  += include/mainwindow.h \
             include/adcirc_io.h
