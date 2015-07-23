@@ -97,7 +97,6 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
     //...variables
     int i;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3;
-    const char* hashCSeed;
 
     //...initialize the sha1 hash
     QCryptographicHash localHash(QCryptographicHash::Sha1);
@@ -110,20 +109,18 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
     for(i=0;i<myMesh.NumNodes;i++)
     {
         //...Create a formatted string for each x, y and z;
+        hashSeed1 = QString();
+        hashSeed2 = QString();
         hashSeed1.sprintf("%+018.12e",myMesh.node[i].x);
         hashSeed2.sprintf("%+018.12e",myMesh.node[i].y);
 
-        //Currently, neglect the z-value so it does not alter
-        //the connectivity hashes
-        //hashSeed3.sprintf("%+018.12e",myMesh.z_elevation[i]);
-
         //...Concatenate the formatted strings together
+        hashSeed = QString();
         hashSeed = hashSeed1+hashSeed2; //+hashSeed3;
-        hashCSeed = hashSeed.toStdString().c_str();
 
         //...Create the hash for the local node
         localHash.reset();
-        localHash.addData(hashCSeed,38);
+        localHash.addData(hashSeed.toUtf8(),38);
 
         //...Save the local hash for this node into the array
         myMesh.node[i].locationHash = localHash.result().toHex();
@@ -135,17 +132,20 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
     {
         //...Create a formatted string for each vertex as a product
         //   of each location hash
+        hashSeed1 = QString();
+        hashSeed2 = QString();
+        hashSeed3 = QString();
         hashSeed1 = myMesh.node[myMesh.element[i].c1-1].locationHash;
         hashSeed2 = myMesh.node[myMesh.element[i].c2-1].locationHash;
         hashSeed3 = myMesh.node[myMesh.element[i].c3-1].locationHash;
 
         //...Concatenate the formatted strings together
+        hashSeed = QString();
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
-        hashCSeed = hashSeed.toStdString().c_str();
 
         //...Create the hash for the local node
         localHash.reset();
-        localHash.addData(hashCSeed,120);
+        localHash.addData(hashSeed.toUtf8(),120);
 
         //...Save the local hash for this node into the array
         myMesh.element[i].elementHash = localHash.result().toHex();
@@ -266,7 +266,6 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
 {
     QString line,tempString;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3,hashSeed4;
-    const char* hashCSeed;
     int i;
 
     QFile outputFile(fileName);
@@ -282,22 +281,29 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
     //   any way by checking the hash in the header
     for(i=0;i<myMesh.NumNodes;i++)
     {
+        hashSeed1 = QString();
+        hashSeed2 = QString();
+        hashSeed3 = QString();
+        hashSeed  = QString();
         hashSeed1.sprintf("%+018.12e",myMesh.node[i].x);
         hashSeed2.sprintf("%+018.12e",myMesh.node[i].y);
         hashSeed3.sprintf("%+018.12e",myMesh.node[i].z);
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
-        hashCSeed = hashSeed.toStdString().c_str();
-        fullHash.addData(hashCSeed,57);
+        fullHash.addData(hashSeed.toUtf8(),57);
     }
     for(i=0;i<myMesh.NumElements;i++)
     {
+        hashSeed1 = QString();
+        hashSeed2 = QString();
+        hashSeed3 = QString();
+        hashSeed4 = QString();
+        hashSeed  = QString();
         hashSeed1 = myMesh.element[i].elementHash;
         hashSeed2 = myMesh.element[i].h1;
         hashSeed3 = myMesh.element[i].h2;
         hashSeed4 = myMesh.element[i].h3;
         hashSeed = hashSeed1+hashSeed2+hashSeed3+hashSeed4;
-        hashCSeed = hashSeed.toStdString().c_str();
-        fullHash.addData(hashCSeed,160);
+        fullHash.addData(hashSeed.toUtf8(),160);
     }
     myMesh.mesh_hash = fullHash.result().toHex();
 
