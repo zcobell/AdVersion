@@ -3,25 +3,115 @@
 #include <QDir>
 #include <QPointer>
 
-extern int process_a2s(QString inputFile,QString outputFile)
+int adcirc_io::process_a2s(QString inputFile,QString outputFile)
 {
-    int ierr;
+    int ierr,counter;
+    int elapsedSeconds,elapsedMinutes;
     adcirc_mesh mesh;
+    QTime timer;
+    QString elapsedString;
+
+    //...Set the starting time
+    timer.start();
+
+
+    //...Create a progress bar
+    QProgressDialog progress;
+    progress.setWindowTitle("Progress");
+    progress.setWindowModality(Qt::WindowModal);
+    progress.setMaximum(9);
+    progress.setValue(0);
+    counter = 0;
+    progress.show();
+
     QPointer<adcirc_io> adc = new adcirc_io;
-    mesh = adc->readAdcircMesh(inputFile);
-    ierr = adc->createAdcircHashes(mesh);
-    ierr = adc->sortAdcircHashes(mesh);
-    ierr = adc->writeAdcircHashMesh(outputFile,mesh);
-    return 0;
+    ierr = adc->readAdcircMesh(inputFile,mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->createAdcircHashes(mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->sortAdcircHashes(mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->writeAdcircHashMesh(outputFile,mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+
+    elapsedSeconds = timer.elapsed() / 1000;
+    elapsedMinutes = elapsedSeconds / 60;
+    elapsedSeconds = elapsedSeconds % 60;
+    elapsedString = QString::number(elapsedMinutes) + " min, " +
+            QString::number(elapsedSeconds) + " sec";
+
+
+    QMessageBox::information(NULL,"Complete",QString("The mesh was converted to SHA1 format. \n")+
+                                             QString("Elapsed Time: "+elapsedString));
+    return ERR_NOERR;
 }
 
-extern int process_s2a(QString inputFile,QString outputFile)
+int adcirc_io::process_s2a(QString inputFile,QString outputFile)
 {
-    int ierr;
+    int ierr,counter;
+    int elapsedSeconds,elapsedMinutes;
     adcirc_mesh mesh;
+    QTime timer;
+    QString elapsedString;
+
+    //...Set the starting time
+    timer.start();
+
+    //...Create a progress bar
+    QProgressDialog progress;
+    progress.setWindowTitle("Progress");
+    progress.setWindowModality(Qt::WindowModal);
+    progress.setMaximum(6);
+    progress.setValue(0);
+    counter = 0;
+
+    progress.show();
+
     QPointer<adcirc_io> adc = new adcirc_io;
-    mesh = adc->readAdcircSha1Mesh(inputFile);
-    ierr = adc->numberAdcircMesh(mesh);
-    ierr = adc->writeAdcircMesh(outputFile,mesh);
-    return 0;
+    ierr = adc->readAdcircSha1Mesh(inputFile,mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->numberAdcircMesh(mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->writeAdcircMesh(outputFile,mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+
+    elapsedSeconds = timer.elapsed() / 1000;
+    elapsedMinutes = elapsedSeconds / 60;
+    elapsedSeconds = elapsedSeconds % 60;
+    elapsedString = QString::number(elapsedMinutes) + " min, " +
+            QString::number(elapsedSeconds) + " sec";
+
+
+    QMessageBox::information(NULL,"Complete",QString("The mesh was converted to ADCIRC format. \n")+
+                                             QString("Elapsed Time: "+elapsedString));
+
+    return ERR_NOERR;
 }

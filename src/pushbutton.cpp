@@ -87,22 +87,8 @@ void MainWindow::on_button_toSha_clicked()
         return;
     }
 
-    QProgressDialog dialog;
-    dialog.setLabelText("Converting ADCIRC --> SHA1");
-    dialog.setWindowTitle("Processing...");
-    dialog.setCancelButton(NULL);
-    QFutureWatcher<int> futureWatcher;
-    QObject::connect(&futureWatcher, SIGNAL(finished()), &dialog, SLOT(reset()));
-    QObject::connect(&dialog, SIGNAL(canceled()), &futureWatcher, SLOT(cancel()));
-    QObject::connect(&futureWatcher, SIGNAL(progressRangeChanged(int,int)), &dialog, SLOT(setRange(int,int)));
-    QObject::connect(&futureWatcher, SIGNAL(progressValueChanged(int)), &dialog, SLOT(setValue(int)));
-    futureWatcher.setFuture(QtConcurrent::run(process_a2s,adcircFile,sha1File));
-    dialog.exec();
-    futureWatcher.waitForFinished();
-    if(futureWatcher.result()==0)
-        QMessageBox::information(this,"Success","The conversion to SHA1 format has finished.");
-    else
-        QMessageBox::information(this,"ERROR","The conversion was not performed successfully.");
+
+    ierr = adcirc_io::process_a2s(adcircFile,sha1File);
 
     return;
 }
@@ -135,22 +121,7 @@ void MainWindow::on_button_toAdc_clicked()
         return;
     }
 
-    QProgressDialog dialog;
-    dialog.setLabelText("Converting SHA1 --> ADCIRC");
-    dialog.setWindowTitle("Processing...");
-    dialog.setCancelButton(NULL);
-    QFutureWatcher<int> futureWatcher;
-    QObject::connect(&futureWatcher, SIGNAL(finished()), &dialog, SLOT(reset()));
-    QObject::connect(&dialog, SIGNAL(canceled()), &futureWatcher, SLOT(cancel()));
-    QObject::connect(&futureWatcher, SIGNAL(progressRangeChanged(int,int)), &dialog, SLOT(setRange(int,int)));
-    QObject::connect(&futureWatcher, SIGNAL(progressValueChanged(int)), &dialog, SLOT(setValue(int)));
-    futureWatcher.setFuture(QtConcurrent::run(process_s2a,sha1File,adcircFile));
-    dialog.exec();
-    futureWatcher.waitForFinished();
-    if(futureWatcher.result()==0)
-        QMessageBox::information(this,"Success","The conversion to ADCIRC format has finished.");
-    else
-        QMessageBox::information(this,"ERROR","The conversion was not performed successfully.");
+    ierr = adcirc_io::process_s2a(sha1File,adcircFile);
 
     return;
 }
