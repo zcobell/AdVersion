@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <adcirc_io.h>
 
+
 namespace Ui {
 class MainWindow;
 }
@@ -16,6 +17,7 @@ public:
     QString PreviousDirectory;
     explicit MainWindow(QWidget *parent = 0);
     void GetLeadingPath(QString Input);
+    static void process_err(int ierr);
     ~MainWindow();
 
 private slots:

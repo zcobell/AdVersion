@@ -1,5 +1,8 @@
 #include "adcirc_io.h"
 
+QTime polling;
+int progressUpdateInterval = 1;
+
 adcirc_io::adcirc_io(QObject *parent) : QObject(parent)
 {
 
@@ -23,7 +26,7 @@ bool operator< (const adcirc_element &first, const adcirc_element &second)
         return false;
 }
 
-adcirc_mesh adcirc_io::readAdcircMesh(QString fileName, QProgressDialog &dialog, int &counter)
+int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
 
     //Variables
@@ -34,9 +37,8 @@ adcirc_mesh adcirc_io::readAdcircMesh(QString fileName, QProgressDialog &dialog,
 
     QFile meshFile(fileName);
 
-    adcirc_mesh myMesh;
-
     dialog.setLabelText("Reading the ADCIRC mesh...");
+    dialog.setValue(0);
 
     //----------------------------------------------------//
 
@@ -44,7 +46,7 @@ adcirc_mesh adcirc_io::readAdcircMesh(QString fileName, QProgressDialog &dialog,
     if(!meshFile.open(QIODevice::ReadOnly|QIODevice::Text))
     {
         myMesh.status = -1;
-        return myMesh;
+        return ERR_NOFILE;
     }
 
     //Read the header line
@@ -57,6 +59,8 @@ adcirc_mesh adcirc_io::readAdcircMesh(QString fileName, QProgressDialog &dialog,
     myMesh.NumNodes = readData.toInt();
     readData = readDataList.value(0);
     myMesh.NumElements = readData.toInt();
+
+    dialog.setMaximum(myMesh.NumNodes*4+myMesh.NumElements*5);
 
     //Begin sizing the arrays
     myMesh.node.resize(myMesh.NumNodes);
@@ -73,12 +77,16 @@ adcirc_mesh adcirc_io::readAdcircMesh(QString fileName, QProgressDialog &dialog,
         myMesh.node[i].y = readData.toDouble();
         readData = readDataList.value(3);
         myMesh.node[i].z = readData.toDouble();
+
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
+
     }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     //Begin reading the elements
     for(i = 0; i< myMesh.NumElements; i++)
@@ -91,16 +99,18 @@ adcirc_mesh adcirc_io::readAdcircMesh(QString fileName, QProgressDialog &dialog,
         myMesh.element[i].c2 = readData.toInt();
         readData = readDataList.value(4);
         myMesh.element[i].c3 = readData.toInt();
+
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
     }
 
     meshFile.close();
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    return myMesh;
+    return ERR_NOERR;
 }
 
 int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
@@ -138,12 +148,15 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
 
         //...Save the local hash for this node into the array
         myMesh.node[i].locationHash = localHash.result().toHex();
-    }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
+
+    }
 
     //...Now create the hash for each element which is based upon the
     //   locations of each hash
@@ -168,26 +181,28 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
 
         //...Save the local hash for this node into the array
         myMesh.element[i].elementHash = localHash.result().toHex();
+
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
     }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    return 0;
+    return ERR_NOERR;
 }
 
 int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
-#if 0
-    //...Sort the nodes
+
+    dialog.setLabelText("Sorting the hashes...");
+
+    //...Sort the nodes, but don't transfer yet
     QVector<adcirc_node> nodeList;
     nodeList.resize(myMesh.NumNodes);
     nodeList = myMesh.node;
     qSort(nodeList);
-    myMesh.node = nodeList;
-    nodeList.clear();
 
     //...Sort the elements
     QVector<adcirc_element> elementList;
@@ -203,116 +218,19 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, in
         myMesh.element[i].h1 = myMesh.node[myMesh.element[i].c1-1].locationHash;
         myMesh.element[i].h2 = myMesh.node[myMesh.element[i].c2-1].locationHash;
         myMesh.element[i].h3 = myMesh.node[myMesh.element[i].c3-1].locationHash;
-    }
-#else
-    int i;
-    QVector<QString> dummyNodeList,dummyElementList;
-    QString dummyString, tempString;
-    QStringList dummy;
 
-    dialog.setLabelText("Sorting the hashes...");
+        //...Update the progress bar
+        updateProgress(counter,dialog);
 
-    //...Make some dummy arrays that we
-    //   can decompose later
-    dummyNodeList.resize(myMesh.NumNodes);
-    dummyElementList.resize(myMesh.NumElements);
-
-    //...Build the dummy node array for decomposition later
-    for(i=0;i<myMesh.NumNodes;i++)
-    {
-        dummyString = "";
-        tempString = myMesh.node[i].locationHash;
-        dummyString = tempString;
-        tempString.sprintf("%10.10i,%+018.12e,%+018.12e,%+018.12e",
-                           i,
-                           myMesh.node[i].x,
-                           myMesh.node[i].y,
-                           myMesh.node[i].z);
-        dummyString = dummyString + "," + tempString;
-        dummyNodeList[i] = dummyString;
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
     }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    //...Transfer the sorted node list
+    myMesh.node = nodeList;
 
-
-    //...Build the dummy element array for decomposition later
-    for(i=0;i<myMesh.NumElements;i++)
-    {
-        dummyString = "";
-        tempString = myMesh.element[i].elementHash;
-        dummyString = tempString;
-        tempString.sprintf("%10.10i",i);
-        dummyString = dummyString + "," + tempString;
-        tempString  = myMesh.node[myMesh.element[i].c1-1].locationHash + "," +
-                      myMesh.node[myMesh.element[i].c2-1].locationHash + "," +
-                      myMesh.node[myMesh.element[i].c3-1].locationHash;
-        dummyString = dummyString + "," + tempString;
-        dummyElementList[i] = dummyString;
-    }
-
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    //...Sort the hashes
-    qSort(dummyNodeList);
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    qSort(dummyElementList);
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    //...Sorted nodes
-    for(i=0;i<myMesh.NumNodes;i++)
-    {
-        dummy = dummyNodeList[i].split(",");
-        myMesh.node[i].locationHash = dummy.value(0);
-        tempString = dummy.value(2);
-        myMesh.node[i].x = tempString.toDouble();
-        tempString = dummy.value(3);
-        myMesh.node[i].y = tempString.toDouble();
-        tempString = dummy.value(4);
-        myMesh.node[i].z = tempString.toDouble();
-    }
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    //...Free some memory
-    dummyNodeList.clear();
-
-    //...Sorted elements
-    for(i=0;i<myMesh.NumElements;i++)
-    {
-        dummy = dummyElementList[i].split(",");
-        myMesh.element[i].elementHash = dummy.value(0);
-        myMesh.element[i].h1 = dummy.value(2);
-        myMesh.element[i].h2 = dummy.value(3);
-        myMesh.element[i].h3 = dummy.value(4);
-    }
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    //...Free some memory
-    dummyElementList.clear();
-
-    //...Boundaries not part of code yet
-
-#endif
-
-    return 0;
+    return ERR_NOERR;
 }
 
 int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
@@ -345,11 +263,15 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
         hashSeed3.sprintf("%+018.12e",myMesh.node[i].z);
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
         fullHash.addData(hashSeed.toUtf8(),57);
+
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
     }
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
 
     for(i=0;i<myMesh.NumElements;i++)
     {
@@ -364,11 +286,14 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
         hashSeed4 = myMesh.element[i].h3;
         hashSeed = hashSeed1+hashSeed2+hashSeed3+hashSeed4;
         fullHash.addData(hashSeed.toUtf8(),160);
+
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
     }
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     myMesh.mesh_hash = fullHash.result().toHex();
 
@@ -386,11 +311,14 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
                                          myMesh.node[i].y,
                                          myMesh.node[i].z);
         output << line;
+
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
     }
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     //...Write the element connectivity
     for(i=0;i<myMesh.NumElements;i++)
@@ -402,24 +330,25 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
                myMesh.element[i].h2 + " " +
                myMesh.element[i].h3 + "\n";
         output << line;
-    }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
+    }
 
     outputFile.close();
 
-    return 0;
+    return ERR_NOERR;
 }
 
-adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName, QProgressDialog &dialog, int &counter)
+int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
     QString tempString;
     QStringList tempList;
     int i;
-    adcirc_mesh myMesh;
 
     dialog.setLabelText("Reading the hashed ADCIRC mesh...");
 
@@ -427,7 +356,7 @@ adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName, QProgressDialog &dia
     if(!meshFile.open(QIODevice::ReadOnly|QIODevice::Text))
     {
         myMesh.status = -1;
-        return myMesh;
+        return ERR_NOFILE;
     }
 
     myMesh.header = meshFile.readLine().simplified();
@@ -438,6 +367,8 @@ adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName, QProgressDialog &dia
     myMesh.NumNodes = tempString.toInt();
     tempString = tempList.value(0);
     myMesh.NumElements = tempString.toInt();
+
+    dialog.setMaximum((myMesh.NumNodes+myMesh.NumElements)*3);
 
     myMesh.node.resize(myMesh.NumNodes);
     myMesh.element.resize(myMesh.NumElements);
@@ -454,12 +385,14 @@ adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName, QProgressDialog &dia
         myMesh.node[i].y = tempString.toDouble();
         tempString = tempList.value(3);
         myMesh.node[i].z = tempString.toDouble();
-    }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
+    }
 
     //...Reading the elements
     for(i=0;i<myMesh.NumElements;i++)
@@ -470,15 +403,17 @@ adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName, QProgressDialog &dia
         myMesh.element[i].h1 = tempList.value(1);
         myMesh.element[i].h2 = tempList.value(2);
         myMesh.element[i].h3 = tempList.value(3);
+
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
     }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
     meshFile.close();
-    return myMesh;
+    return ERR_NOERR;
 }
 
 int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
@@ -490,12 +425,17 @@ int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, in
 
     //...Create a mapping table
     for(i=0;i<myMesh.NumNodes;i++)
+    {
         mapping_s2a[myMesh.node[i].locationHash] = i;
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
+    }
+
 
     //...Generate the element table
     for(i=0;i<myMesh.NumElements;i++)
@@ -503,14 +443,16 @@ int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, in
         myMesh.element[i].c1 = mapping_s2a[myMesh.element[i].h1];
         myMesh.element[i].c2 = mapping_s2a[myMesh.element[i].h2];
         myMesh.element[i].c3 = mapping_s2a[myMesh.element[i].h3];
+
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
     }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    return 0;
+    return ERR_NOERR;
 }
 
 int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
@@ -521,6 +463,9 @@ int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressD
     QTextStream output(&outputFile);
     outputFile.open(QIODevice::WriteOnly);
 
+    //...Set the progress bar update time
+    polling = QTime::currentTime().addMSecs(100);
+
     dialog.setLabelText("Writing the ADCIRC mesh...");
 
     output << myMesh.header << "\n";
@@ -530,29 +475,47 @@ int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressD
         line.sprintf("%10i %+18.12e %+18.12e %+18.12e \n",i+1,myMesh.node[i].x,
                      myMesh.node[i].y,myMesh.node[i].z);
         output << line;
-    }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
+    }
 
     for(i=0;i<myMesh.NumElements;i++)
     {
         line.sprintf("%10i %5i %10i %10i %10i \n",i+1,3,myMesh.element[i].c1+1,
                 myMesh.element[i].c2+1,myMesh.element[i].c3+1);
         output << line;
-    }
 
-    //Update the progress bar
-    counter++;
-    dialog.setValue(counter);
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+        //...Update the progress bar
+        updateProgress(counter,dialog);
+
+        //...Catch the cancelled signal
+        if(dialog.wasCanceled())
+            return ERR_CANCELED;
+    }
 
     output << 0 << "\n";
     output << 0 << "\n";
     output << 0 << "\n";
     output << 0 << "\n";
     outputFile.close();
-    return 0;
+    return ERR_NOERR;
 }
+
+void adcirc_io::updateProgress(int &count,QProgressDialog &dialog)
+{
+    //...Progress Bar updates every 100ms
+    count++;
+    if(QTime::currentTime()>polling)
+    {
+        polling = QTime::currentTime().addMSecs(progressUpdateInterval);
+        dialog.setValue(count);
+        QApplication::processEvents();
+    }
+    return;
+}
+
