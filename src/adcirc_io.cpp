@@ -23,7 +23,7 @@ bool operator< (const adcirc_element &first, const adcirc_element &second)
         return false;
 }
 
-adcirc_mesh adcirc_io::readAdcircMesh(QString fileName)
+adcirc_mesh adcirc_io::readAdcircMesh(QString fileName, QProgressDialog &dialog, int &counter)
 {
 
     //Variables
@@ -35,6 +35,8 @@ adcirc_mesh adcirc_io::readAdcircMesh(QString fileName)
     QFile meshFile(fileName);
 
     adcirc_mesh myMesh;
+
+    dialog.setLabelText("Reading the ADCIRC mesh...");
 
     //----------------------------------------------------//
 
@@ -73,6 +75,11 @@ adcirc_mesh adcirc_io::readAdcircMesh(QString fileName)
         myMesh.node[i].z = readData.toDouble();
     }
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     //Begin reading the elements
     for(i = 0; i< myMesh.NumElements; i++)
     {
@@ -88,15 +95,22 @@ adcirc_mesh adcirc_io::readAdcircMesh(QString fileName)
 
     meshFile.close();
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     return myMesh;
 }
 
-int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
+int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
 
     //...variables
     int i;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3;
+
+    dialog.setLabelText("Hashing the ADCIRC mesh...");
 
     //...initialize the sha1 hash
     QCryptographicHash localHash(QCryptographicHash::Sha1);
@@ -126,6 +140,11 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
         myMesh.node[i].locationHash = localHash.result().toHex();
     }
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     //...Now create the hash for each element which is based upon the
     //   locations of each hash
     for(i=0;i<myMesh.NumElements;i++)
@@ -151,10 +170,15 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
         myMesh.element[i].elementHash = localHash.result().toHex();
     }
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     return 0;
 }
 
-int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
+int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
 #if 0
     //...Sort the nodes
@@ -186,6 +210,8 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
     QString dummyString, tempString;
     QStringList dummy;
 
+    dialog.setLabelText("Sorting the hashes...");
+
     //...Make some dummy arrays that we
     //   can decompose later
     dummyNodeList.resize(myMesh.NumNodes);
@@ -206,6 +232,11 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
         dummyNodeList[i] = dummyString;
     }
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
 
     //...Build the dummy element array for decomposition later
     for(i=0;i<myMesh.NumElements;i++)
@@ -222,9 +253,23 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
         dummyElementList[i] = dummyString;
     }
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     //...Sort the hashes
     qSort(dummyNodeList);
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     qSort(dummyElementList);
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     //...Sorted nodes
     for(i=0;i<myMesh.NumNodes;i++)
@@ -238,6 +283,10 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
         tempString = dummy.value(4);
         myMesh.node[i].z = tempString.toDouble();
     }
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     //...Free some memory
     dummyNodeList.clear();
@@ -251,6 +300,10 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
         myMesh.element[i].h2 = dummy.value(3);
         myMesh.element[i].h3 = dummy.value(4);
     }
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     //...Free some memory
     dummyElementList.clear();
@@ -262,7 +315,7 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
     return 0;
 }
 
-int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
+int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
     QString line,tempString;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3,hashSeed4;
@@ -271,6 +324,8 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
     QFile outputFile(fileName);
     QTextStream output(&outputFile);
     outputFile.open(QIODevice::WriteOnly);
+
+    dialog.setLabelText("Writing the hashed ADCIRC mesh...");
 
     //...Compute the full mesh hash by iterating over all the data
     //   contained
@@ -291,6 +346,11 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
         fullHash.addData(hashSeed.toUtf8(),57);
     }
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     for(i=0;i<myMesh.NumElements;i++)
     {
         hashSeed1 = QString();
@@ -305,6 +365,11 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
         hashSeed = hashSeed1+hashSeed2+hashSeed3+hashSeed4;
         fullHash.addData(hashSeed.toUtf8(),160);
     }
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     myMesh.mesh_hash = fullHash.result().toHex();
 
     output << myMesh.header << "\n";
@@ -322,6 +387,10 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
                                          myMesh.node[i].z);
         output << line;
     }
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     //...Write the element connectivity
     for(i=0;i<myMesh.NumElements;i++)
@@ -335,17 +404,24 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
         output << line;
     }
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     outputFile.close();
 
     return 0;
 }
 
-adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName)
+adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName, QProgressDialog &dialog, int &counter)
 {
     QString tempString;
     QStringList tempList;
     int i;
     adcirc_mesh myMesh;
+
+    dialog.setLabelText("Reading the hashed ADCIRC mesh...");
 
     QFile meshFile(fileName);
     if(!meshFile.open(QIODevice::ReadOnly|QIODevice::Text))
@@ -380,6 +456,11 @@ adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName)
         myMesh.node[i].z = tempString.toDouble();
     }
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     //...Reading the elements
     for(i=0;i<myMesh.NumElements;i++)
     {
@@ -391,18 +472,30 @@ adcirc_mesh adcirc_io::readAdcircSha1Mesh(QString fileName)
         myMesh.element[i].h3 = tempList.value(3);
     }
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     meshFile.close();
     return myMesh;
 }
 
-int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh)
+int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
     QMap<QString,int> mapping_s2a;
     int i;
 
+    dialog.setLabelText("Numbering the ADCIRC mesh...");
+
     //...Create a mapping table
     for(i=0;i<myMesh.NumNodes;i++)
         mapping_s2a[myMesh.node[i].locationHash] = i;
+
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     //...Generate the element table
     for(i=0;i<myMesh.NumElements;i++)
@@ -412,16 +505,23 @@ int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh)
         myMesh.element[i].c3 = mapping_s2a[myMesh.element[i].h3];
     }
 
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     return 0;
 }
 
-int adcirc_io::writeAdcircMesh(QString fileName,adcirc_mesh &myMesh)
+int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
     QString line;
     int i;
     QFile outputFile(fileName);
     QTextStream output(&outputFile);
     outputFile.open(QIODevice::WriteOnly);
+
+    dialog.setLabelText("Writing the ADCIRC mesh...");
 
     output << myMesh.header << "\n";
     output << myMesh.NumElements << " " << myMesh.NumNodes << "\n";
@@ -431,12 +531,24 @@ int adcirc_io::writeAdcircMesh(QString fileName,adcirc_mesh &myMesh)
                      myMesh.node[i].y,myMesh.node[i].z);
         output << line;
     }
+
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     for(i=0;i<myMesh.NumElements;i++)
     {
         line.sprintf("%10i %5i %10i %10i %10i \n",i+1,3,myMesh.element[i].c1+1,
                 myMesh.element[i].c2+1,myMesh.element[i].c3+1);
         output << line;
     }
+
+    //Update the progress bar
+    counter++;
+    dialog.setValue(counter);
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
     output << 0 << "\n";
     output << 0 << "\n";
     output << 0 << "\n";

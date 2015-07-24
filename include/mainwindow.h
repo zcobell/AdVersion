@@ -4,9 +4,6 @@
 #include <QMainWindow>
 #include <adcirc_io.h>
 
-extern int process_a2s(QString inputFile,QString outputFile);
-extern int process_s2a(QString inputFile,QString outputFile);
-
 namespace Ui {
 class MainWindow;
 }

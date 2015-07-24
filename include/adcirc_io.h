@@ -1,6 +1,7 @@
 #ifndef ADCIRCIO_H
 #define ADCIRCIO_H
 
+#include <QApplication>
 #include <QObject>
 #include <QVector>
 #include <QString>
@@ -8,6 +9,7 @@
 #include <QTextStream>
 #include <QCryptographicHash>
 #include <QDebug>
+#include <QProgressDialog>
 
 //int hashMethod = QCryptographicHash::Sha1;
 
@@ -46,7 +48,7 @@ struct adcirc_mesh
     QString header;                                //...file header
     int NumNodes;                                  //...Number of nodes in mesh
     int NumElements;                               //...Number of elements in mesh
-    QString mesh_hash;                          //...hash for the entire mesh
+    QString mesh_hash;                             //...hash for the entire mesh
     QVector<adcirc_node> node;                     //...adcirc node vector
     QVector<adcirc_element> element;               //...adcirc element vector
 };
@@ -57,18 +59,22 @@ class adcirc_io : public QObject
 public:
     explicit adcirc_io(QObject *parent = 0);
 
-    adcirc_mesh readAdcircMesh(QString fileName);
-    adcirc_mesh readAdcircSha1Mesh(QString fileName);
+    adcirc_mesh readAdcircMesh(QString fileName, QProgressDialog &dialog, int &counter);
+    adcirc_mesh readAdcircSha1Mesh(QString fileName, QProgressDialog &dialog, int &counter);
 
-    int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh);
-    int sortAdcircHashes(adcirc_mesh &myMesh);
-    int createAdcircHashes(adcirc_mesh &myMesh);
-    int numberAdcircMesh(adcirc_mesh &myMesh);
-    int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh);
+    int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
+    int sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
+    int createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
+    int numberAdcircMesh(adcirc_mesh &myMesh,  QProgressDialog &dialog, int &counter);
+    int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh,  QProgressDialog &dialog, int &counter);
+    static int process_a2s(QString inputFile,QString outputFile);
+    static int process_s2a(QString inputFile,QString outputFile);
 
 signals:
 
 public slots:
 };
+
+
 
 #endif // ADCIRCIO_H
