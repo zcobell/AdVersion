@@ -33,7 +33,7 @@ struct adcirc_boundary
     QVector<double> pipe_ht;                   //...cross barrier pipe elevation
     QVector<double> pipe_coef;                 //...cross barrier pipe coefficient
     QVector<double> pipe_diam;                 //...cross barrier pipe diameter
-    QVector<QString> boundary_hash;            //...hash for the full boundary
+    QString boundary_hash;                     //...hash for the full boundary
 };
 
 struct adcirc_node
