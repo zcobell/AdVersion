@@ -134,7 +134,7 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDi
     myMesh.NumLandBoundaries = readData.toInt();
     readData = meshFile.readLine().simplified();
     myMesh.NumLandBoundaryNodes = readData.toInt();
-    myMesh.landBoundary.resize(myMesh.NumOpenBoundaries);
+    myMesh.landBoundary.resize(myMesh.NumLandBoundaries);
     for(i=0;i<myMesh.NumLandBoundaries;i++)
     {
         readData = meshFile.readLine().simplified();
