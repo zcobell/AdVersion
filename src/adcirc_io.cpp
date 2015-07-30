@@ -30,7 +30,7 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDi
 {
 
     //Variables
-    int i;
+    int i,j;
 
     QString readData;
     QStringList readDataList;
@@ -106,6 +106,152 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDi
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+    }
+
+    //Begin reading the boundaries
+
+    //Open Boundaries
+    readData = meshFile.readLine().simplified();
+    myMesh.NumOpenBoundaries = readData.toInt();
+    readData = meshFile.readLine().simplified();
+    myMesh.NumOpenBoundaryNodes = readData.toInt();
+    myMesh.openBoundary.resize(myMesh.NumOpenBoundaries);
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        readData = meshFile.readLine().simplified();
+        myMesh.openBoundary[i].NumNodes = readData.toInt();
+        myMesh.openBoundary[i].code = -1;
+        myMesh.openBoundary[i].node1.resize(myMesh.openBoundary[i].NumNodes);
+        for(j=0;j<myMesh.openBoundary[i].NumNodes;j++)
+        {
+            readData = meshFile.readLine().simplified();
+            myMesh.openBoundary[i].node1[j] = readData.toInt();
+        }
+    }
+
+    //Land Boundaries
+    readData = meshFile.readLine().simplified();
+    myMesh.NumLandBoundaries = readData.toInt();
+    readData = meshFile.readLine().simplified();
+    myMesh.NumLandBoundaryNodes = readData.toInt();
+    myMesh.landBoundary.resize(myMesh.NumOpenBoundaries);
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        readData = meshFile.readLine().simplified();
+        readDataList = readData.split(" ");
+        readData = readDataList.value(0);
+        myMesh.landBoundary[i].NumNodes = readData.toInt();
+        readData = readDataList.value(1);
+        myMesh.landBoundary[i].code = readData.toInt();
+
+        //Read the boundary string appropriately
+        if(myMesh.landBoundary[i].code  == 0   ||
+            myMesh.landBoundary[i].code == 1   ||
+            myMesh.landBoundary[i].code == 2   ||
+            myMesh.landBoundary[i].code == 10  ||
+            myMesh.landBoundary[i].code == 11  ||
+            myMesh.landBoundary[i].code == 12  ||
+            myMesh.landBoundary[i].code == 20  ||
+            myMesh.landBoundary[i].code == 21  ||
+            myMesh.landBoundary[i].code == 22  ||
+            myMesh.landBoundary[i].code == 30  ||
+            myMesh.landBoundary[i].code == 52  ||
+            myMesh.landBoundary[i].code == 102 ||
+            myMesh.landBoundary[i].code == 112 ||
+            myMesh.landBoundary[i].code == 122 )
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                myMesh.landBoundary[i].node1[j] = readData.toInt();
+            }
+        }
+        else if(myMesh.landBoundary[i].code == 3  ||
+                myMesh.landBoundary[i].code == 13 ||
+                myMesh.landBoundary[i].code == 23 )
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].elevation.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].supercritical.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                readDataList = readData.split(" ");
+                readData = readDataList.value(0);
+                myMesh.landBoundary[i].node1[j] = readData.toInt();
+                readData = readDataList.value(1);
+                myMesh.landBoundary[i].elevation[j] = readData.toDouble();
+                readData = readDataList.value(2);
+                myMesh.landBoundary[i].supercritical[j] = readData.toDouble();
+            }
+        }
+        else if(myMesh.landBoundary[i].code == 4  ||
+                myMesh.landBoundary[i].code == 24 )
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node2.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].elevation.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].supercritical.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].subcritical.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                readDataList = readData.split(" ");
+                readData = readDataList.value(0);
+                myMesh.landBoundary[i].node1[j] = readData.toInt();
+                readData = readDataList.value(1);
+                myMesh.landBoundary[i].node2[j] = readData.toInt();
+                readData = readDataList.value(2);
+                myMesh.landBoundary[i].elevation[j] = readData.toDouble();
+                readData = readDataList.value(3);
+                myMesh.landBoundary[i].subcritical[j] = readData.toDouble();
+                readData = readDataList.value(4);
+                myMesh.landBoundary[i].supercritical[j] = readData.toDouble();
+            }
+        }
+        else if(myMesh.landBoundary[i].code == 5  ||
+                myMesh.landBoundary[i].code == 25 )
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node2.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].elevation.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].supercritical.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].subcritical.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].pipe_ht.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].pipe_coef.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].pipe_diam.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                readDataList = readData.split(" ");
+                readData = readDataList.value(0);
+                myMesh.landBoundary[i].node1[j] = readData.toInt();
+                readData = readDataList.value(1);
+                myMesh.landBoundary[i].node2[j] = readData.toInt();
+                readData = readDataList.value(2);
+                myMesh.landBoundary[i].elevation[j] = readData.toDouble();
+                readData = readDataList.value(3);
+                myMesh.landBoundary[i].subcritical[j] = readData.toDouble();
+                readData = readDataList.value(4);
+                myMesh.landBoundary[i].supercritical[j] = readData.toDouble();
+                readData = readDataList.value(5);
+                myMesh.landBoundary[i].pipe_ht[j] = readData.toDouble();
+                readData = readDataList.value(6);
+                myMesh.landBoundary[i].pipe_coef[j] = readData.toDouble();
+                readData = readDataList.value(7);
+                myMesh.landBoundary[i].pipe_diam[j] = readData.toDouble();
+            }
+        }
+        else
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.openBoundary[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                myMesh.landBoundary[i].node1[j] = readData.toInt();
+            }
+        }
     }
 
     meshFile.close();
