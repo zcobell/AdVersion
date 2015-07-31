@@ -1,7 +1,8 @@
 #include "adcirc_io.h"
 
+//...Some checks for the progress bar
 QTime polling;
-int progressUpdateInterval = 1;
+int progressUpdateInterval = 10;
 
 adcirc_io::adcirc_io(QObject *parent) : QObject(parent)
 {
@@ -26,11 +27,29 @@ bool operator< (const adcirc_element &first, const adcirc_element &second)
         return false;
 }
 
+//...Comparison operator used in the sorting of boundaries
+bool operator< (const adcirc_boundary_hash &first, const adcirc_boundary_hash &second)
+{
+    if(first.boundary_hash<second.boundary_hash)
+        return true;
+    else
+        return false;
+}
+
+//...Comparison operator used in the sorting of boundaries
+bool operator< (const adcirc_boundary &first, const adcirc_boundary &second)
+{
+    if(first.averageLongitude<second.averageLongitude)
+        return false;
+    else
+        return true;
+}
+
 int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
 
     //Variables
-    int i;
+    int i,j;
 
     QString readData;
     QStringList readDataList;
@@ -108,6 +127,163 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDi
             return ERR_CANCELED;
     }
 
+    //Begin reading the boundaries
+
+    //Open Boundaries
+    readData = meshFile.readLine().simplified();
+    readDataList = readData.split(" ");
+    readData = readDataList.value(0);
+    myMesh.NumOpenBoundaries = readData.toInt();
+    readData = meshFile.readLine().simplified();
+    readDataList = readData.split(" ");
+    readData = readDataList.value(0);
+    myMesh.NumOpenBoundaryNodes = readData.toInt();
+    myMesh.openBoundaryH.resize(myMesh.NumOpenBoundaries);
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        readData = meshFile.readLine().simplified();
+        readDataList = readData.split(" ");
+        readData = readDataList.value(0);
+        myMesh.openBoundaryH[i].NumNodes = readData.toInt();
+        myMesh.openBoundaryH[i].code = -1;
+        myMesh.openBoundaryH[i].node1.resize(myMesh.openBoundaryH[i].NumNodes);
+        for(j=0;j<myMesh.openBoundaryH[i].NumNodes;j++)
+        {
+            readData = meshFile.readLine().simplified();
+            myMesh.openBoundaryH[i].node1[j] = readData.toInt();
+        }
+    }
+
+    //Land Boundaries
+    readData = meshFile.readLine().simplified();
+    readDataList = readData.split(" ");
+    readData = readDataList.value(0);
+    myMesh.NumLandBoundaries = readData.toInt();
+    readData = meshFile.readLine().simplified();
+    readDataList = readData.split(" ");
+    readData = readDataList.value(0);
+    myMesh.NumLandBoundaryNodes = readData.toInt();
+    myMesh.landBoundaryH.resize(myMesh.NumLandBoundaries);
+
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        readData = meshFile.readLine().simplified();
+        readDataList = readData.split(" ");
+        readData = readDataList.value(0);
+        myMesh.landBoundaryH[i].NumNodes = readData.toInt();
+        readData = readDataList.value(1);
+        myMesh.landBoundaryH[i].code = readData.toInt();
+
+        //Read the boundary string appropriately
+        if(myMesh.landBoundaryH[i].code  == 0   ||
+            myMesh.landBoundaryH[i].code == 1   ||
+            myMesh.landBoundaryH[i].code == 2   ||
+            myMesh.landBoundaryH[i].code == 10  ||
+            myMesh.landBoundaryH[i].code == 11  ||
+            myMesh.landBoundaryH[i].code == 12  ||
+            myMesh.landBoundaryH[i].code == 20  ||
+            myMesh.landBoundaryH[i].code == 21  ||
+            myMesh.landBoundaryH[i].code == 22  ||
+            myMesh.landBoundaryH[i].code == 30  ||
+            myMesh.landBoundaryH[i].code == 52  ||
+            myMesh.landBoundaryH[i].code == 102 ||
+            myMesh.landBoundaryH[i].code == 112 ||
+            myMesh.landBoundaryH[i].code == 122 )
+        {
+            myMesh.landBoundaryH[i].node1.resize(myMesh.landBoundaryH[i].NumNodes);
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                myMesh.landBoundaryH[i].node1[j] = readData.toInt();
+            }
+        }
+        else if(myMesh.landBoundaryH[i].code == 3  ||
+                myMesh.landBoundaryH[i].code == 13 ||
+                myMesh.landBoundaryH[i].code == 23 )
+        {
+            myMesh.landBoundaryH[i].node1.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].elevation.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].supercritical.resize(myMesh.landBoundaryH[i].NumNodes);
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                readDataList = readData.split(" ");
+                readData = readDataList.value(0);
+                myMesh.landBoundaryH[i].node1[j] = readData.toInt();
+                readData = readDataList.value(1);
+                myMesh.landBoundaryH[i].elevation[j] = readData.toDouble();
+                readData = readDataList.value(2);
+                myMesh.landBoundaryH[i].supercritical[j] = readData.toDouble();
+            }
+        }
+        else if(myMesh.landBoundaryH[i].code == 4  ||
+                myMesh.landBoundaryH[i].code == 24 )
+        {
+            myMesh.landBoundaryH[i].node1.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].node2.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].elevation.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].supercritical.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].subcritical.resize(myMesh.landBoundaryH[i].NumNodes);
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                readDataList = readData.split(" ");
+                readData = readDataList.value(0);
+                myMesh.landBoundaryH[i].node1[j] = readData.toInt();
+                readData = readDataList.value(1);
+                myMesh.landBoundaryH[i].node2[j] = readData.toInt();
+                readData = readDataList.value(2);
+                myMesh.landBoundaryH[i].elevation[j] = readData.toDouble();
+                readData = readDataList.value(3);
+                myMesh.landBoundaryH[i].subcritical[j] = readData.toDouble();
+                readData = readDataList.value(4);
+                myMesh.landBoundaryH[i].supercritical[j] = readData.toDouble();
+            }
+        }
+        else if(myMesh.landBoundaryH[i].code == 5  ||
+                myMesh.landBoundaryH[i].code == 25 )
+        {
+            myMesh.landBoundaryH[i].node1.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].node2.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].elevation.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].supercritical.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].subcritical.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].pipe_ht.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].pipe_coef.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].pipe_diam.resize(myMesh.landBoundaryH[i].NumNodes);
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                readDataList = readData.split(" ");
+                readData = readDataList.value(0);
+                myMesh.landBoundaryH[i].node1[j] = readData.toInt();
+                readData = readDataList.value(1);
+                myMesh.landBoundaryH[i].node2[j] = readData.toInt();
+                readData = readDataList.value(2);
+                myMesh.landBoundaryH[i].elevation[j] = readData.toDouble();
+                readData = readDataList.value(3);
+                myMesh.landBoundaryH[i].subcritical[j] = readData.toDouble();
+                readData = readDataList.value(4);
+                myMesh.landBoundaryH[i].supercritical[j] = readData.toDouble();
+                readData = readDataList.value(5);
+                myMesh.landBoundaryH[i].pipe_ht[j] = readData.toDouble();
+                readData = readDataList.value(6);
+                myMesh.landBoundaryH[i].pipe_coef[j] = readData.toDouble();
+                readData = readDataList.value(7);
+                myMesh.landBoundaryH[i].pipe_diam[j] = readData.toDouble();
+            }
+        }
+        else
+        {
+            myMesh.landBoundaryH[i].node1.resize(myMesh.landBoundaryH[i].NumNodes);
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                readData = meshFile.readLine().simplified();
+                myMesh.landBoundaryH[i].node1[j] = readData.toInt();
+            }
+        }
+    }
+
     meshFile.close();
 
     return ERR_NOERR;
@@ -117,7 +293,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
 {
 
     //...variables
-    int i;
+    int i,j;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3;
 
     dialog.setLabelText("Hashing the ADCIRC mesh...");
@@ -144,7 +320,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
 
         //...Create the hash for the local node
         localHash.reset();
-        localHash.addData(hashSeed.toUtf8(),38);
+        localHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //...Save the local hash for this node into the array
         myMesh.node[i].locationHash = localHash.result().toHex();
@@ -177,7 +353,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
 
         //...Create the hash for the local node
         localHash.reset();
-        localHash.addData(hashSeed.toUtf8(),120);
+        localHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //...Save the local hash for this node into the array
         myMesh.element[i].elementHash = localHash.result().toHex();
@@ -190,11 +366,103 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
             return ERR_CANCELED;
     }
 
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        localHash.reset();
+
+        //Hash the boundary code, for open boundaries, -1
+        hashSeed.sprintf("%+6i",-1);
+        localHash.addData(hashSeed.toUtf8(),hashSeed.length());
+
+        //Accumulate a hash along the boundary string
+        for(j=0;j<myMesh.openBoundaryH[i].NumNodes;j++)
+        {
+            hashSeed = QString();
+            hashSeed = myMesh.node[myMesh.openBoundaryH[i].node1[j]-1].locationHash;
+            localHash.addData(hashSeed.toUtf8(),hashSeed.length());
+        }
+
+        //Save the hash
+        myMesh.openBoundaryH[i].boundary_hash = localHash.result().toHex();
+    }
+
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        localHash.reset();
+
+        //Hash the boundary code
+        hashSeed.sprintf("%+6i",myMesh.landBoundaryH[i].code);
+        localHash.addData(hashSeed.toUtf8(),hashSeed.length());
+
+        //Accumulate a hash along the boundary string
+        for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+        {
+
+            //Single node boundaries and dual node boundaries
+            //lumped since we only care if the position
+            //changes, not the attributes
+            if(myMesh.landBoundaryH[i].code  == 0   ||
+                myMesh.landBoundaryH[i].code == 1   ||
+                myMesh.landBoundaryH[i].code == 2   ||
+                myMesh.landBoundaryH[i].code == 10  ||
+                myMesh.landBoundaryH[i].code == 11  ||
+                myMesh.landBoundaryH[i].code == 12  ||
+                myMesh.landBoundaryH[i].code == 20  ||
+                myMesh.landBoundaryH[i].code == 21  ||
+                myMesh.landBoundaryH[i].code == 22  ||
+                myMesh.landBoundaryH[i].code == 30  ||
+                myMesh.landBoundaryH[i].code == 52  ||
+                myMesh.landBoundaryH[i].code == 102 ||
+                myMesh.landBoundaryH[i].code == 112 ||
+                myMesh.landBoundaryH[i].code == 122 ||
+                myMesh.landBoundaryH[i].code == 3   ||
+                myMesh.landBoundaryH[i].code == 13  ||
+                myMesh.landBoundaryH[i].code == 23 )
+            {
+                //Accumulate a hash along the boundary string
+                for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+                {
+                    hashSeed = QString();
+                    hashSeed = myMesh.node[myMesh.landBoundaryH[i].node1[j]-1].locationHash;
+                    localHash.addData(hashSeed.toUtf8(),hashSeed.length());
+                }
+            }
+            else if(myMesh.landBoundaryH[i].code == 4  ||
+                    myMesh.landBoundaryH[i].code == 24 ||
+                    myMesh.landBoundaryH[i].code == 5  ||
+                    myMesh.landBoundaryH[i].code == 25 )
+            {
+                //Accumulate a hash along the boundary string
+                for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+                {
+                    hashSeed = QString();
+                    hashSeed = myMesh.node[myMesh.landBoundaryH[i].node1[j]-1].locationHash +
+                               myMesh.node[myMesh.landBoundaryH[i].node2[j]-1].locationHash;
+                    localHash.addData(hashSeed.toUtf8(),hashSeed.length());
+                }
+            }
+            else
+            {
+                //Accumulate a hash along the boundary string
+                for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+                {
+                    hashSeed = QString();
+                    hashSeed = myMesh.node[myMesh.landBoundaryH[i].node1[j]-1].locationHash;
+                    localHash.addData(hashSeed.toUtf8(),hashSeed.length());
+                }
+            }
+        }
+
+        //Save the hash
+        myMesh.landBoundaryH[i].boundary_hash = localHash.result().toHex();
+    }
+
     return ERR_NOERR;
 }
 
 int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
+    int i,j;
 
     dialog.setLabelText("Sorting the hashes...");
 
@@ -227,8 +495,105 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, in
             return ERR_CANCELED;
     }
 
+    //...Sort the open boundary segments
+    QVector<adcirc_boundary_hash> openboundaryList;
+    openboundaryList.resize(myMesh.NumOpenBoundaries);
+    openboundaryList = myMesh.openBoundaryH;
+    qSort(openboundaryList);
+
+    //...Clear the information from the mesh about open boundaries
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+        myMesh.openBoundaryH[i].node1.clear();
+    myMesh.openBoundaryH.clear();
+
+    //...Save the sorted information
+    myMesh.openBoundaryH = openboundaryList;
+
+    //...Hash the open boundary array
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        myMesh.openBoundaryH[i].node1_hash.resize(myMesh.openBoundaryH[i].NumNodes);
+        for(j=0;j<myMesh.openBoundaryH[i].NumNodes;j++)
+            myMesh.openBoundaryH[i].node1_hash[j] =
+                    myMesh.node[myMesh.openBoundaryH[i].node1[j]-1].locationHash;
+    }
+
+    //...Sort the land boundary segments
+    QVector<adcirc_boundary_hash> landBoundaryList;
+    landBoundaryList.resize(myMesh.NumLandBoundaries);
+    landBoundaryList = myMesh.landBoundaryH;
+    qSort(landBoundaryList);
+
+    //...Clear the boundary arrays
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        myMesh.landBoundaryH[i].node1.clear();
+        myMesh.landBoundaryH[i].node2.clear();
+        myMesh.landBoundaryH[i].elevation.clear();
+        myMesh.landBoundaryH[i].subcritical.clear();
+        myMesh.landBoundaryH[i].supercritical.clear();
+        myMesh.landBoundaryH[i].pipe_ht.clear();
+        myMesh.landBoundaryH[i].pipe_coef.clear();
+        myMesh.landBoundaryH[i].pipe_diam.clear();
+    }
+
+    //...Transfer the new boundary array
+    myMesh.landBoundaryH = landBoundaryList;
+    landBoundaryList.clear();
+
+    //Accumulate a hash along the boundary string
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        if(myMesh.landBoundaryH[i].code  == 0   ||
+            myMesh.landBoundaryH[i].code == 1   ||
+            myMesh.landBoundaryH[i].code == 2   ||
+            myMesh.landBoundaryH[i].code == 10  ||
+            myMesh.landBoundaryH[i].code == 11  ||
+            myMesh.landBoundaryH[i].code == 12  ||
+            myMesh.landBoundaryH[i].code == 20  ||
+            myMesh.landBoundaryH[i].code == 21  ||
+            myMesh.landBoundaryH[i].code == 22  ||
+            myMesh.landBoundaryH[i].code == 30  ||
+            myMesh.landBoundaryH[i].code == 52  ||
+            myMesh.landBoundaryH[i].code == 102 ||
+            myMesh.landBoundaryH[i].code == 112 ||
+            myMesh.landBoundaryH[i].code == 122 ||
+            myMesh.landBoundaryH[i].code == 3   ||
+            myMesh.landBoundaryH[i].code == 13  ||
+            myMesh.landBoundaryH[i].code == 23 )
+        {
+            myMesh.landBoundaryH[i].node1_hash.resize(myMesh.landBoundaryH[i].NumNodes);
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+                myMesh.landBoundaryH[i].node1_hash[j] =
+                        myMesh.node[myMesh.landBoundaryH[i].node1[j]-1].locationHash;
+        }
+        else if(myMesh.landBoundaryH[i].code == 4  ||
+                myMesh.landBoundaryH[i].code == 24 ||
+                myMesh.landBoundaryH[i].code == 5  ||
+                myMesh.landBoundaryH[i].code == 25 )
+        {
+            myMesh.landBoundaryH[i].node1_hash.resize(myMesh.landBoundaryH[i].NumNodes);
+            myMesh.landBoundaryH[i].node2_hash.resize(myMesh.landBoundaryH[i].NumNodes);
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                myMesh.landBoundaryH[i].node1_hash[j] =
+                        myMesh.node[myMesh.landBoundaryH[i].node1[j]-1].locationHash;
+                myMesh.landBoundaryH[i].node2_hash[j] =
+                        myMesh.node[myMesh.landBoundaryH[i].node2[j]-1].locationHash;
+            }
+        }
+        else
+        {
+            myMesh.landBoundaryH[i].node1_hash.resize(myMesh.landBoundaryH[i].NumNodes);
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+                myMesh.landBoundaryH[i].node1_hash[j] =
+                        myMesh.node[myMesh.landBoundaryH[i].node1[j]-1].locationHash;
+        }
+    }
+
     //...Transfer the sorted node list
     myMesh.node = nodeList;
+    nodeList.clear();
 
     return ERR_NOERR;
 }
@@ -236,8 +601,9 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, in
 int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
     QString line,tempString;
+    QString elevation,supercritical,subcritical,pipeht,pipediam,pipecoef;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3,hashSeed4;
-    int i;
+    int i,j,hashLen;
 
     QFile outputFile(fileName);
     QTextStream output(&outputFile);
@@ -254,15 +620,11 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
     //   any way by checking the hash in the header
     for(i=0;i<myMesh.NumNodes;i++)
     {
-        hashSeed1 = QString();
-        hashSeed2 = QString();
-        hashSeed3 = QString();
-        hashSeed  = QString();
         hashSeed1.sprintf("%+018.12e",myMesh.node[i].x);
         hashSeed2.sprintf("%+018.12e",myMesh.node[i].y);
         hashSeed3.sprintf("%+018.12e",myMesh.node[i].z);
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
-        fullHash.addData(hashSeed.toUtf8(),57);
+        fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //...Update the progress bar
         updateProgress(counter,dialog);
@@ -272,20 +634,14 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
             return ERR_CANCELED;
     }
 
-
     for(i=0;i<myMesh.NumElements;i++)
     {
-        hashSeed1 = QString();
-        hashSeed2 = QString();
-        hashSeed3 = QString();
-        hashSeed4 = QString();
-        hashSeed  = QString();
         hashSeed1 = myMesh.element[i].elementHash;
         hashSeed2 = myMesh.element[i].h1;
         hashSeed3 = myMesh.element[i].h2;
         hashSeed4 = myMesh.element[i].h3;
         hashSeed = hashSeed1+hashSeed2+hashSeed3+hashSeed4;
-        fullHash.addData(hashSeed.toUtf8(),160);
+        fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //...Update the progress bar
         updateProgress(counter,dialog);
@@ -293,6 +649,94 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+    }
+
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        for(j=0;j<myMesh.openBoundaryH[i].NumNodes;j++)
+        {
+            hashSeed = myMesh.openBoundaryH[i].node1_hash[j];
+            fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
+        }
+    }
+
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        if(myMesh.landBoundaryH[i].code  == 0   ||
+            myMesh.landBoundaryH[i].code == 1   ||
+            myMesh.landBoundaryH[i].code == 2   ||
+            myMesh.landBoundaryH[i].code == 10  ||
+            myMesh.landBoundaryH[i].code == 11  ||
+            myMesh.landBoundaryH[i].code == 12  ||
+            myMesh.landBoundaryH[i].code == 20  ||
+            myMesh.landBoundaryH[i].code == 21  ||
+            myMesh.landBoundaryH[i].code == 22  ||
+            myMesh.landBoundaryH[i].code == 30  ||
+            myMesh.landBoundaryH[i].code == 52  ||
+            myMesh.landBoundaryH[i].code == 102 ||
+            myMesh.landBoundaryH[i].code == 112 ||
+            myMesh.landBoundaryH[i].code == 122 )
+        {
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                hashSeed = myMesh.landBoundaryH[i].node1_hash[j];
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
+            }
+        }
+        else if(myMesh.landBoundaryH[i].code == 3  ||
+                myMesh.landBoundaryH[i].code == 13 ||
+                myMesh.landBoundaryH[i].code == 23 )
+        {
+
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
+                supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
+                hashSeed = myMesh.landBoundaryH[i].node1_hash[j]+
+                             elevation+supercritical;
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
+            }
+        }
+        else if(myMesh.landBoundaryH[i].code == 4  ||
+                myMesh.landBoundaryH[i].code == 24 )
+        {
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
+                supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
+                subcritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].subcritical[j]);
+                hashSeed = myMesh.landBoundaryH[i].node1_hash[j]+
+                             myMesh.landBoundaryH[i].node2_hash[j]+
+                             elevation+subcritical+supercritical;
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
+            }
+        }
+        else if(myMesh.landBoundaryH[i].code == 5  ||
+                myMesh.landBoundaryH[i].code == 25 )
+        {
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
+                supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
+                subcritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].subcritical[j]);
+                pipeht.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_ht);
+                pipecoef.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_coef);
+                pipediam.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_diam);
+                hashSeed = myMesh.landBoundaryH[i].node1_hash[j]+
+                             myMesh.landBoundaryH[i].node2_hash[j]+
+                             elevation+subcritical+supercritical+pipeht+
+                             pipecoef+pipediam;
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
+            }
+        }
+        else
+        {
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                hashSeed = myMesh.landBoundaryH[i].node1_hash[j];
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
+            }
+        }
     }
 
     myMesh.mesh_hash = fullHash.result().toHex();
@@ -339,6 +783,92 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
             return ERR_CANCELED;
     }
 
+    //...Write the open boundaries
+    output << myMesh.NumOpenBoundaries << " \n";
+    output << myMesh.NumOpenBoundaryNodes << " \n";
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        output << myMesh.openBoundaryH[i].boundary_hash << "  "
+               << myMesh.openBoundaryH[i].NumNodes << " \n";
+        for(j=0;j<myMesh.openBoundaryH[i].NumNodes;j++)
+            output << myMesh.openBoundaryH[i].node1_hash[j] << " \n";
+    }
+
+    //...Write the land boundaries
+    output << myMesh.NumLandBoundaries << " \n";
+    output << myMesh.NumLandBoundaryNodes << " \n";
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        output << myMesh.landBoundaryH[i].boundary_hash << "  "
+               << myMesh.landBoundaryH[i].NumNodes << "   "
+               << myMesh.landBoundaryH[i].code << " \n";
+        if(myMesh.landBoundaryH[i].code  == 0   ||
+            myMesh.landBoundaryH[i].code == 1   ||
+            myMesh.landBoundaryH[i].code == 2   ||
+            myMesh.landBoundaryH[i].code == 10  ||
+            myMesh.landBoundaryH[i].code == 11  ||
+            myMesh.landBoundaryH[i].code == 12  ||
+            myMesh.landBoundaryH[i].code == 20  ||
+            myMesh.landBoundaryH[i].code == 21  ||
+            myMesh.landBoundaryH[i].code == 22  ||
+            myMesh.landBoundaryH[i].code == 30  ||
+            myMesh.landBoundaryH[i].code == 52  ||
+            myMesh.landBoundaryH[i].code == 102 ||
+            myMesh.landBoundaryH[i].code == 112 ||
+            myMesh.landBoundaryH[i].code == 122 )
+        {
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+                output << myMesh.landBoundaryH[i].node1_hash[j] << " \n";
+        }
+        else if(myMesh.landBoundaryH[i].code == 3  ||
+                myMesh.landBoundaryH[i].code == 13 ||
+                myMesh.landBoundaryH[i].code == 23 )
+        {
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
+                supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
+                output << myMesh.landBoundaryH[i].node1_hash[j] << " "
+                       << elevation << " " << supercritical << " \n";
+            }
+        }
+        else if(myMesh.landBoundaryH[i].code == 4  ||
+                myMesh.landBoundaryH[i].code == 24 )
+        {
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
+                supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
+                subcritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].subcritical[j]);
+                output << myMesh.landBoundaryH[i].node1_hash[j] << " "
+                       << myMesh.landBoundaryH[i].node2_hash[j] << " "
+                       << elevation << " " << subcritical << " " << supercritical << " \n";
+            }
+        }
+        else if(myMesh.landBoundaryH[i].code == 5  ||
+                myMesh.landBoundaryH[i].code == 25 )
+        {
+            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
+            {
+                elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
+                supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
+                subcritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].subcritical[j]);
+                pipeht.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_ht);
+                pipecoef.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_coef);
+                pipediam.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_diam);
+                output << myMesh.landBoundaryH[i].node1_hash[j] << " " <<
+                          myMesh.landBoundaryH[i].node2_hash[j] << " " <<
+                          elevation << " " << subcritical << " " << supercritical <<
+                          pipeht << " " << pipecoef << " " << pipediam << " \n";
+            }
+        }
+        else
+        {
+            for(j=0;j<myMesh.openBoundaryH[i].NumNodes;j++)
+                output << myMesh.landBoundaryH[i].node1_hash[j] << " \n";
+        }
+    }
+
     outputFile.close();
 
     return ERR_NOERR;
@@ -348,7 +878,7 @@ int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgre
 {
     QString tempString;
     QStringList tempList;
-    int i;
+    int i,j;
 
     dialog.setLabelText("Reading the hashed ADCIRC mesh...");
 
@@ -412,6 +942,165 @@ int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgre
             return ERR_CANCELED;
     }
 
+    //...Read the open boundaries
+    tempString = meshFile.readLine().simplified();
+    tempList = tempString.split(" ");
+    tempString = tempList.value(0);
+    myMesh.NumOpenBoundaries = tempString.toInt();
+    tempString = meshFile.readLine().simplified();
+    tempList = tempString.split(" ");
+    tempString = tempList.value(0);
+    myMesh.NumOpenBoundaryNodes = tempString.toInt();
+
+    myMesh.openBoundary.resize(myMesh.NumOpenBoundaries);
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        tempString = meshFile.readLine().simplified();
+        tempList = tempString.split(" ");
+        myMesh.openBoundary[i].boundary_hash = tempList.value(0);
+        tempString = tempList.value(1);
+        myMesh.openBoundary[i].NumNodes = tempString.toInt();
+        myMesh.openBoundary[i].node1.resize(myMesh.openBoundary[i].NumNodes);
+        myMesh.openBoundary[i].node1_hash.resize(myMesh.openBoundary[i].NumNodes);
+        for(j=0;j<myMesh.openBoundary[i].NumNodes;j++)
+        {
+            tempString = meshFile.readLine().simplified();
+            myMesh.openBoundary[i].node1_hash[j] = tempString;
+        }
+    }
+
+    //...Read the land boundaries
+    tempString = meshFile.readLine().simplified();
+    tempList = tempString.split(" ");
+    tempString = tempList.value(0);
+    myMesh.NumLandBoundaries = tempString.toInt();
+    tempString = meshFile.readLine().simplified();
+    tempList = tempString.split(" ");
+    tempString = tempList.value(0);
+    myMesh.NumLandBoundaryNodes = tempString.toInt();
+
+    myMesh.landBoundary.resize(myMesh.NumLandBoundaries);
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        tempString = meshFile.readLine().simplified();
+        tempList = tempString.split(" ");
+        myMesh.landBoundary[i].boundary_hash = tempList.value(0);
+        tempString = tempList.value(1);
+        myMesh.landBoundary[i].NumNodes = tempString.toInt();
+        tempString = tempList.value(2);
+        myMesh.landBoundary[i].code = tempString.toInt();
+
+        if(myMesh.landBoundary[i].code  == 0   ||
+            myMesh.landBoundary[i].code == 1   ||
+            myMesh.landBoundary[i].code == 2   ||
+            myMesh.landBoundary[i].code == 10  ||
+            myMesh.landBoundary[i].code == 11  ||
+            myMesh.landBoundary[i].code == 12  ||
+            myMesh.landBoundary[i].code == 20  ||
+            myMesh.landBoundary[i].code == 21  ||
+            myMesh.landBoundary[i].code == 22  ||
+            myMesh.landBoundary[i].code == 30  ||
+            myMesh.landBoundary[i].code == 52  ||
+            myMesh.landBoundary[i].code == 102 ||
+            myMesh.landBoundary[i].code == 112 ||
+            myMesh.landBoundary[i].code == 122 )
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node1_hash.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                tempString = meshFile.readLine().simplified();
+                myMesh.landBoundary[i].node1_hash[j] = tempString;
+            }
+        }
+        else if(myMesh.landBoundary[i].code == 3  ||
+                myMesh.landBoundary[i].code == 13 ||
+                myMesh.landBoundary[i].code == 23 )
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node1_hash.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].elevation.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].supercritical.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                tempString = meshFile.readLine().simplified();
+                tempList = tempString.split(" ");
+                myMesh.landBoundary[i].node1_hash[j] = tempList.value(0);
+                tempString = tempList.value(1);
+                myMesh.landBoundary[i].elevation[j] = tempString.toDouble();
+                tempString = tempList.value(2);
+                myMesh.landBoundary[i].supercritical[j] = tempString.toDouble();
+            }
+        }
+        else if(myMesh.landBoundary[i].code == 4  ||
+                myMesh.landBoundary[i].code == 24 )
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node1_hash.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node2.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node2_hash.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].elevation.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].supercritical.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].subcritical.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                tempString = meshFile.readLine().simplified();
+                tempList = tempString.split(" ");
+                myMesh.landBoundary[i].node1_hash[j] = tempList.value(0);
+                myMesh.landBoundary[i].node2_hash[j] = tempList.value(1);
+                tempString = tempList.value(2);
+                myMesh.landBoundary[i].elevation[j] = tempString.toDouble();
+                tempString = tempList.value(3);
+                myMesh.landBoundary[i].subcritical[j] = tempString.toDouble();
+                tempString = tempList.value(4);
+                myMesh.landBoundary[i].supercritical[j] = tempString.toDouble();
+            }
+        }
+        else if(myMesh.landBoundary[i].code == 5  ||
+                myMesh.landBoundary[i].code == 25 )
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node1_hash.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node2.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node2_hash.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].elevation.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].supercritical.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].subcritical.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].pipe_ht.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].pipe_coef.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].pipe_diam.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                tempString = meshFile.readLine().simplified();
+                tempList = tempString.split(" ");
+                myMesh.landBoundary[i].node1_hash[j] = tempList.value(0);
+                myMesh.landBoundary[i].node2_hash[j] = tempList.value(1);
+                tempString = tempList.value(2);
+                myMesh.landBoundary[i].elevation[j] = tempString.toDouble();
+                tempString = tempList.value(3);
+                myMesh.landBoundary[i].subcritical[j] = tempString.toDouble();
+                tempString = tempList.value(4);
+                myMesh.landBoundary[i].supercritical[j] = tempString.toDouble();
+                tempString = tempList.value(5);
+                myMesh.landBoundary[i].pipe_ht[j] = tempString.toDouble();
+                tempString = tempList.value(6);
+                myMesh.landBoundary[i].pipe_coef[j] = tempString.toDouble();
+                tempString = tempList.value(7);
+                myMesh.landBoundary[i].pipe_diam[j] = tempString.toDouble();
+            }
+        }
+        else
+        {
+            myMesh.landBoundary[i].node1.resize(myMesh.landBoundary[i].NumNodes);
+            myMesh.landBoundary[i].node1_hash.resize(myMesh.landBoundary[i].NumNodes);
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                tempString = meshFile.readLine().simplified();
+                myMesh.landBoundary[i].node1_hash[j] = tempString;
+            }
+        }
+    }
+
     meshFile.close();
     return ERR_NOERR;
 }
@@ -419,7 +1108,8 @@ int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgre
 int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
     QMap<QString,int> mapping_s2a;
-    int i;
+    int i,j;
+    double a;
 
     dialog.setLabelText("Numbering the ADCIRC mesh...");
 
@@ -436,7 +1126,6 @@ int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, in
             return ERR_CANCELED;
     }
 
-
     //...Generate the element table
     for(i=0;i<myMesh.NumElements;i++)
     {
@@ -452,13 +1141,109 @@ int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, in
             return ERR_CANCELED;
     }
 
+    //...Map the open boundary arrays
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        for(j=0;j<myMesh.openBoundary[i].NumNodes;j++)
+            myMesh.openBoundary[i].node1[j] = mapping_s2a[myMesh.openBoundary[i].node1_hash[j]];
+    }
+
+    //...Map the land boundary array
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        if(myMesh.landBoundary[i].code  == 0   ||
+            myMesh.landBoundary[i].code == 1   ||
+            myMesh.landBoundary[i].code == 2   ||
+            myMesh.landBoundary[i].code == 10  ||
+            myMesh.landBoundary[i].code == 11  ||
+            myMesh.landBoundary[i].code == 12  ||
+            myMesh.landBoundary[i].code == 20  ||
+            myMesh.landBoundary[i].code == 21  ||
+            myMesh.landBoundary[i].code == 22  ||
+            myMesh.landBoundary[i].code == 30  ||
+            myMesh.landBoundary[i].code == 52  ||
+            myMesh.landBoundary[i].code == 102 ||
+            myMesh.landBoundary[i].code == 112 ||
+            myMesh.landBoundary[i].code == 122 ||
+            myMesh.landBoundary[i].code == 3   ||
+            myMesh.landBoundary[i].code == 13  ||
+            myMesh.landBoundary[i].code == 23 )
+        {
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+                myMesh.landBoundary[i].node1[j] = mapping_s2a[myMesh.landBoundary[i].node1_hash[j]];
+        }
+        else if(myMesh.landBoundary[i].code == 4  ||
+                myMesh.landBoundary[i].code == 24 ||
+                myMesh.landBoundary[i].code == 5  ||
+                myMesh.landBoundary[i].code == 25 )
+        {
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                myMesh.landBoundary[i].node1[j] = mapping_s2a[myMesh.landBoundary[i].node1_hash[j]];
+                myMesh.landBoundary[i].node2[j] = mapping_s2a[myMesh.landBoundary[i].node2_hash[j]];
+            }
+        }
+        else
+        {
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+                myMesh.landBoundary[i].node1[j] = mapping_s2a[myMesh.landBoundary[i].node1_hash[j]];
+        }
+    }
+
+    //...Now put the boundaries in East --> West order
+    QVector<adcirc_boundary> openBoundary;
+    QVector<adcirc_boundary> landBoundary;
+    openBoundary = myMesh.openBoundary;
+    landBoundary = myMesh.landBoundary;
+
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        a = 0.0;
+        for(j=0;j<openBoundary[i].NumNodes;j++)
+            a += myMesh.node[openBoundary[i].node1[j]].x;
+        a = a / openBoundary[i].NumNodes;
+        openBoundary[i].averageLongitude = a;
+    }
+
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        a = 0.0;
+        for(j=0;j<landBoundary[i].NumNodes;j++)
+            a += myMesh.node[landBoundary[i].node1[j]].x;
+        a = a / landBoundary[i].NumNodes;
+        landBoundary[i].averageLongitude = a;
+    }
+
+    qSort(openBoundary);
+    qSort(landBoundary);
+
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+        myMesh.openBoundary[i].node1.clear();
+    myMesh.openBoundary.clear();
+
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        myMesh.landBoundary[i].node1.clear();
+        myMesh.landBoundary[i].node2.clear();
+        myMesh.landBoundary[i].elevation.clear();
+        myMesh.landBoundary[i].subcritical.clear();
+        myMesh.landBoundary[i].supercritical.clear();
+        myMesh.landBoundary[i].pipe_ht.clear();
+        myMesh.landBoundary[i].pipe_coef.clear();
+        myMesh.landBoundary[i].pipe_diam.clear();
+    }
+    myMesh.landBoundary.clear();
+
+    myMesh.openBoundary = openBoundary;
+    myMesh.landBoundary = landBoundary;
+
     return ERR_NOERR;
 }
 
 int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 {
-    QString line;
-    int i;
+    QString line,elevation,supercritical,subcritical,pipeht,pipecoef,pipediam,node1,node2;
+    int i,j;
     QFile outputFile(fileName);
     QTextStream output(&outputFile);
     outputFile.open(QIODevice::WriteOnly);
@@ -498,10 +1283,101 @@ int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressD
             return ERR_CANCELED;
     }
 
-    output << 0 << "\n";
-    output << 0 << "\n";
-    output << 0 << "\n";
-    output << 0 << "\n";
+    output << myMesh.NumOpenBoundaries << " \n";
+    output << myMesh.NumOpenBoundaryNodes << " \n";
+
+    for(i=0;i<myMesh.NumOpenBoundaries;i++)
+    {
+        output << myMesh.openBoundary[i].NumNodes << " \n";
+        for(j=0;j<myMesh.openBoundary[i].NumNodes;j++)
+        {
+            node1.sprintf("%10i",myMesh.openBoundary[i].node1[j]+1);
+            output << node1 << " \n";
+        }
+    }
+
+    output << myMesh.NumLandBoundaries << " \n";
+    output << myMesh.NumLandBoundaryNodes << " \n";
+
+    for(i=0;i<myMesh.NumLandBoundaries;i++)
+    {
+        output << myMesh.landBoundary[i].NumNodes << " "
+               <<  myMesh.landBoundary[i].code << " \n";
+        if(myMesh.landBoundary[i].code  == 0   ||
+            myMesh.landBoundary[i].code == 1   ||
+            myMesh.landBoundary[i].code == 2   ||
+            myMesh.landBoundary[i].code == 10  ||
+            myMesh.landBoundary[i].code == 11  ||
+            myMesh.landBoundary[i].code == 12  ||
+            myMesh.landBoundary[i].code == 20  ||
+            myMesh.landBoundary[i].code == 21  ||
+            myMesh.landBoundary[i].code == 22  ||
+            myMesh.landBoundary[i].code == 30  ||
+            myMesh.landBoundary[i].code == 52  ||
+            myMesh.landBoundary[i].code == 102 ||
+            myMesh.landBoundary[i].code == 112 ||
+            myMesh.landBoundary[i].code == 122 )
+        {
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                node1.sprintf("%10i",myMesh.landBoundary[i].node1[j]+1);
+                output << node1 << " \n";
+            }
+        }
+        else if(myMesh.landBoundary[i].code == 3  ||
+                myMesh.landBoundary[i].code == 13 ||
+                myMesh.landBoundary[i].code == 23 )
+        {
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                node1.sprintf("%10i",myMesh.landBoundary[i].node1[j]+1);
+                elevation.sprintf("%+18.12e",myMesh.landBoundary[i].elevation[j]);
+                supercritical.sprintf("%+18.12e",myMesh.landBoundary[i].supercritical[j]);
+                output << node1 << " " << elevation << " " << supercritical << " \n";
+            }
+        }
+        else if(myMesh.landBoundary[i].code == 4  ||
+                myMesh.landBoundary[i].code == 24 )
+        {
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                node1.sprintf("%10i",myMesh.landBoundary[i].node1[j]+1);
+                node2.sprintf("%10i",myMesh.landBoundary[i].node2[j]+1);
+                elevation.sprintf("%+18.12e",myMesh.landBoundary[i].elevation[j]);
+                supercritical.sprintf("%+18.12e",myMesh.landBoundary[i].supercritical[j]);
+                subcritical.sprintf("%+18.12e",myMesh.landBoundary[i].subcritical[j]);
+                output << node1 << " " << node2 << " " << elevation << " "
+                       << subcritical << " " << supercritical << " \n";
+            }
+        }
+        else if(myMesh.landBoundary[i].code == 5  ||
+                myMesh.landBoundary[i].code == 25 )
+        {
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                node1.sprintf("%10i",myMesh.landBoundary[i].node1[j]+1);
+                node2.sprintf("%10i",myMesh.landBoundary[i].node2[j]+1);
+                elevation.sprintf("%+18.12e",myMesh.landBoundary[i].elevation[j]);
+                supercritical.sprintf("%+18.12e",myMesh.landBoundary[i].supercritical[j]);
+                subcritical.sprintf("%+18.12e",myMesh.landBoundary[i].subcritical[j]);
+                pipeht.sprintf("%+18.12e",myMesh.landBoundary[i].pipe_ht);
+                pipecoef.sprintf("%+18.12e",myMesh.landBoundary[i].pipe_coef);
+                pipediam.sprintf("%+18.12e",myMesh.landBoundary[i].pipe_diam);
+                output << node1 << " " << node2 << " " << elevation << " "
+                       << subcritical << " " << supercritical << " "
+                       << pipeht << " " << pipecoef << " " << pipediam << " \n";
+            }
+        }
+        else
+        {
+            for(j=0;j<myMesh.landBoundary[i].NumNodes;j++)
+            {
+                node1.sprintf("%10i",myMesh.landBoundary[i].node1[j]+1);
+                output << node1 << " \n";
+            }
+        }
+
+    }
     outputFile.close();
     return ERR_NOERR;
 }
