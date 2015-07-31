@@ -320,7 +320,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
 
         //...Create the hash for the local node
         localHash.reset();
-        localHash.addData(hashSeed.toUtf8(),38);
+        localHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //...Save the local hash for this node into the array
         myMesh.node[i].locationHash = localHash.result().toHex();
@@ -353,7 +353,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
 
         //...Create the hash for the local node
         localHash.reset();
-        localHash.addData(hashSeed.toUtf8(),120);
+        localHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //...Save the local hash for this node into the array
         myMesh.element[i].elementHash = localHash.result().toHex();
@@ -372,14 +372,14 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
 
         //Hash the boundary code, for open boundaries, -1
         hashSeed.sprintf("%+6i",-1);
-        localHash.addData(hashSeed.toUtf8(),6);
+        localHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //Accumulate a hash along the boundary string
         for(j=0;j<myMesh.openBoundaryH[i].NumNodes;j++)
         {
             hashSeed = QString();
-            hashSeed = myMesh.node[myMesh.openBoundaryH[i].node1[j]].locationHash;
-            localHash.addData(hashSeed.toUtf8(),20);
+            hashSeed = myMesh.node[myMesh.openBoundaryH[i].node1[j]-1].locationHash;
+            localHash.addData(hashSeed.toUtf8(),hashSeed.length());
         }
 
         //Save the hash
@@ -392,7 +392,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
 
         //Hash the boundary code
         hashSeed.sprintf("%+6i",myMesh.landBoundaryH[i].code);
-        localHash.addData(hashSeed.toUtf8(),6);
+        localHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //Accumulate a hash along the boundary string
         for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
@@ -423,8 +423,8 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
                 for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
                 {
                     hashSeed = QString();
-                    hashSeed = myMesh.node[myMesh.landBoundaryH[i].node1[j]].locationHash;
-                    localHash.addData(hashSeed.toUtf8(),20);
+                    hashSeed = myMesh.node[myMesh.landBoundaryH[i].node1[j]-1].locationHash;
+                    localHash.addData(hashSeed.toUtf8(),hashSeed.length());
                 }
             }
             else if(myMesh.landBoundaryH[i].code == 4  ||
@@ -438,7 +438,7 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
                     hashSeed = QString();
                     hashSeed = myMesh.node[myMesh.landBoundaryH[i].node1[j]-1].locationHash +
                                myMesh.node[myMesh.landBoundaryH[i].node2[j]-1].locationHash;
-                    localHash.addData(hashSeed.toUtf8(),40);
+                    localHash.addData(hashSeed.toUtf8(),hashSeed.length());
                 }
             }
             else
@@ -447,8 +447,8 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
                 for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
                 {
                     hashSeed = QString();
-                    hashSeed = myMesh.node[myMesh.landBoundaryH[i].node1[j]].locationHash;
-                    localHash.addData(hashSeed.toUtf8(),20);
+                    hashSeed = myMesh.node[myMesh.landBoundaryH[i].node1[j]-1].locationHash;
+                    localHash.addData(hashSeed.toUtf8(),hashSeed.length());
                 }
             }
         }
@@ -624,7 +624,7 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
         hashSeed2.sprintf("%+018.12e",myMesh.node[i].y);
         hashSeed3.sprintf("%+018.12e",myMesh.node[i].z);
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
-        fullHash.addData(hashSeed.toUtf8(),57);
+        fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //...Update the progress bar
         updateProgress(counter,dialog);
@@ -641,7 +641,7 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
         hashSeed3 = myMesh.element[i].h2;
         hashSeed4 = myMesh.element[i].h3;
         hashSeed = hashSeed1+hashSeed2+hashSeed3+hashSeed4;
-        fullHash.addData(hashSeed.toUtf8(),160);
+        fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
         //...Update the progress bar
         updateProgress(counter,dialog);
@@ -656,7 +656,7 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
         for(j=0;j<myMesh.openBoundaryH[i].NumNodes;j++)
         {
             hashSeed = myMesh.openBoundaryH[i].node1_hash[j];
-            fullHash.addData(hashSeed.toUtf8(),20);
+            fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
         }
     }
 
@@ -680,7 +680,7 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
             for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
             {
                 hashSeed = myMesh.landBoundaryH[i].node1_hash[j];
-                fullHash.addData(hashSeed.toUtf8(),20);
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
             }
         }
         else if(myMesh.landBoundaryH[i].code == 3  ||
@@ -694,8 +694,7 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
                 supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
                 hashSeed = myMesh.landBoundaryH[i].node1_hash[j]+
                              elevation+supercritical;
-                hashLen = hashSeed.length();
-                fullHash.addData(hashSeed.toUtf8(),hashLen);
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
             }
         }
         else if(myMesh.landBoundaryH[i].code == 4  ||
@@ -709,8 +708,7 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
                 hashSeed = myMesh.landBoundaryH[i].node1_hash[j]+
                              myMesh.landBoundaryH[i].node2_hash[j]+
                              elevation+subcritical+supercritical;
-                hashLen = hashSeed.length();
-                fullHash.addData(hashSeed.toUtf8(),hashLen);
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
             }
         }
         else if(myMesh.landBoundaryH[i].code == 5  ||
@@ -728,8 +726,7 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
                              myMesh.landBoundaryH[i].node2_hash[j]+
                              elevation+subcritical+supercritical+pipeht+
                              pipecoef+pipediam;
-                hashLen = hashSeed.length();
-                fullHash.addData(hashSeed.toUtf8(),hashLen);
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
             }
         }
         else
@@ -737,11 +734,10 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
             for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
             {
                 hashSeed = myMesh.landBoundaryH[i].node1_hash[j];
-                fullHash.addData(hashSeed.toUtf8(),20);
+                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
             }
         }
     }
-
 
     myMesh.mesh_hash = fullHash.result().toHex();
 
