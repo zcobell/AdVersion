@@ -23,6 +23,24 @@ struct adcirc_boundary
 {
     int code;                                  //...boundary code
     int NumNodes;                              //...number of nodes on boundary
+    double averageLongitude;                   //...Average Longitude of the boundary segment
+    QVector<int> node1;                        //...hash node list for node 1
+    QVector<int> node2;                        //...hash node list for node 2
+    QVector<QString> node1_hash;               //...hash node list for node 1
+    QVector<QString> node2_hash;               //...hash node list for node 2
+    QVector<double> elevation;                 //...elevation for boundary
+    QVector<double> supercritical;             //...supercritical flow coefficient
+    QVector<double> subcritical;               //...subcritical flow coefficient
+    QVector<double> pipe_ht;                   //...cross barrier pipe elevation
+    QVector<double> pipe_coef;                 //...cross barrier pipe coefficient
+    QVector<double> pipe_diam;                 //...cross barrier pipe diameter
+    QString boundary_hash;                     //...hash for the full boundary
+};
+
+struct adcirc_boundary_hash
+{
+    int code;                                  //...boundary code
+    int NumNodes;                              //...number of nodes on boundary
     QVector<int> node1;                        //...hash node list for node 1
     QVector<int> node2;                        //...hash node list for node 2
     QVector<QString> node1_hash;               //...hash node list for node 1
@@ -63,6 +81,8 @@ struct adcirc_mesh
     QString mesh_hash;                             //...Hash for the entire mesh
     QVector<adcirc_node> node;                     //...Adcirc node vector
     QVector<adcirc_element> element;               //...Adcirc element vector
+    QVector<adcirc_boundary_hash> openBoundaryH;   //...Adcirc Open Boundaries vector
+    QVector<adcirc_boundary_hash> landBoundaryH;   //...Adcirc Land Boundaries vector
     QVector<adcirc_boundary> openBoundary;         //...Adcirc Open Boundaries vector
     QVector<adcirc_boundary> landBoundary;         //...Adcirc Land Boundaries vector
 };

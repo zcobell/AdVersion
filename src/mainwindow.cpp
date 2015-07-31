@@ -14,6 +14,9 @@ MainWindow::MainWindow(QWidget *parent) :
     PreviousDirectory = PreviousDirectory+"/Desktop";
 #endif
 
+    //...Set up the file formatting options
+
+
 }
 
 MainWindow::~MainWindow()
