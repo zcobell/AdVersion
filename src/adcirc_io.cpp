@@ -603,7 +603,7 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
     QString line,tempString;
     QString elevation,supercritical,subcritical,pipeht,pipediam,pipecoef;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3,hashSeed4;
-    int i,j,hashLen;
+    int i,j;
 
     QFile outputFile(fileName);
     QTextStream output(&outputFile);
