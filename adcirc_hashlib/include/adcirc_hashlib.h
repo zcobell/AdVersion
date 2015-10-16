@@ -1,7 +1,11 @@
-#ifndef ADCIRCIO_H
-#define ADCIRCIO_H
+#ifndef ADCIRCHASHLIB_H
+#define ADCIRCHASHLIB_H
 
-#include <QApplication>
+#define ERR_NOERR    -9000
+#define ERR_CANCELED -9990
+#define ERR_NOFILE   -9991
+#define ERR_UNKNOWN  -9999
+
 #include <QObject>
 #include <QVector>
 #include <QString>
@@ -12,14 +16,15 @@
 #include <QTime>
 
 #ifdef GUI
+#include <QApplication>
 #include <QProgressDialog>
 #include <QMessageBox>
+#else
+#include <stdio.h>
+#include <iostream>
+#include <cstdlib>
+using namespace std;
 #endif
-
-#define ERR_NOERR    -9000
-#define ERR_CANCELED -9990
-#define ERR_NOFILE   -9991
-#define ERR_UNKNOWN  -9999
 
 //...Structure for the boundary arrays
 struct adcirc_boundary
@@ -90,12 +95,13 @@ struct adcirc_mesh
     QVector<adcirc_boundary> landBoundary;         //...Adcirc Land Boundaries vector
 };
 
-class adcirc_io : public QObject
+
+class adcirc_hashlib : public QObject
 {
     Q_OBJECT
 public:
-    explicit adcirc_io(QObject *parent = 0);
 
+    explicit adcirc_hashlib(QObject *parent = 0);
 #ifdef GUI
     int readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
     int readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
@@ -104,8 +110,6 @@ public:
     int createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
     int numberAdcircMesh(adcirc_mesh &myMesh,  QProgressDialog &dialog, int &counter);
     int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh,  QProgressDialog &dialog, int &counter);
-    static int process_a2s(QString inputFile,QString outputFile);
-    static int process_s2a(QString inputFile,QString outputFile);
     void updateProgress(int &count, QProgressDialog &dialog);
 #else
     int readAdcircMesh(QString fileName, adcirc_mesh &myMesh);
@@ -115,18 +119,19 @@ public:
     int createAdcircHashes(adcirc_mesh &myMesh);
     int numberAdcircMesh(adcirc_mesh &myMesh);
     int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh);
+#endif
     static int process_a2s(QString inputFile,QString outputFile);
     static int process_s2a(QString inputFile,QString outputFile);
-#endif
 
 signals:
 
 public slots:
 };
 
+
 #ifdef GUI
 extern QTime polling;
 extern int progressUpdateInterval;
 #endif
 
-#endif // ADCIRCIO_H
+#endif // ADCIRCHASHLIB_H

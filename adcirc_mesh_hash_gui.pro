@@ -9,12 +9,11 @@ INCLUDEPATH += gui/include adcirc_hashlib/include
 
 SOURCES += gui/src/main.cpp\
            gui/src/mainwindow.cpp \
-           adcirc_hashlib/src/adcirc_io.cpp \
-    gui/src/pushbutton.cpp \
-    gui/src/processing.cpp
+           adcirc_hashlib/src/adcirc_hashlib.cpp \
+           gui/src/pushbutton.cpp
 
 HEADERS  += gui/include/mainwindow.h \
-            adcirc_hashlib/include/adcirc_io.h
+            adcirc_hashlib/include/adcirc_hashlib.h
 
 FORMS    += gui/ui/mainwindow.ui
 

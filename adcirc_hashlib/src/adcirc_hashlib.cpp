@@ -1,4 +1,11 @@
-#include "adcirc_io.h"
+#include "adcirc_hashlib.h"
+#include <QPointer>
+
+#ifdef GUI
+#include <mainwindow.h>
+#include <ui_mainwindow.h>
+#include <QDir>
+#endif
 
 #ifdef GUI
 //...Some checks for the progress bar
@@ -6,7 +13,7 @@ QTime polling;
 int progressUpdateInterval = 10;
 #endif
 
-adcirc_io::adcirc_io(QObject *parent) : QObject(parent)
+adcirc_hashlib::adcirc_hashlib(QObject *parent) : QObject(parent)
 {
 
 }
@@ -48,9 +55,9 @@ bool operator< (const adcirc_boundary &first, const adcirc_boundary &second)
 }
 
 #ifdef GUI
-int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+int adcirc_hashlib::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 #else
-int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
+int adcirc_hashlib::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
 #endif
 {
     //Variables
@@ -303,9 +310,9 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
 }
 
 #ifdef GUI
-int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+int adcirc_hashlib::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 #else
-int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
+int adcirc_hashlib::createAdcircHashes(adcirc_mesh &myMesh)
 #endif
 {
 
@@ -484,9 +491,9 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
 }
 
 #ifdef GUI
-int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+int adcirc_hashlib::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 #else
-int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
+int adcirc_hashlib::sortAdcircHashes(adcirc_mesh &myMesh)
 #endif
 {
     int i,j;
@@ -630,9 +637,9 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
 }
 
 #ifdef GUI
-int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+int adcirc_hashlib::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 #else
-int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
+int adcirc_hashlib::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
 #endif
 {
     QString line,tempString;
@@ -922,9 +929,9 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
 }
 
 #ifdef GUI
-int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+int adcirc_hashlib::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 #else
-int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh)
+int adcirc_hashlib::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh)
 #endif
 {
     QString tempString;
@@ -1165,9 +1172,9 @@ int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh)
 }
 
 #ifdef GUI
-int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+int adcirc_hashlib::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 #else
-int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh)
+int adcirc_hashlib::numberAdcircMesh(adcirc_mesh &myMesh)
 #endif
 {
     QMap<QString,int> mapping_s2a;
@@ -1310,9 +1317,9 @@ int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh)
 }
 
 #ifdef GUI
-int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+int adcirc_hashlib::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
 #else
-int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh)
+int adcirc_hashlib::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh)
 #endif
 {
     QString line,elevation,supercritical,subcritical,pipeht,pipecoef,pipediam,node1,node2;
@@ -1462,7 +1469,7 @@ int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh)
 }
 
 #ifdef GUI
-void adcirc_io::updateProgress(int &count,QProgressDialog &dialog)
+void adcirc_hashlib::updateProgress(int &count,QProgressDialog &dialog)
 {
     //...Progress Bar updates every 100ms
     count++;
@@ -1474,4 +1481,209 @@ void adcirc_io::updateProgress(int &count,QProgressDialog &dialog)
     }
     return;
 }
+#endif
+
+#ifdef GUI
+int adcirc_hashlib::process_a2s(QString inputFile,QString outputFile)
+{
+    int ierr,counter;
+    int elapsedSeconds,elapsedMinutes;
+    adcirc_mesh mesh;
+    QTime timer;
+    QString elapsedString;
+
+    //...Set the starting time
+    timer.start();
+
+    //...Create a progress bar
+    QProgressDialog progress;
+    progress.setWindowTitle("Progress");
+    progress.setWindowModality(Qt::WindowModal);
+    progress.setMaximum(9);
+    progress.setValue(0);
+    counter = 0;
+    progress.show();
+
+    QPointer<adcirc_hashlib> adc = new adcirc_hashlib;
+    ierr = adc->readAdcircMesh(inputFile,mesh,progress,counter);
+
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->createAdcircHashes(mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->sortAdcircHashes(mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->writeAdcircHashMesh(outputFile,mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+
+    elapsedSeconds = timer.elapsed() / 1000;
+    elapsedMinutes = elapsedSeconds / 60;
+    elapsedSeconds = elapsedSeconds % 60;
+    elapsedString = QString::number(elapsedMinutes) + " min, " +
+            QString::number(elapsedSeconds) + " sec";
+
+    QMessageBox::information(NULL,"Complete",QString("The mesh was converted to SHA1 format. \n")+
+                                             QString("Elapsed Time: "+elapsedString));
+
+    return ERR_NOERR;
+}
+
+int adcirc_hashlib::process_s2a(QString inputFile,QString outputFile)
+{
+    int ierr,counter;
+    int elapsedSeconds,elapsedMinutes;
+    adcirc_mesh mesh;
+    QTime timer;
+    QString elapsedString;
+
+    //...Set the starting time
+    timer.start();
+
+    //...Create a progress bar
+    QProgressDialog progress;
+    progress.setWindowTitle("Progress");
+    progress.setWindowModality(Qt::WindowModal);
+    progress.setMaximum(6);
+    progress.setValue(0);
+    counter = 0;
+    progress.show();
+
+    QPointer<adcirc_hashlib> adc = new adcirc_hashlib;
+    ierr = adc->readAdcircSha1Mesh(inputFile,mesh,progress,counter);
+
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->numberAdcircMesh(mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+    ierr = adc->writeAdcircMesh(outputFile,mesh,progress,counter);
+    if(ierr!=ERR_NOERR)
+    {
+        MainWindow::process_err(ierr);
+        return ERR_NOERR;
+    }
+
+    elapsedSeconds = timer.elapsed() / 1000;
+    elapsedMinutes = elapsedSeconds / 60;
+    elapsedSeconds = elapsedSeconds % 60;
+    elapsedString = QString::number(elapsedMinutes) + " min, " +
+            QString::number(elapsedSeconds) + " sec";
+
+    QMessageBox::information(NULL,"Complete",QString("The mesh was converted to ADCIRC format. \n")+
+                                             QString("Elapsed Time: "+elapsedString));
+
+    return ERR_NOERR;
+}
+#else
+
+int adcirc_hashlib::process_a2s(QString inputFile,QString outputFile)
+{
+    int ierr,counter;
+    int elapsedSeconds,elapsedMinutes;
+    adcirc_mesh mesh;
+    QTime timer;
+    QString elapsedString;
+
+    //...Set the starting time
+    timer.start();
+
+    cout << "Reading ADCIRC mesh...";
+    QPointer<adcirc_hashlib> adc = new adcirc_hashlib;
+    ierr = adc->readAdcircMesh(inputFile,mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Hashing ADCIRC mesh...";
+    ierr = adc->createAdcircHashes(mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Sorting ADCIRC hashes...";
+    ierr = adc->sortAdcircHashes(mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Writing hashed mesh...";
+    ierr = adc->writeAdcircHashMesh(outputFile,mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    elapsedSeconds = timer.elapsed() / 1000;
+    elapsedMinutes = elapsedSeconds / 60;
+    elapsedSeconds = elapsedSeconds % 60;
+    elapsedString = QString::number(elapsedMinutes) + " min, " +
+            QString::number(elapsedSeconds) + " sec";
+
+    cout << "Elapsed time: " << elapsedString.toStdString() << "\n";
+
+    return ERR_NOERR;
+}
+
+int adcirc_hashlib::process_s2a(QString inputFile,QString outputFile)
+{
+    int ierr,counter;
+    int elapsedSeconds,elapsedMinutes;
+    adcirc_mesh mesh;
+    QTime timer;
+    QString elapsedString;
+
+    //...Set the starting time
+    timer.start();
+
+    QPointer<adcirc_hashlib> adc = new adcirc_hashlib;
+
+    cout << "Reading hashed mesh...";
+    ierr = adc->readAdcircSha1Mesh(inputFile,mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Numbering the ADCIRC mesh...";
+    ierr = adc->numberAdcircMesh(mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Writing the ADCIRC mesh...";
+    ierr = adc->writeAdcircMesh(outputFile,mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    elapsedSeconds = timer.elapsed() / 1000;
+    elapsedMinutes = elapsedSeconds / 60;
+    elapsedSeconds = elapsedSeconds % 60;
+    elapsedString = QString::number(elapsedMinutes) + " min, " +
+            QString::number(elapsedSeconds) + " sec";
+
+    cout << "Elapsed time: " << elapsedString.toStdString();
+
+    return ERR_NOERR;
+}
+
 #endif

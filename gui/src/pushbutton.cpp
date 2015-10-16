@@ -86,7 +86,7 @@ void MainWindow::on_button_toSha_clicked()
     }
 
 
-    ierr = adcirc_io::process_a2s(adcircFile,sha1File);
+    ierr = adcirc_hashlib::process_a2s(adcircFile,sha1File);
 
     return;
 }
@@ -119,7 +119,7 @@ void MainWindow::on_button_toAdc_clicked()
         return;
     }
 
-    ierr = adcirc_io::process_s2a(sha1File,adcircFile);
+    ierr = adcirc_hashlib::process_s2a(sha1File,adcircFile);
 
     return;
 }

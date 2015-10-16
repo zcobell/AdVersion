@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <adcirc_io.h>
+#include <adcirc_hashlib.h>
 
 
 namespace Ui {
