@@ -1609,6 +1609,7 @@ int adcirc_hashlib::process_a2s(QString inputFile,QString outputFile)
     timer.start();
 
     cout << "Reading ADCIRC mesh...";
+    cout.flush();
     QPointer<adcirc_hashlib> adc = new adcirc_hashlib;
     ierr = adc->readAdcircMesh(inputFile,mesh);
     if(ierr!=ERR_NOERR)
@@ -1616,18 +1617,21 @@ int adcirc_hashlib::process_a2s(QString inputFile,QString outputFile)
     cout << "done!\n";
 
     cout << "Hashing ADCIRC mesh...";
+    cout.flush();
     ierr = adc->createAdcircHashes(mesh);
     if(ierr!=ERR_NOERR)
         return ierr;
     cout << "done!\n";
 
     cout << "Sorting ADCIRC hashes...";
+    cout.flush();
     ierr = adc->sortAdcircHashes(mesh);
     if(ierr!=ERR_NOERR)
         return ierr;
     cout << "done!\n";
 
     cout << "Writing hashed mesh...";
+    cout.flush();
     ierr = adc->writeAdcircHashMesh(outputFile,mesh);
     if(ierr!=ERR_NOERR)
         return ierr;
@@ -1658,18 +1662,21 @@ int adcirc_hashlib::process_s2a(QString inputFile,QString outputFile)
     QPointer<adcirc_hashlib> adc = new adcirc_hashlib;
 
     cout << "Reading hashed mesh...";
+    cout.flush();
     ierr = adc->readAdcircSha1Mesh(inputFile,mesh);
     if(ierr!=ERR_NOERR)
         return ierr;
     cout << "done!\n";
 
     cout << "Numbering the ADCIRC mesh...";
+    cout.flush();
     ierr = adc->numberAdcircMesh(mesh);
     if(ierr!=ERR_NOERR)
         return ierr;
     cout << "done!\n";
 
     cout << "Writing the ADCIRC mesh...";
+    cout.flush();
     ierr = adc->writeAdcircMesh(outputFile,mesh);
     if(ierr!=ERR_NOERR)
         return ierr;

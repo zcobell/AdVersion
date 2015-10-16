@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <cstdlib>
+#include <QTextStream>
 
 using namespace std;
 
@@ -12,7 +13,8 @@ int main(int argc, char *argv[])
 
     QString adcircFile,sha1File;
     int conversion,ierr;
-    char* adcircFile_std,sha1File_std;
+
+    QTextStream sin(stdin);
 
     cout << "\n";
     cout << "    ADCIRC mesh hashing utility     \n";
@@ -29,12 +31,9 @@ int main(int argc, char *argv[])
     {
 
         cout << "Name of ADCIRC mesh: ";
-        cin >> adcircFile_std;
+        sin >> adcircFile;
         cout << "Name of output ADCSHA1 file: ";
-        cin >> sha1File_std;
-
-        adcircFile = QString(adcircFile_std);
-        sha1File = QString(sha1File_std);
+        sin >> sha1File;
 
         if(adcircFile == NULL)
         {
@@ -61,12 +60,9 @@ int main(int argc, char *argv[])
     else if(conversion==2)
     {
         cout << "Name of ADCSHA1 file: ";
-        cin >> sha1File_std;
+        sin >> sha1File;
         cout << "Name of output ADCIRC mesh: ";
-        cin >> adcircFile_std;
-
-        adcircFile = QString(adcircFile_std);
-        sha1File = QString(sha1File_std);
+        sin >> adcircFile;
 
         if(adcircFile == NULL)
         {
