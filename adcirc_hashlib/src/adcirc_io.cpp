@@ -760,9 +760,9 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
                 elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
                 supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
                 subcritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].subcritical[j]);
-                pipeht.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_ht);
-                pipecoef.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_coef);
-                pipediam.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_diam);
+                pipeht.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_ht[j]);
+                pipecoef.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_coef[j]);
+                pipediam.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_diam[j]);
                 hashSeed = myMesh.landBoundaryH[i].node1_hash[j]+
                              myMesh.landBoundaryH[i].node2_hash[j]+
                              elevation+subcritical+supercritical+pipeht+
@@ -900,9 +900,9 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
                 elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
                 supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
                 subcritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].subcritical[j]);
-                pipeht.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_ht);
-                pipecoef.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_coef);
-                pipediam.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_diam);
+                pipeht.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_ht[j]);
+                pipecoef.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_coef[j]);
+                pipediam.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_diam[j]);
                 output << myMesh.landBoundaryH[i].node1_hash[j] << " " <<
                           myMesh.landBoundaryH[i].node2_hash[j] << " " <<
                           elevation << " " << subcritical << " " << supercritical <<
@@ -1439,9 +1439,9 @@ int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh)
                 elevation.sprintf("%+18.12e",myMesh.landBoundary[i].elevation[j]);
                 supercritical.sprintf("%+18.12e",myMesh.landBoundary[i].supercritical[j]);
                 subcritical.sprintf("%+18.12e",myMesh.landBoundary[i].subcritical[j]);
-                pipeht.sprintf("%+18.12e",myMesh.landBoundary[i].pipe_ht);
-                pipecoef.sprintf("%+18.12e",myMesh.landBoundary[i].pipe_coef);
-                pipediam.sprintf("%+18.12e",myMesh.landBoundary[i].pipe_diam);
+                pipeht.sprintf("%+18.12e",myMesh.landBoundary[i].pipe_ht[j]);
+                pipecoef.sprintf("%+18.12e",myMesh.landBoundary[i].pipe_coef[j]);
+                pipediam.sprintf("%+18.12e",myMesh.landBoundary[i].pipe_diam[j]);
                 output << node1 << " " << node2 << " " << elevation << " "
                        << subcritical << " " << supercritical << " "
                        << pipeht << " " << pipecoef << " " << pipediam << " \n";
