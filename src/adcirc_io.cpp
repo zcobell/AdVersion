@@ -1,8 +1,10 @@
 #include "adcirc_io.h"
 
+#ifdef GUI
 //...Some checks for the progress bar
 QTime polling;
 int progressUpdateInterval = 10;
+#endif
 
 adcirc_io::adcirc_io(QObject *parent) : QObject(parent)
 {
@@ -45,9 +47,12 @@ bool operator< (const adcirc_boundary &first, const adcirc_boundary &second)
         return true;
 }
 
+#ifdef GUI
 int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+#else
+int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
+#endif
 {
-
     //Variables
     int i,j;
 
@@ -56,8 +61,10 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDi
 
     QFile meshFile(fileName);
 
+#ifdef GUI
     dialog.setLabelText("Reading the ADCIRC mesh...");
     dialog.setValue(0);
+#endif
 
     //----------------------------------------------------//
 
@@ -79,7 +86,9 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDi
     readData = readDataList.value(0);
     myMesh.NumElements = readData.toInt();
 
+#ifdef GUI
     dialog.setMaximum(myMesh.NumNodes*4+myMesh.NumElements*5);
+#endif
 
     //Begin sizing the arrays
     myMesh.node.resize(myMesh.NumNodes);
@@ -97,12 +106,14 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDi
         readData = readDataList.value(3);
         myMesh.node[i].z = readData.toDouble();
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
 
     }
 
@@ -119,12 +130,14 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDi
         readData = readDataList.value(4);
         myMesh.element[i].c3 = readData.toInt();
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     //Begin reading the boundaries
@@ -289,14 +302,19 @@ int adcirc_io::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDi
     return ERR_NOERR;
 }
 
+#ifdef GUI
 int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+#else
+int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh)
+#endif
 {
 
     //...variables
     int i,j;
     QString hashSeed,hashSeed1,hashSeed2,hashSeed3;
-
+#ifdef GUI
     dialog.setLabelText("Hashing the ADCIRC mesh...");
+#endif
 
     //...initialize the sha1 hash
     QCryptographicHash localHash(QCryptographicHash::Sha1);
@@ -325,12 +343,14 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
         //...Save the local hash for this node into the array
         myMesh.node[i].locationHash = localHash.result().toHex();
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
 
     }
 
@@ -358,12 +378,15 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
         //...Save the local hash for this node into the array
         myMesh.element[i].elementHash = localHash.result().toHex();
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
+
     }
 
     for(i=0;i<myMesh.NumOpenBoundaries;i++)
@@ -460,11 +483,17 @@ int adcirc_io::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, 
     return ERR_NOERR;
 }
 
+#ifdef GUI
 int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+#else
+int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh)
+#endif
 {
     int i,j;
 
+#ifdef GUI
     dialog.setLabelText("Sorting the hashes...");
+#endif
 
     //...Sort the nodes, but don't transfer yet
     QVector<adcirc_node> nodeList;
@@ -487,12 +516,14 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, in
         myMesh.element[i].h2 = myMesh.node[myMesh.element[i].c2-1].locationHash;
         myMesh.element[i].h3 = myMesh.node[myMesh.element[i].c3-1].locationHash;
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     //...Sort the open boundary segments
@@ -598,7 +629,11 @@ int adcirc_io::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, in
     return ERR_NOERR;
 }
 
+#ifdef GUI
 int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+#else
+int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
+#endif
 {
     QString line,tempString;
     QString elevation,supercritical,subcritical,pipeht,pipediam,pipecoef;
@@ -609,7 +644,9 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
     QTextStream output(&outputFile);
     outputFile.open(QIODevice::WriteOnly);
 
+#ifdef GUI
     dialog.setLabelText("Writing the hashed ADCIRC mesh...");
+#endif
 
     //...Compute the full mesh hash by iterating over all the data
     //   contained
@@ -626,12 +663,14 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
         hashSeed = hashSeed1+hashSeed2+hashSeed3;
         fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     for(i=0;i<myMesh.NumElements;i++)
@@ -643,12 +682,14 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
         hashSeed = hashSeed1+hashSeed2+hashSeed3+hashSeed4;
         fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     for(i=0;i<myMesh.NumOpenBoundaries;i++)
@@ -756,12 +797,15 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
                                          myMesh.node[i].z);
         output << line;
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
+
     }
 
     //...Write the element connectivity
@@ -775,12 +819,15 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
                myMesh.element[i].h3 + "\n";
         output << line;
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
+
     }
 
     //...Write the open boundaries
@@ -874,13 +921,19 @@ int adcirc_io::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgr
     return ERR_NOERR;
 }
 
+#ifdef GUI
 int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+#else
+int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh)
+#endif
 {
     QString tempString;
     QStringList tempList;
     int i,j;
 
+#ifdef GUI
     dialog.setLabelText("Reading the hashed ADCIRC mesh...");
+#endif
 
     QFile meshFile(fileName);
     if(!meshFile.open(QIODevice::ReadOnly|QIODevice::Text))
@@ -898,7 +951,9 @@ int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgre
     tempString = tempList.value(0);
     myMesh.NumElements = tempString.toInt();
 
+#ifdef GUI
     dialog.setMaximum((myMesh.NumNodes+myMesh.NumElements)*3);
+#endif
 
     myMesh.node.resize(myMesh.NumNodes);
     myMesh.element.resize(myMesh.NumElements);
@@ -916,12 +971,14 @@ int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgre
         tempString = tempList.value(3);
         myMesh.node[i].z = tempString.toDouble();
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     //...Reading the elements
@@ -934,12 +991,14 @@ int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgre
         myMesh.element[i].h2 = tempList.value(2);
         myMesh.element[i].h3 = tempList.value(3);
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     //...Read the open boundaries
@@ -1105,25 +1164,33 @@ int adcirc_io::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgre
     return ERR_NOERR;
 }
 
+#ifdef GUI
 int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+#else
+int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh)
+#endif
 {
     QMap<QString,int> mapping_s2a;
     int i,j;
     double a;
 
+#ifdef GUI
     dialog.setLabelText("Numbering the ADCIRC mesh...");
+#endif
 
     //...Create a mapping table
     for(i=0;i<myMesh.NumNodes;i++)
     {
         mapping_s2a[myMesh.node[i].locationHash] = i;
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     //...Generate the element table
@@ -1133,12 +1200,14 @@ int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, in
         myMesh.element[i].c2 = mapping_s2a[myMesh.element[i].h2];
         myMesh.element[i].c3 = mapping_s2a[myMesh.element[i].h3];
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     //...Map the open boundary arrays
@@ -1240,7 +1309,11 @@ int adcirc_io::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, in
     return ERR_NOERR;
 }
 
+#ifdef GUI
 int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
+#else
+int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh)
+#endif
 {
     QString line,elevation,supercritical,subcritical,pipeht,pipecoef,pipediam,node1,node2;
     int i,j;
@@ -1248,10 +1321,12 @@ int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressD
     QTextStream output(&outputFile);
     outputFile.open(QIODevice::WriteOnly);
 
+#ifdef GUI
     //...Set the progress bar update time
     polling = QTime::currentTime().addMSecs(100);
 
     dialog.setLabelText("Writing the ADCIRC mesh...");
+#endif
 
     output << myMesh.header << "\n";
     output << myMesh.NumElements << " " << myMesh.NumNodes << "\n";
@@ -1261,12 +1336,14 @@ int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressD
                      myMesh.node[i].y,myMesh.node[i].z);
         output << line;
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     for(i=0;i<myMesh.NumElements;i++)
@@ -1275,12 +1352,14 @@ int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressD
                 myMesh.element[i].c2+1,myMesh.element[i].c3+1);
         output << line;
 
+#ifdef GUI
         //...Update the progress bar
         updateProgress(counter,dialog);
 
         //...Catch the cancelled signal
         if(dialog.wasCanceled())
             return ERR_CANCELED;
+#endif
     }
 
     output << myMesh.NumOpenBoundaries << " \n";
@@ -1382,6 +1461,7 @@ int adcirc_io::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressD
     return ERR_NOERR;
 }
 
+#ifdef GUI
 void adcirc_io::updateProgress(int &count,QProgressDialog &dialog)
 {
     //...Progress Bar updates every 100ms
@@ -1394,4 +1474,4 @@ void adcirc_io::updateProgress(int &count,QProgressDialog &dialog)
     }
     return;
 }
-
+#endif

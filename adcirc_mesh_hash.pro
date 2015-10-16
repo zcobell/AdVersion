@@ -1,4 +1,4 @@
-QT       += core gui concurrent
+QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -17,3 +17,5 @@ HEADERS  += include/mainwindow.h \
             include/adcirc_io.h
 
 FORMS    += ui/mainwindow.ui
+
+QMAKE_CXXFLAGS += -DGUI

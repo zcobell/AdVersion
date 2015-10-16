@@ -3,8 +3,6 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QMessageBox>
-#include <QFutureWatcher>
-#include <QtConcurrent>
 #include <QProgressDialog>
 
 void MainWindow::on_browse_fromAdcirc_clicked()

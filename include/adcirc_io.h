@@ -9,9 +9,12 @@
 #include <QTextStream>
 #include <QCryptographicHash>
 #include <QDebug>
-#include <QProgressDialog>
 #include <QTime>
+
+#ifdef GUI
+#include <QProgressDialog>
 #include <QMessageBox>
+#endif
 
 #define ERR_NOERR    -9000
 #define ERR_CANCELED -9990
@@ -93,6 +96,7 @@ class adcirc_io : public QObject
 public:
     explicit adcirc_io(QObject *parent = 0);
 
+#ifdef GUI
     int readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
     int readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
     int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
@@ -103,13 +107,26 @@ public:
     static int process_a2s(QString inputFile,QString outputFile);
     static int process_s2a(QString inputFile,QString outputFile);
     void updateProgress(int &count, QProgressDialog &dialog);
+#else
+    int readAdcircMesh(QString fileName, adcirc_mesh &myMesh);
+    int readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh);
+    int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh);
+    int sortAdcircHashes(adcirc_mesh &myMesh);
+    int createAdcircHashes(adcirc_mesh &myMesh);
+    int numberAdcircMesh(adcirc_mesh &myMesh);
+    int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh);
+    static int process_a2s(QString inputFile,QString outputFile);
+    static int process_s2a(QString inputFile,QString outputFile);
+#endif
 
 signals:
 
 public slots:
 };
 
+#ifdef GUI
 extern QTime polling;
 extern int progressUpdateInterval;
+#endif
 
 #endif // ADCIRCIO_H
