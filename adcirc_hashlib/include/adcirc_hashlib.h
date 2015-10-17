@@ -19,12 +19,12 @@
 //
 //------------------------------------------------------------------------------
 //
-//  File: adcirc_hashlib.h  
+//  File: adcirc_hashlib.h
 //
 //------------------------------------------------------------------------------
 
-#ifndef ADCIRCHASHLIB_H
-#define ADCIRCHASHLIB_H
+#ifndef ADCIRC_HASHLIB_H
+#define ADCIRC_HASHLIB_H
 
 #define ERR_NOERR    -9000
 #define ERR_CANCELED -9990
@@ -44,6 +44,9 @@
 #include <QApplication>
 #include <QProgressDialog>
 #include <QMessageBox>
+#include <mainwindow.h>
+#include <ui_mainwindow.h>
+#include <QDir>
 #else
 #include <stdio.h>
 #include <iostream>
@@ -145,12 +148,10 @@ public:
     int numberAdcircMesh(adcirc_mesh &myMesh);
     int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh);
 #endif
+    QString hashNode(adcirc_node &node);
+    QString hashElement(adcirc_mesh &mesh, int elementid);
     static int process_a2s(QString inputFile,QString outputFile);
     static int process_s2a(QString inputFile,QString outputFile);
-
-signals:
-
-public slots:
 };
 
 
@@ -159,4 +160,4 @@ extern QTime polling;
 extern int progressUpdateInterval;
 #endif
 
-#endif // ADCIRCHASHLIB_H
+#endif // ADCIRC_HASHLIB_H

@@ -34,4 +34,6 @@ HEADERS  += ../../adcirc_hashlib/include/adcirc_hashlib.h
 
 
 SOURCES += ../../adcirc_hashlib/src/adcirc_hashlib.cpp \
+           ../../adcirc_hashlib/src/adcirc_hashlib_fileio.cpp \
+           ../../adcirc_hashlib/src/adcirc_hashlib_callFunctions.cpp \
            src/adcirc2hash_cmd.cpp
