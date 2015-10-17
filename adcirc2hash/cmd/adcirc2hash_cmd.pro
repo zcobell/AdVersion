@@ -1,6 +1,6 @@
 #-------------------------------GPL-------------------------------------#
 #
-# This file is part of  adcirc2hash
+# This file is part of adcirc2hash
 # Copyright (C) 2015  Zach Cobell
 #
 # This program is free software: you can redistribute it and/or modify

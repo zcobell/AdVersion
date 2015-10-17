@@ -1,7 +1,6 @@
 #-------------------------------GPL-------------------------------------#
 #
-# adcirc2hash - A utility for processing ADCIRC meshes for use with 
-#               versioning software
+# This file is part of adcirc2hash 
 # Copyright (C) 2015  Zach Cobell
 #
 # This program is free software: you can redistribute it and/or modify
