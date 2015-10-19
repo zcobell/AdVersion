@@ -25,14 +25,61 @@
 
 #include "adcirc_hashlib.h"
 
-//...Some checks for the progress bar in the GUI
-QTime polling;
-int progressUpdateInterval = 10;
-
-
 //------------------------------------------------------------------------------
 adcirc_hashlib::adcirc_hashlib(QObject *parent) : QObject(parent)
 {
 
+}
+//------------------------------------------------------------------------------
+
+
+//...Comparison operators used in sorting operations
+
+//------------------------------------------------------------------------------
+//...Comparison operator used in the sorting of nodes
+//------------------------------------------------------------------------------
+bool operator< (const adcirc_node &first, const adcirc_node &second)
+{
+    if(first.locationHash<second.locationHash)
+        return true;
+    else
+        return false;
+}
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+//...Comparison operator used in the sorting of elements
+bool operator< (const adcirc_element &first, const adcirc_element &second)
+{
+    if(first.elementHash<second.elementHash)
+        return true;
+    else
+        return false;
+}
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+//...Comparison operator used in the sorting of boundaries
+//------------------------------------------------------------------------------
+bool operator< (const adcirc_boundary_hash &first, const adcirc_boundary_hash &second)
+{
+    if(first.boundary_hash<second.boundary_hash)
+        return true;
+    else
+        return false;
+}
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//...Comparison operator used in the sorting of boundaries
+//------------------------------------------------------------------------------
+bool operator< (const adcirc_boundary &first, const adcirc_boundary &second)
+{
+    if(first.averageLongitude<second.averageLongitude)
+        return false;
+    else
+        return true;
 }
 //------------------------------------------------------------------------------

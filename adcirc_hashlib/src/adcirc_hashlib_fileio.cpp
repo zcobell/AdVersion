@@ -28,11 +28,7 @@
 //------------------------------------------------------------------------------
 //...Read an ADCIRC mesh
 //------------------------------------------------------------------------------
-#ifdef GUI
-int adcirc_hashlib::readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
-#else
 int adcirc_hashlib::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
-#endif
 {
     //Variables
     int i,j;
@@ -41,11 +37,6 @@ int adcirc_hashlib::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
     QStringList readDataList;
 
     QFile meshFile(fileName);
-
-#ifdef GUI
-    dialog.setLabelText("Reading the ADCIRC mesh...");
-    dialog.setValue(0);
-#endif
 
     //----------------------------------------------------//
 
@@ -67,10 +58,6 @@ int adcirc_hashlib::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
     readData = readDataList.value(0);
     myMesh.NumElements = readData.toInt();
 
-#ifdef GUI
-    dialog.setMaximum(myMesh.NumNodes*4+myMesh.NumElements*5);
-#endif
-
     //Begin sizing the arrays
     myMesh.node.resize(myMesh.NumNodes);
     myMesh.element.resize(myMesh.NumElements);
@@ -86,16 +73,6 @@ int adcirc_hashlib::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
         myMesh.node[i].y = readData.toDouble();
         readData = readDataList.value(3);
         myMesh.node[i].z = readData.toDouble();
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
-
     }
 
 
@@ -110,15 +87,6 @@ int adcirc_hashlib::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
         myMesh.element[i].c2 = readData.toInt();
         readData = readDataList.value(4);
         myMesh.element[i].c3 = readData.toInt();
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
     }
 
     //Begin reading the boundaries
@@ -288,158 +256,18 @@ int adcirc_hashlib::readAdcircMesh(QString fileName, adcirc_mesh &myMesh)
 //------------------------------------------------------------------------------
 //...Write the adcirc mesh using the SHA1 hashes
 //------------------------------------------------------------------------------
-#ifdef GUI
-int adcirc_hashlib::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
-#else
 int adcirc_hashlib::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
-#endif
 {
     QString line,tempString;
     QString elevation,supercritical,subcritical,pipeht,pipediam,pipecoef;
-    QString hashSeed,hashSeed1,hashSeed2,hashSeed3,hashSeed4;
     int i,j;
 
     QFile outputFile(fileName);
     QTextStream output(&outputFile);
     outputFile.open(QIODevice::WriteOnly);
 
-#ifdef GUI
-    dialog.setLabelText("Writing the hashed ADCIRC mesh...");
-#endif
-
-    //...Compute the full mesh hash by iterating over all the data
-    //   contained
-    QCryptographicHash fullHash(QCryptographicHash::Sha1);
-
-    //...The full mesh hash is computed with the z-elevations
-    //   so we can easily see if two meshes are different in
-    //   any way by checking the hash in the header
-    for(i=0;i<myMesh.NumNodes;i++)
-    {
-        hashSeed1.sprintf("%+018.12e",myMesh.node[i].x);
-        hashSeed2.sprintf("%+018.12e",myMesh.node[i].y);
-        hashSeed3.sprintf("%+018.12e",myMesh.node[i].z);
-        hashSeed = hashSeed1+hashSeed2+hashSeed3;
-        fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
-    }
-
-    for(i=0;i<myMesh.NumElements;i++)
-    {
-        hashSeed1 = myMesh.element[i].elementHash;
-        hashSeed2 = myMesh.element[i].h1;
-        hashSeed3 = myMesh.element[i].h2;
-        hashSeed4 = myMesh.element[i].h3;
-        hashSeed = hashSeed1+hashSeed2+hashSeed3+hashSeed4;
-        fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
-    }
-
-    for(i=0;i<myMesh.NumOpenBoundaries;i++)
-    {
-        for(j=0;j<myMesh.openBoundaryH[i].NumNodes;j++)
-        {
-            hashSeed = myMesh.openBoundaryH[i].node1_hash[j];
-            fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
-        }
-    }
-
-    for(i=0;i<myMesh.NumLandBoundaries;i++)
-    {
-        if(myMesh.landBoundaryH[i].code  == 0   ||
-            myMesh.landBoundaryH[i].code == 1   ||
-            myMesh.landBoundaryH[i].code == 2   ||
-            myMesh.landBoundaryH[i].code == 10  ||
-            myMesh.landBoundaryH[i].code == 11  ||
-            myMesh.landBoundaryH[i].code == 12  ||
-            myMesh.landBoundaryH[i].code == 20  ||
-            myMesh.landBoundaryH[i].code == 21  ||
-            myMesh.landBoundaryH[i].code == 22  ||
-            myMesh.landBoundaryH[i].code == 30  ||
-            myMesh.landBoundaryH[i].code == 52  ||
-            myMesh.landBoundaryH[i].code == 102 ||
-            myMesh.landBoundaryH[i].code == 112 ||
-            myMesh.landBoundaryH[i].code == 122 )
-        {
-            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
-            {
-                hashSeed = myMesh.landBoundaryH[i].node1_hash[j];
-                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
-            }
-        }
-        else if(myMesh.landBoundaryH[i].code == 3  ||
-                myMesh.landBoundaryH[i].code == 13 ||
-                myMesh.landBoundaryH[i].code == 23 )
-        {
-
-            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
-            {
-                elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
-                supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
-                hashSeed = myMesh.landBoundaryH[i].node1_hash[j]+
-                             elevation+supercritical;
-                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
-            }
-        }
-        else if(myMesh.landBoundaryH[i].code == 4  ||
-                myMesh.landBoundaryH[i].code == 24 )
-        {
-            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
-            {
-                elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
-                supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
-                subcritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].subcritical[j]);
-                hashSeed = myMesh.landBoundaryH[i].node1_hash[j]+
-                             myMesh.landBoundaryH[i].node2_hash[j]+
-                             elevation+subcritical+supercritical;
-                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
-            }
-        }
-        else if(myMesh.landBoundaryH[i].code == 5  ||
-                myMesh.landBoundaryH[i].code == 25 )
-        {
-            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
-            {
-                elevation.sprintf("%+18.12e",myMesh.landBoundaryH[i].elevation[j]);
-                supercritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].supercritical[j]);
-                subcritical.sprintf("%+18.12e",myMesh.landBoundaryH[i].subcritical[j]);
-                pipeht.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_ht[j]);
-                pipecoef.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_coef[j]);
-                pipediam.sprintf("%+18.12e",myMesh.landBoundaryH[i].pipe_diam[j]);
-                hashSeed = myMesh.landBoundaryH[i].node1_hash[j]+
-                             myMesh.landBoundaryH[i].node2_hash[j]+
-                             elevation+subcritical+supercritical+pipeht+
-                             pipecoef+pipediam;
-                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
-            }
-        }
-        else
-        {
-            for(j=0;j<myMesh.landBoundaryH[i].NumNodes;j++)
-            {
-                hashSeed = myMesh.landBoundaryH[i].node1_hash[j];
-                fullHash.addData(hashSeed.toUtf8(),hashSeed.length());
-            }
-        }
-    }
-
-    myMesh.mesh_hash = fullHash.result().toHex();
+    //...Determine the hash for the entire mesh
+    myMesh.mesh_hash = hashMesh(myMesh);
 
     output << myMesh.header << "\n";
     output << myMesh.mesh_hash << "\n";
@@ -455,16 +283,6 @@ int adcirc_hashlib::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
                                          myMesh.node[i].y,
                                          myMesh.node[i].z);
         output << line;
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
-
     }
 
     //...Write the element connectivity
@@ -477,16 +295,6 @@ int adcirc_hashlib::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
                myMesh.element[i].h2 + " " +
                myMesh.element[i].h3 + "\n";
         output << line;
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
-
     }
 
     //...Write the open boundaries
@@ -585,19 +393,11 @@ int adcirc_hashlib::writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh)
 //------------------------------------------------------------------------------
 //...Read an ADCIRC mesh using the SHA1 format
 //------------------------------------------------------------------------------
-#ifdef GUI
-int adcirc_hashlib::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
-#else
 int adcirc_hashlib::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh)
-#endif
 {
     QString tempString;
     QStringList tempList;
     int i,j;
-
-#ifdef GUI
-    dialog.setLabelText("Reading the hashed ADCIRC mesh...");
-#endif
 
     QFile meshFile(fileName);
     if(!meshFile.open(QIODevice::ReadOnly|QIODevice::Text))
@@ -615,10 +415,6 @@ int adcirc_hashlib::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh)
     tempString = tempList.value(0);
     myMesh.NumElements = tempString.toInt();
 
-#ifdef GUI
-    dialog.setMaximum((myMesh.NumNodes+myMesh.NumElements)*3);
-#endif
-
     myMesh.node.resize(myMesh.NumNodes);
     myMesh.element.resize(myMesh.NumElements);
 
@@ -634,15 +430,6 @@ int adcirc_hashlib::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh)
         myMesh.node[i].y = tempString.toDouble();
         tempString = tempList.value(3);
         myMesh.node[i].z = tempString.toDouble();
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
     }
 
     //...Reading the elements
@@ -654,15 +441,6 @@ int adcirc_hashlib::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh)
         myMesh.element[i].h1 = tempList.value(1);
         myMesh.element[i].h2 = tempList.value(2);
         myMesh.element[i].h3 = tempList.value(3);
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
     }
 
     //...Read the open boundaries
@@ -833,24 +611,13 @@ int adcirc_hashlib::readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh)
 //------------------------------------------------------------------------------
 //...Write the adcirc mesh in standard format
 //------------------------------------------------------------------------------
-#ifdef GUI
-int adcirc_hashlib::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
-#else
 int adcirc_hashlib::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh)
-#endif
 {
     QString line,elevation,supercritical,subcritical,pipeht,pipecoef,pipediam,node1,node2;
     int i,j;
     QFile outputFile(fileName);
     QTextStream output(&outputFile);
     outputFile.open(QIODevice::WriteOnly);
-
-#ifdef GUI
-    //...Set the progress bar update time
-    polling = QTime::currentTime().addMSecs(100);
-
-    dialog.setLabelText("Writing the ADCIRC mesh...");
-#endif
 
     output << myMesh.header << "\n";
     output << myMesh.NumElements << " " << myMesh.NumNodes << "\n";
@@ -859,15 +626,6 @@ int adcirc_hashlib::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh)
         line.sprintf("%10i %+18.12e %+18.12e %+18.12e \n",i+1,myMesh.node[i].x,
                      myMesh.node[i].y,myMesh.node[i].z);
         output << line;
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
     }
 
     for(i=0;i<myMesh.NumElements;i++)
@@ -875,15 +633,6 @@ int adcirc_hashlib::writeAdcircMesh(QString fileName, adcirc_mesh &myMesh)
         line.sprintf("%10i %5i %10i %10i %10i \n",i+1,3,myMesh.element[i].c1+1,
                 myMesh.element[i].c2+1,myMesh.element[i].c3+1);
         output << line;
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
     }
 
     output << myMesh.NumOpenBoundaries << " \n";

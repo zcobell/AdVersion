@@ -51,18 +51,14 @@ QString adcirc_hashlib::hashElement(adcirc_mesh &mesh, int elementid)
         hashSeed1 = mesh.node[mesh.element[elementid].c1-1].locationHash;
 
     if(mesh.node[mesh.element[elementid].c2-1].locationHash==NULL)
-        hashSeed1 = hashNode(mesh.node[mesh.element[elementid].c2-1]);
+        hashSeed2 = hashNode(mesh.node[mesh.element[elementid].c2-1]);
     else
-        hashSeed1 = mesh.node[mesh.element[elementid].c2-1].locationHash;
+        hashSeed2 = mesh.node[mesh.element[elementid].c2-1].locationHash;
 
     if(mesh.node[mesh.element[elementid].c3-1].locationHash==NULL)
-        hashSeed1 = hashNode(mesh.node[mesh.element[elementid].c3-1]);
+        hashSeed3 = hashNode(mesh.node[mesh.element[elementid].c3-1]);
     else
-        hashSeed1 = mesh.node[mesh.element[elementid].c3-1].locationHash;
-
-    //...Check if the nodes to make sure the hash has already been computed
-    if(hashSeed1==NULL || hashSeed2==NULL || hashSeed3==NULL)
-        return QString("ERROR");
+        hashSeed3 = mesh.node[mesh.element[elementid].c3-1].locationHash;
 
     //...Concatenate the formatted strings together
     hashSeed = QString();

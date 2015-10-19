@@ -30,9 +30,17 @@
 #include <iostream>
 #include <cstdlib>
 #include <QTextStream>
+#include <QPointer>
+
+int process_a2s(QString inputFile,QString outputFile);
+int process_s2a(QString inputFile,QString outputFile);
 
 using namespace std;
 
+
+//------------------------------------------------------------------------------
+//...Main function for conversion
+//------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
@@ -81,7 +89,7 @@ int main(int argc, char *argv[])
         }
 
 
-        ierr = adcirc_hashlib::process_a2s(adcircFile,sha1File);
+        ierr = process_a2s(adcircFile,sha1File);
     }
     else if(conversion==2)
     {
@@ -109,10 +117,116 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        ierr = adcirc_hashlib::process_s2a(sha1File,adcircFile);
+        ierr = process_s2a(sha1File,adcircFile);
     }
 
 
     return 0;
+}
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+//...Function to process ADCIRC-->SHA1 using the adcirc2hash command line interface
+//------------------------------------------------------------------------------
+int process_a2s(QString inputFile,QString outputFile)
+{
+    int ierr;
+    int elapsedSeconds,elapsedMinutes;
+    adcirc_mesh mesh;
+    QTime timer;
+    QString elapsedString;
+
+    //...Set the starting time
+    timer.start();
+
+    cout << "Reading ADCIRC mesh...";
+    cout.flush();
+    QPointer<adcirc_hashlib> adc = new adcirc_hashlib;
+    ierr = adc->readAdcircMesh(inputFile,mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Hashing ADCIRC mesh...";
+    cout.flush();
+    ierr = adc->createAdcircHashes(mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Sorting ADCIRC hashes...";
+    cout.flush();
+    ierr = adc->sortAdcircHashes(mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Writing hashed mesh...";
+    cout.flush();
+    ierr = adc->writeAdcircHashMesh(outputFile,mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    elapsedSeconds = timer.elapsed() / 1000;
+    elapsedMinutes = elapsedSeconds / 60;
+    elapsedSeconds = elapsedSeconds % 60;
+    elapsedString = QString::number(elapsedMinutes) + " min, " +
+            QString::number(elapsedSeconds) + " sec";
+
+    cout << "Elapsed time: " << elapsedString.toStdString() << "\n";
+
+    return ERR_NOERR;
+}
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+//...Function to process SHA1-->ADCIRC using the command line interface.
+//------------------------------------------------------------------------------
+int process_s2a(QString inputFile,QString outputFile)
+{
+    int ierr;
+    int elapsedSeconds,elapsedMinutes;
+    adcirc_mesh mesh;
+    QTime timer;
+    QString elapsedString;
+
+    //...Set the starting time
+    timer.start();
+
+    QPointer<adcirc_hashlib> adc = new adcirc_hashlib;
+
+    cout << "Reading hashed mesh...";
+    cout.flush();
+    ierr = adc->readAdcircSha1Mesh(inputFile,mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Numbering the ADCIRC mesh...";
+    cout.flush();
+    ierr = adc->numberAdcircMesh(mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    cout << "Writing the ADCIRC mesh...";
+    cout.flush();
+    ierr = adc->writeAdcircMesh(outputFile,mesh);
+    if(ierr!=ERR_NOERR)
+        return ierr;
+    cout << "done!\n";
+
+    elapsedSeconds = timer.elapsed() / 1000;
+    elapsedMinutes = elapsedSeconds / 60;
+    elapsedSeconds = elapsedSeconds % 60;
+    elapsedString = QString::number(elapsedMinutes) + " min, " +
+            QString::number(elapsedSeconds) + " sec";
+
+    cout << "Elapsed time: " << elapsedString.toStdString();
+
+    return ERR_NOERR;
 }
 

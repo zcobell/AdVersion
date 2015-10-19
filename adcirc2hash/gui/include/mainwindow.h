@@ -58,6 +58,10 @@ private slots:
 
     void on_button_toAdc_clicked();
 
+    int process_a2s(QString inputFile,QString outputFile);
+
+    int process_s2a(QString inputFile,QString outputFile);
+
 private:
     Ui::MainWindow *ui;
 };

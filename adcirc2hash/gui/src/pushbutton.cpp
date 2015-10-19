@@ -85,7 +85,6 @@ void MainWindow::on_browse_toAdc_clicked()
 void MainWindow::on_button_toSha_clicked()
 {
     QString adcircFile,sha1File;
-    adcirc_mesh mesh;
     int ierr;
 
     adcircFile = ui->text_fromAdcirc->text();
@@ -111,7 +110,9 @@ void MainWindow::on_button_toSha_clicked()
     }
 
 
-    ierr = adcirc_hashlib::process_a2s(adcircFile,sha1File);
+    ierr = process_a2s(adcircFile,sha1File);
+    if(ierr!=ERR_NOERR)
+        process_err(ierr);
 
     return;
 }
@@ -119,7 +120,6 @@ void MainWindow::on_button_toSha_clicked()
 void MainWindow::on_button_toAdc_clicked()
 {
     QString adcircFile,sha1File;
-    adcirc_mesh mesh;
     int ierr;
 
     adcircFile = ui->text_toAdc->text();
@@ -144,7 +144,9 @@ void MainWindow::on_button_toAdc_clicked()
         return;
     }
 
-    ierr = adcirc_hashlib::process_s2a(sha1File,adcircFile);
+    ierr = process_s2a(sha1File,adcircFile);
+    if(ierr!=ERR_NOERR)
+        process_err(ierr);
 
     return;
 }

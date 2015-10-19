@@ -25,71 +25,9 @@
 
 #include "adcirc_hashlib.h"
 
-//...Comparison operators used in sorting operations
-
-//------------------------------------------------------------------------------
-//...Comparison operator used in the sorting of nodes
-//------------------------------------------------------------------------------
-bool operator< (const adcirc_node &first, const adcirc_node &second)
-{
-    if(first.locationHash<second.locationHash)
-        return true;
-    else
-        return false;
-}
-//------------------------------------------------------------------------------
-
-
-//------------------------------------------------------------------------------
-//...Comparison operator used in the sorting of elements
-bool operator< (const adcirc_element &first, const adcirc_element &second)
-{
-    if(first.elementHash<second.elementHash)
-        return true;
-    else
-        return false;
-}
-//------------------------------------------------------------------------------
-
-
-//------------------------------------------------------------------------------
-//...Comparison operator used in the sorting of boundaries
-//------------------------------------------------------------------------------
-bool operator< (const adcirc_boundary_hash &first, const adcirc_boundary_hash &second)
-{
-    if(first.boundary_hash<second.boundary_hash)
-        return true;
-    else
-        return false;
-}
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-//...Comparison operator used in the sorting of boundaries
-//------------------------------------------------------------------------------
-bool operator< (const adcirc_boundary &first, const adcirc_boundary &second)
-{
-    if(first.averageLongitude<second.averageLongitude)
-        return false;
-    else
-        return true;
-}
-//------------------------------------------------------------------------------
-
-
-
-
-#ifdef GUI
-int adcirc_hashlib::sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
-#else
 int adcirc_hashlib::sortAdcircHashes(adcirc_mesh &myMesh)
-#endif
 {
     int i,j;
-
-#ifdef GUI
-    dialog.setLabelText("Sorting the hashes...");
-#endif
 
     //...Sort the nodes, but don't transfer yet
     QVector<adcirc_node> nodeList;
@@ -111,15 +49,6 @@ int adcirc_hashlib::sortAdcircHashes(adcirc_mesh &myMesh)
         myMesh.element[i].h1 = myMesh.node[myMesh.element[i].c1-1].locationHash;
         myMesh.element[i].h2 = myMesh.node[myMesh.element[i].c2-1].locationHash;
         myMesh.element[i].h3 = myMesh.node[myMesh.element[i].c3-1].locationHash;
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
     }
 
     //...Sort the open boundary segments

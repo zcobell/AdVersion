@@ -25,34 +25,15 @@
 
 #include "adcirc_hashlib.h"
 
-#ifdef GUI
-int adcirc_hashlib::numberAdcircMesh(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
-#else
 int adcirc_hashlib::numberAdcircMesh(adcirc_mesh &myMesh)
-#endif
 {
     QMap<QString,int> mapping_s2a;
     int i,j;
     double a;
 
-#ifdef GUI
-    dialog.setLabelText("Numbering the ADCIRC mesh...");
-#endif
-
     //...Create a mapping table
     for(i=0;i<myMesh.NumNodes;i++)
-    {
         mapping_s2a[myMesh.node[i].locationHash] = i;
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
-    }
 
     //...Generate the element table
     for(i=0;i<myMesh.NumElements;i++)
@@ -60,15 +41,6 @@ int adcirc_hashlib::numberAdcircMesh(adcirc_mesh &myMesh)
         myMesh.element[i].c1 = mapping_s2a[myMesh.element[i].h1];
         myMesh.element[i].c2 = mapping_s2a[myMesh.element[i].h2];
         myMesh.element[i].c3 = mapping_s2a[myMesh.element[i].h3];
-
-#ifdef GUI
-        //...Update the progress bar
-        updateProgress(counter,dialog);
-
-        //...Catch the cancelled signal
-        if(dialog.wasCanceled())
-            return ERR_CANCELED;
-#endif
     }
 
     //...Map the open boundary arrays

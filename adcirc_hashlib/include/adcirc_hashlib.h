@@ -39,21 +39,10 @@
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QTime>
-
-#ifdef GUI
-#include <QApplication>
-#include <QProgressDialog>
-#include <QMessageBox>
-#include <mainwindow.h>
-#include <ui_mainwindow.h>
-#include <QDir>
-#else
 #include <stdio.h>
 #include <iostream>
 #include <cstdlib>
 using namespace std;
-#endif
-
 
 //...Structure for the boundary arrays
 struct adcirc_boundary
@@ -93,7 +82,7 @@ struct adcirc_boundary_hash
 
 struct adcirc_node
 {
-    QString locationHash;                      //...Hash of the X,Y location
+    QString locationHash = NULL;               //...Hash of the X,Y location
     double x,y,z;                              //...X,Y,Z coordinates of the node
 };
 
@@ -131,24 +120,13 @@ class adcirc_hashlib : public QObject
 public:
 
     explicit adcirc_hashlib(QObject *parent = 0);
-#ifdef GUI
-    int readAdcircMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
-    int readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
-    int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
-    int sortAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
-    int createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter);
-    int numberAdcircMesh(adcirc_mesh &myMesh,  QProgressDialog &dialog, int &counter);
-    int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh,  QProgressDialog &dialog, int &counter);
-    void updateProgress(int &count, QProgressDialog &dialog);
-#else
     int readAdcircMesh(QString fileName, adcirc_mesh &myMesh);
     int readAdcircSha1Mesh(QString fileName, adcirc_mesh &myMesh);
     int writeAdcircHashMesh(QString fileName, adcirc_mesh &myMesh);
     int sortAdcircHashes(adcirc_mesh &myMesh);
-    int createAdcircHashes(adcirc_mesh &myMesh);
+    int createAdcircHashes(adcirc_mesh &mesh);
     int numberAdcircMesh(adcirc_mesh &myMesh);
     int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh);
-#endif
 
     QString hashNode(adcirc_node &node);
     QString hashNode(double x, double y);
@@ -160,16 +138,9 @@ public:
     QString hashOpenBC(adcirc_mesh &mesh, int OpenBCIndex);
     QString hashLandBC(adcirc_mesh &mesh, int LandBCIndex);
 
-    static int process_a2s(QString inputFile,QString outputFile);
-    static int process_s2a(QString inputFile,QString outputFile);
+    QString hashMesh(adcirc_mesh &mesh);
 
 };
-
-
-#ifdef GUI
-extern QTime polling;
-extern int progressUpdateInterval;
-#endif
 
 bool operator< (const adcirc_node &first, const adcirc_node &second);
 bool operator< (const adcirc_element &first, const adcirc_element &second);
