@@ -82,7 +82,7 @@ struct adcirc_boundary_hash
 
 struct adcirc_node
 {
-    QString locationHash = NULL;               //...Hash of the X,Y location
+    QString locationHash;                      //...Hash of the X,Y location
     double x,y,z;                              //...X,Y,Z coordinates of the node
 };
 
