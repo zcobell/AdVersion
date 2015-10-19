@@ -148,8 +148,14 @@ public:
     int numberAdcircMesh(adcirc_mesh &myMesh);
     int writeAdcircMesh(QString fileName, adcirc_mesh &myMesh);
 #endif
+
     QString hashNode(adcirc_node &node);
+    QString hashNode(double x, double y);
+
     QString hashElement(adcirc_mesh &mesh, int elementid);
+    QString hashElement(adcirc_node n1, adcirc_node n2, adcirc_node n3);
+    QString hashElement(double x1, double y1, double x2, double y2, double x3, double y3);
+
     static int process_a2s(QString inputFile,QString outputFile);
     static int process_s2a(QString inputFile,QString outputFile);
 };

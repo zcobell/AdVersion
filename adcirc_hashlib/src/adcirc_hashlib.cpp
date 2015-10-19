@@ -90,11 +90,11 @@ bool operator< (const adcirc_boundary &first, const adcirc_boundary &second)
 
 
 //------------------------------------------------------------------------------
-//...Hash an ADCIRC node
+//...Hash an ADCIRC node based on a node struct
 //------------------------------------------------------------------------------
 QString adcirc_hashlib::hashNode(adcirc_node &node)
 {
-    QString hashSeed,hashSeed1,hashSeed2,hashSeed3;
+    QString hashSeed,hashSeed1,hashSeed2;
 
     //...initialize the sha1 hash
     QCryptographicHash localHash(QCryptographicHash::Sha1);
@@ -108,7 +108,7 @@ QString adcirc_hashlib::hashNode(adcirc_node &node)
 
     //...Concatenate the formatted strings together
     hashSeed = QString();
-    hashSeed = hashSeed1+hashSeed2; //+hashSeed3;
+    hashSeed = hashSeed1+hashSeed2;
 
     //...Create the hash for the local node
     localHash.addData(hashSeed.toUtf8(),hashSeed.length());
@@ -120,7 +120,37 @@ QString adcirc_hashlib::hashNode(adcirc_node &node)
 
 
 //------------------------------------------------------------------------------
-//...Hash an ADCIRC element
+//...Hash an ADCIRC node with just x, y information
+//------------------------------------------------------------------------------
+QString adcirc_hashlib::hashNode(double x, double y)
+{
+    QString hashSeed,hashSeed1,hashSeed2;
+
+    //...initialize the sha1 hash
+    QCryptographicHash localHash(QCryptographicHash::Sha1);
+    localHash.reset();
+
+    //...Create a formatted string for each x, y and z;
+    hashSeed1 = QString();
+    hashSeed2 = QString();
+    hashSeed1.sprintf("%+018.12e",x);
+    hashSeed2.sprintf("%+018.12e",y);
+
+    //...Concatenate the formatted strings together
+    hashSeed = QString();
+    hashSeed = hashSeed1+hashSeed2;
+
+    //...Create the hash for the local node
+    localHash.addData(hashSeed.toUtf8(),hashSeed.length());
+
+    //...return the node hash
+    return localHash.result().toHex();
+}
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+//...Hash an ADCIRC element using mesh and element ID as input
 //------------------------------------------------------------------------------
 QString adcirc_hashlib::hashElement(adcirc_mesh &mesh, int elementid)
 {
@@ -136,10 +166,23 @@ QString adcirc_hashlib::hashElement(adcirc_mesh &mesh, int elementid)
     hashSeed2 = QString();
     hashSeed3 = QString();
 
-    //...Grab the node hashes to be the seeds for the element
-    hashSeed1 = mesh.node[mesh.element[elementid].c1-1].locationHash;
-    hashSeed2 = mesh.node[mesh.element[elementid].c2-1].locationHash;
-    hashSeed3 = mesh.node[mesh.element[elementid].c3-1].locationHash;
+    //...Grab the node hashes to be the seeds for the element.
+    //   Check if the node has been hashed previously and if not
+    //   send it to the hashing function
+    if(mesh.node[mesh.element[elementid].c1-1].locationHash==NULL)
+        hashSeed1 = hashNode(mesh.node[mesh.element[elementid].c1-1]);
+    else
+        hashSeed1 = mesh.node[mesh.element[elementid].c1-1].locationHash;
+
+    if(mesh.node[mesh.element[elementid].c2-1].locationHash==NULL)
+        hashSeed1 = hashNode(mesh.node[mesh.element[elementid].c2-1]);
+    else
+        hashSeed1 = mesh.node[mesh.element[elementid].c2-1].locationHash;
+
+    if(mesh.node[mesh.element[elementid].c3-1].locationHash==NULL)
+        hashSeed1 = hashNode(mesh.node[mesh.element[elementid].c3-1]);
+    else
+        hashSeed1 = mesh.node[mesh.element[elementid].c3-1].locationHash;
 
     //...Check if the nodes to make sure the hash has already been computed
     if(hashSeed1==NULL || hashSeed2==NULL || hashSeed3==NULL)
@@ -159,7 +202,77 @@ QString adcirc_hashlib::hashElement(adcirc_mesh &mesh, int elementid)
 
 
 //------------------------------------------------------------------------------
-//...Create the ADCIRC mesh hashes
+//...Hash an ADCIRC element using adcirc_node structs as input
+//------------------------------------------------------------------------------
+QString adcirc_hashlib::hashElement(adcirc_node n1, adcirc_node n2, adcirc_node n3)
+{
+    QString hashSeed,hashSeed1,hashSeed2,hashSeed3;
+
+    //...initialize the sha1 hash
+    QCryptographicHash localHash(QCryptographicHash::Sha1);
+    localHash.reset();
+
+    //...Create a formatted string for each vertex as a product
+    //   of each location hash
+    hashSeed1 = QString();
+    hashSeed2 = QString();
+    hashSeed3 = QString();
+
+    //...Grab the node hashes to be the seeds for the element
+    hashSeed1 = hashNode(n1);
+    hashSeed2 = hashNode(n2);
+    hashSeed3 = hashNode(n3);
+
+    //...Concatenate the formatted strings together
+    hashSeed = QString();
+    hashSeed = hashSeed1+hashSeed2+hashSeed3;
+
+    //...Create the hash for the local node
+    localHash.addData(hashSeed.toUtf8(),hashSeed.length());
+
+    //...return the element hash
+    return localHash.result().toHex();
+}
+//----------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+//...Hash an ADCIRC element using x,y locations as input
+//------------------------------------------------------------------------------
+QString adcirc_hashlib::hashElement(double x1, double y1, double x2, double y2, double x3, double y3)
+{
+    QString hashSeed,hashSeed1,hashSeed2,hashSeed3;
+
+    //...initialize the sha1 hash
+    QCryptographicHash localHash(QCryptographicHash::Sha1);
+    localHash.reset();
+
+    //...Create a formatted string for each vertex as a product
+    //   of each location hash
+    hashSeed1 = QString();
+    hashSeed2 = QString();
+    hashSeed3 = QString();
+
+    //...Grab the node hashes to be the seeds for the element
+    hashSeed1 = hashNode(x1,y1);
+    hashSeed2 = hashNode(x2,y2);
+    hashSeed3 = hashNode(x3,y3);
+
+    //...Concatenate the formatted strings together
+    hashSeed = QString();
+    hashSeed = hashSeed1+hashSeed2+hashSeed3;
+
+    //...Create the hash for the local node
+    localHash.addData(hashSeed.toUtf8(),hashSeed.length());
+
+    //...return the element hash
+    return localHash.result().toHex();
+}
+//----------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+//...Create the ADCIRC mesh hashes with a GUI progress bar
 //------------------------------------------------------------------------------
 #ifdef GUI
 int adcirc_hashlib::createAdcircHashes(adcirc_mesh &myMesh, QProgressDialog &dialog, int &counter)
