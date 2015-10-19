@@ -26,6 +26,9 @@
 #include "adcirc_hashlib.h"
 #include <QPointer>
 
+//------------------------------------------------------------------------------
+//...Function to update the progress bar when called from the adcirc2hash gui
+//------------------------------------------------------------------------------
 #ifdef GUI
 void adcirc_hashlib::updateProgress(int &count,QProgressDialog &dialog)
 {
@@ -40,7 +43,13 @@ void adcirc_hashlib::updateProgress(int &count,QProgressDialog &dialog)
     return;
 }
 #endif
+//------------------------------------------------------------------------------
 
+
+//------------------------------------------------------------------------------
+//...Function to process ADCIRC-->SHA1 using the adcirc2hash GUI interface
+//   This should probably be moved out of the library, but for now it stays
+//------------------------------------------------------------------------------
 #ifdef GUI
 int adcirc_hashlib::process_a2s(QString inputFile,QString outputFile)
 {
@@ -101,6 +110,10 @@ int adcirc_hashlib::process_a2s(QString inputFile,QString outputFile)
     return ERR_NOERR;
 }
 
+//------------------------------------------------------------------------------
+//...Function to process SHA1-->ADCIRC using the GUI interface.
+//   This should probably be moved out of the library, but for now it stays
+//------------------------------------------------------------------------------
 int adcirc_hashlib::process_s2a(QString inputFile,QString outputFile)
 {
     int ierr,counter;
@@ -153,8 +166,14 @@ int adcirc_hashlib::process_s2a(QString inputFile,QString outputFile)
 
     return ERR_NOERR;
 }
+//------------------------------------------------------------------------------
 #else
 
+
+//------------------------------------------------------------------------------
+//...Function to process ADCIRC-->SHA1 using the adcirc2hash command line interface
+//   This should probably be moved out of the library, but for now it stays
+//------------------------------------------------------------------------------
 int adcirc_hashlib::process_a2s(QString inputFile,QString outputFile)
 {
     int ierr,counter;
@@ -205,7 +224,13 @@ int adcirc_hashlib::process_a2s(QString inputFile,QString outputFile)
 
     return ERR_NOERR;
 }
+//------------------------------------------------------------------------------
 
+
+//------------------------------------------------------------------------------
+//...Function to process SHA1-->ADCIRC using the command line interface.
+//   This should probably be moved out of the library, but for now it stays
+//------------------------------------------------------------------------------
 int adcirc_hashlib::process_s2a(QString inputFile,QString outputFile)
 {
     int ierr,counter;
@@ -252,3 +277,4 @@ int adcirc_hashlib::process_s2a(QString inputFile,QString outputFile)
 }
 
 #endif
+//------------------------------------------------------------------------------

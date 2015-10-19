@@ -54,6 +54,7 @@
 using namespace std;
 #endif
 
+
 //...Structure for the boundary arrays
 struct adcirc_boundary
 {
@@ -161,6 +162,7 @@ public:
 
     static int process_a2s(QString inputFile,QString outputFile);
     static int process_s2a(QString inputFile,QString outputFile);
+
 };
 
 
@@ -168,5 +170,10 @@ public:
 extern QTime polling;
 extern int progressUpdateInterval;
 #endif
+
+bool operator< (const adcirc_node &first, const adcirc_node &second);
+bool operator< (const adcirc_element &first, const adcirc_element &second);
+bool operator< (const adcirc_boundary_hash &first, const adcirc_boundary_hash &second);
+bool operator< (const adcirc_boundary &first, const adcirc_boundary &second);
 
 #endif // ADCIRC_HASHLIB_H

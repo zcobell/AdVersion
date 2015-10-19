@@ -32,7 +32,13 @@ SOURCES += src/main.cpp\
            src/pushbutton.cpp \
            ../../adcirc_hashlib/src/adcirc_hashlib.cpp \
            ../../adcirc_hashlib/src/adcirc_hashlib_fileio.cpp \
-           ../../adcirc_hashlib/src/adcirc_hashlib_callFunctions.cpp
+           ../../adcirc_hashlib/src/adcirc_hashlib_callFunctions.cpp \
+           ../../adcirc_hashlib/src/adcirc_hashlib_hashnode.cpp \
+           ../../adcirc_hashlib/src/adcirc_hashlib_hashelement.cpp \
+           ../../adcirc_hashlib/src/adcirc_hashlib_hashbc.cpp \
+           ../../adcirc_hashlib/src/adcirc_hashlib_sorthash.cpp \
+           ../../adcirc_hashlib/src/adcirc_hashlib_hashmesh.cpp \
+           ../../adcirc_hashlib/src/adcirc_hashlib_numbermesh.cpp
 
 HEADERS  += include/mainwindow.h \
             ../../adcirc_hashlib/include/adcirc_hashlib.h
