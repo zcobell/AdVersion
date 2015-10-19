@@ -156,6 +156,9 @@ public:
     QString hashElement(adcirc_node n1, adcirc_node n2, adcirc_node n3);
     QString hashElement(double x1, double y1, double x2, double y2, double x3, double y3);
 
+    QString hashOpenBC(adcirc_mesh &mesh, int OpenBCIndex);
+    QString hashLandBC(adcirc_mesh &mesh, int LandBCIndex);
+
     static int process_a2s(QString inputFile,QString outputFile);
     static int process_s2a(QString inputFile,QString outputFile);
 };
