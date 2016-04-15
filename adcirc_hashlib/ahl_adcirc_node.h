@@ -12,7 +12,9 @@ public:
 
     int hashNode();
 
-    QString hash;
+    QString positionHash;
+    QString fullHash;
+
 };
 
 #endif // AHL_ADCIRC_NODE_H
