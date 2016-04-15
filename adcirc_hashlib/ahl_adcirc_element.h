@@ -8,7 +8,7 @@
 class ahl_adcirc_element : public adcirc_element
 {
 public:
-    ahl_adcirc_element();
+    ahl_adcirc_element(QObject *parent = 0);
 
     QVector<ahl_adcirc_node*> connections;
 

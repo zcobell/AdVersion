@@ -8,7 +8,7 @@
 class ahl_adcirc_node : public adcirc_node
 {
 public:
-    ahl_adcirc_node();
+    ahl_adcirc_node(QObject *parent = 0);
 
     int hashNode();
 
