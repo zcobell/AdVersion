@@ -10,6 +10,10 @@ TARGET   = AdcircHash
 TEMPLATE = lib
 VERSION  = 0.0.0.1
 
+win32{
+TARGET_EXT = .dll
+}
+
 DEFINES += LIBADCIRCHASH_LIBRARY
 
 SOURCES += libAdcircHash.cpp \

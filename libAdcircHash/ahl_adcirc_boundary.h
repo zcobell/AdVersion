@@ -8,7 +8,7 @@
 class ahl_adcirc_boundary : public adcirc_boundary
 {
 public:
-    ahl_adcirc_boundary(QObject *parent = 0);
+    explicit ahl_adcirc_boundary(QObject *parent = 0);
 
     int hashBonudary();
 
