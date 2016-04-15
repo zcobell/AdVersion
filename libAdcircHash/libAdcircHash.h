@@ -5,7 +5,6 @@
 #include <QVector>
 #include "libAdcircHash_global.h"
 #include "QADCModules.h"
-#include "ahl_adcirc_mesh.h"
 
 
 class LIBADCIRCHASHSHARED_EXPORT Adcirc_hashlib : public QObject
@@ -25,15 +24,15 @@ protected:
 private:
     QString meshPath;
 
-    ahl_adcirc_mesh *mesh;
+    QPointer<adcirc_mesh> mesh;
 
-    QVector<ahl_adcirc_node*>     nodeHashList;
-    QVector<ahl_adcirc_element*>  elementHashList;
-    QVector<ahl_adcirc_boundary*> openBCHashList;
-    QVector<ahl_adcirc_boundary*> landBCHashList;
+    QVector<QList<adcirc_node*>>     nodeHashList;
+    QVector<QList<adcirc_element*>>  elementHashList;
+    QVector<QList<adcirc_boundary*>> openBCHashList;
+    QVector<QList<adcirc_boundary*>> landBCHashList;
 
-    ///Number of files to split into when hashing (default: 256)
-    int nSplit = 256;
+    ///Number of files to split into when hashing (default: 3 (4096))
+    int nSplit = 1;
 
 };
 
