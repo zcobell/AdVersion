@@ -4,3 +4,11 @@ ahl_adcirc_node::ahl_adcirc_node()
 {
 
 }
+
+int ahl_adcirc_node::hashNode()
+{
+
+    return 0;
+}
+
+
