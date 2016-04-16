@@ -304,8 +304,8 @@ QString Adcirc_hashlib::formatBoundaryHashLine(adcirc_boundary *boundary, int in
         line = QString("%1 %2 %3 %4 %5 \n").arg(boundary->n1[index]->positionHash)
                                         .arg(boundary->n2[index]->positionHash)
                                         .arg(crest)
-                                        .arg(super)
-                                        .arg(sub);
+                                        .arg(sub)
+                                        .arg(super);
     }
     else if(boundary->code==5 || boundary->code == 25)
     {
@@ -318,11 +318,11 @@ QString Adcirc_hashlib::formatBoundaryHashLine(adcirc_boundary *boundary, int in
         line = QString("%1 %2 %3 %4 %5 %6 %7 %8 \n").arg(boundary->n1[index]->positionHash)
                                                  .arg(boundary->n2[index]->positionHash)
                                                  .arg(crest)
-                                                 .arg(super)
                                                  .arg(sub)
+                                                 .arg(super)
                                                  .arg(pipeht)
-                                                 .arg(pipediam)
-                                                 .arg(pipecoef);
+                                                 .arg(pipecoef)
+                                                 .arg(pipediam);
     }
     else
         line = QString("%1 \n").arg(boundary->n1[index]->positionHash);
