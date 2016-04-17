@@ -18,6 +18,7 @@ public:
     int writeHashedMesh(QString outputFile);
     int readHashedMesh();
     int organizeHashes();
+    int createPartitions();
 
 protected:
     int buildDirectoryTree(QString directory);
