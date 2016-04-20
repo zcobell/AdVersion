@@ -10,7 +10,7 @@ TARGET   = AdcircHash
 TEMPLATE = lib
 VERSION  = 0.0.0.1
 
-win32{
+win32 {
 TARGET_EXT = .dll
 }
 
@@ -18,7 +18,7 @@ METISHOME = $$PWD/../thirdparty/metis
 METISPATH = $$METISHOME/Lib
 METISSRC  = $$METISPATH/coarsen.c $$METISPATH/fm.c $$METISPATH/initpart.c \
             $$METISPATH/match.c $$METISPATH/ccgraph.c $$METISPATH/memory.c \
-            $$METISPATH/pmetis.c $$METISPATH/pqueue.c $$METISPATH/refine.c
+            $$METISPATH/pmetis.c $$METISPATH/pqueue.c $$METISPATH/refine.c \
             $$METISPATH/util.c $$METISPATH/timing.c $$METISPATH/debug.c \
             $$METISPATH/bucketsort.c $$METISPATH/graph.c $$METISPATH/stat.c \
             $$METISPATH/kmetis.c $$METISPATH/kwayrefine.c $$METISPATH/kwayfm.c \
@@ -42,18 +42,28 @@ SOURCES += libAdcircHash.cpp $$METISSRC
 HEADERS += libAdcircHash.h\
            libAdcircHash_global.h
 
+
+win32 {
 QADCMODULES_SRCPATH   = "C:/Users/zcobell/Documents/Codes/QADCModules"
 QADCMODULES_BUILDPATH = "C:/Users/zcobell/Documents/Codes/build-QADCModules-Desktop_Qt_5_6_0_MSVC2013_64bit-Debug/QADCModules_lib/debug"
-#QADCMODULES_BUILDPATH = "C:\Users\zcobell\Documents\Codes\build-QADCModules-Desktop_Qt_5_6_0_MInGW_32bit-Debug\QADCModules_lib\debug"
-
 INCLUDEPATH += $$QADCMODULES_SRCPATH/QADCModules_lib
 INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/boost-library
 INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/kdtree
 INCLUDEPATH += $$QADCMODULES_SRCPATH/netcdf/include
 INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/proj4/src
 INCLUDEPATH += $$METISHOME/Lib
+}
 
-win32{
+unix {
+QADCMODULES_PATH = /home/zcobell/Programs/QADCModules
+QADCMODULES_SRCPATH = $$QADCMODULES_PATH/include
+QADCMODULES_BUILDPATH  = $$QADCMODULES_PATH/lib
+INCLUDEPATH += $$QADCMODULES_SRCPATH
+INCLUDEPATH += $$METISHOME/Lib
+}
+
+
+win32 {
 INCLUDEPATH += $$METISHOME/Windows
 }
 
