@@ -26,7 +26,6 @@ bool boundaryHashLessThan(const adcirc_boundary *boundary1, const adcirc_boundar
         return false;
 }
 
-
 Adcirc_hashlib::Adcirc_hashlib(QObject *parent) : QObject(parent)
 {
 
@@ -43,17 +42,13 @@ int Adcirc_hashlib::hashAdcircMesh(QString inputFile, QString outputFile)
 
     ierr = this->mesh->hashMesh();
 
-    ierr = this->createPartitions();
-
-    //this->organizeHashes();
-    //this->writeHashedMesh(outputFile);
+    ierr = this->partitionMesh(12);
 
     if(ierr!=ERROR_NOERROR)
         return -1;
 
     return 0;
 }
-
 
 int Adcirc_hashlib::writeHashedMesh(QString outputFile)
 {
@@ -175,7 +170,6 @@ int Adcirc_hashlib::writeHashedMesh(QString outputFile)
     return 0;
 }
 
-
 int Adcirc_hashlib::organizeHashes()
 {
     int i,subIndex;
@@ -225,7 +219,6 @@ int Adcirc_hashlib::organizeHashes()
 
     return 0;
 }
-
 
 int Adcirc_hashlib::buildDirectoryTree(QString directory)
 {
@@ -285,7 +278,6 @@ int Adcirc_hashlib::buildDirectoryTree(QString directory)
     return 0;
 }
 
-
 QString Adcirc_hashlib::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
 {
 
@@ -334,246 +326,174 @@ QString Adcirc_hashlib::formatBoundaryHashLine(adcirc_boundary *boundary, int in
     return line;
 }
 
-int Adcirc_hashlib::createPartitions()
+int Adcirc_hashlib::metisPartition(int numPartitions)
 {
-    QFile debug("C:/Users/zcobell/Documents/Codes/adcirc_hashlib/debug.txt");
-    if(!debug.open(QIODevice::WriteOnly))
-        return -1;
+    QVector<int> qptr,qind;
+    int i,j,ierr,index;
+    idx_t ne,nn,ncommon,numflag,*xadj,*adj;
+    idx_t nEdgeCut,nPartitions;
+    idx_t metis_options[METIS_NOPTIONS];
+    adcirc_element *tempElement;
+    adcirc_node *n1,*n2,*n3,*n4;
 
-    QVector<int> nedLoc,nEdges,xAdj;
-    QVector<int> vertexWeights,edgeWeights;
-    QVector<int> numDuals,itVect,itVect2;
-    QVector<QVector<int> > iDuals,coNodes;
-    QVector<adcirc_boundary*> boundary;
-    QVector<int> node1,node2;
-    int i1,i2,i3;
-    int i,j,k,jNode;
-    int n1,n2,maxDuals,nWeir,nEdgeTot;
-    int nNodes,nPart,weightFlag,opType;
-    int iNode,nCount,mNed,mNedLoc;
-    int options[5];
+    //...Copy the old connectivity table
+    continuousElementTable.resize(this->mesh->numElements);
+    for(i=0;i<this->mesh->numElements;i++)
+        this->continuousElementTable[i] = this->mesh->elements[i];
 
-    options[0] = 1;
-    options[1] = 3;
-    options[2] = 1;
-    options[3] = 3;
-    options[4] = 0;
-    weightFlag = 0;
-    nWeir      = 0;
-    opType     = 2;
-    nNodes     = this->mesh->numNodes;
-    nPart      = 256;
-
-    nedLoc.resize(nNodes);
-    nEdges.resize(nNodes);
-    xAdj.resize(nNodes+1);
-    vertexWeights.resize(nNodes);
-    edgeWeights.resize(nNodes);
-    numDuals.resize(nNodes);
-    itVect.resize(nNodes);
-    itVect2.resize(nNodes);
-
-    nedLoc.fill(0);
-    nEdges.fill(0);
-    xAdj.fill(0);
-    vertexWeights.fill(0);
-    edgeWeights.fill(0);
-    numDuals.fill(0);
-    itVect2.fill(0);
-
-
-    //...This routine largely mimics the setup
-    //   that ADCPREP uses for libmetis, so some
-    //   things here will look familiar
-
-    //...Step 1: Compute the weir duals
+    //...Begin adding elements between the levees
+    //   This avoids metis disconnecting the mesh
+    //   on either side of the levees
     for(i=0;i<this->mesh->numLandBoundaries;i++)
     {
-        if(this->mesh->landBC[i]->code==4  ||
-           this->mesh->landBC[i]->code==24 ||
-           this->mesh->landBC[i]->code==5  ||
-           this->mesh->landBC[i]->code==25 )
+        if(this->mesh->landBC[i]->code == 4  ||
+           this->mesh->landBC[i]->code == 24 ||
+           this->mesh->landBC[i]->code == 5  ||
+           this->mesh->landBC[i]->code == 25 )
         {
-            boundary.push_back(this->mesh->landBC[i]);
-        }
-    }
-
-    for(i=0;i<boundary.length();i++)
-    {
-        for(j=0;j<boundary[i]->numNodes;j++)
-        {
-            nWeir = nWeir + 1;
-            n1 = boundary[i]->n1[j]->id-1;
-            n2 = boundary[i]->n2[j]->id-1;
-            numDuals[n1] = numDuals[n1]+1;
-            numDuals[n2] = numDuals[n2]+1;
-            node1.push_back(n1);
-            node2.push_back(n2);
-        }
-    }
-
-    maxDuals = 0;
-    for(i=0;i<nNodes;i++)
-        if(maxDuals<numDuals[i])
-            maxDuals = numDuals[i];
-
-    iDuals.resize(maxDuals);
-    for(i=0;i<maxDuals;i++)
-    {
-        iDuals[i].resize(nNodes);
-        iDuals[i].fill(0);
-    }
-
-    for(i=0;i<nWeir;i++)
-    {
-        for(j=0;j<maxDuals;j++)
-        {
-            if(iDuals[j][node1[i]]==0)
+            for(j=0;j<this->mesh->landBC[i]->numNodes-1;j++)
             {
-                iDuals[j][node1[i]] = node2[i];
-                break;
+                n1 = this->mesh->landBC[i]->n1[j];
+                n2 = this->mesh->landBC[i]->n2[j];
+                n3 = this->mesh->landBC[i]->n1[j+1];
+                n4 = this->mesh->landBC[i]->n2[j+1];
+
+                tempElement = new adcirc_element(this);
+                tempElement->connections[0] = n1;
+                tempElement->connections[1] = n2;
+                tempElement->connections[2] = n3;
+                this->continuousElementTable.push_back(tempElement);
+
+                tempElement = new adcirc_element(this);
+                tempElement->connections[0] = n4;
+                tempElement->connections[1] = n3;
+                tempElement->connections[2] = n2;
+                this->continuousElementTable.push_back(tempElement);
             }
         }
     }
 
-    for(i=0;i<nWeir;i++)
+    //...Begin setting things up for metis
+    ne = continuousElementTable.length();
+    nn = this->mesh->numNodes;
+    ncommon = 1;
+    numflag = 0;
+    nPartitions = numPartitions;
+
+    qptr.resize(ne+1);
+
+    //...Build the connectivity table for METIS
+    index = 1;
+    for(i=0;i<ne;i++)
     {
-        for(j=0;j<maxDuals;j++)
-        {
-            if(iDuals[j][node2[i]]==0)
-            {
-                iDuals[j][node2[i]] = node1[i];
-                break;
-            }
-        }
+        qind.push_back(continuousElementTable[i]->connections[0]->id-1);
+        qind.push_back(continuousElementTable[i]->connections[1]->id-1);
+        qind.push_back(continuousElementTable[i]->connections[2]->id-1);
+        qptr[i] = qind.length()-1-2;
     }
+    qptr[ne] = qind.length()-1;
 
-    qDebug() << "Maximum number of duals for any weir node: " << maxDuals;
-    qDebug() << "Number of weir node pairs: " << nWeir;
+    //...Allocate the arrays for METIS
+    idx_t *eptr  = (idx_t*)malloc(qptr.length()*sizeof(idx_t));
+    idx_t *eind  = (idx_t*)malloc(qind.length()*sizeof(idx_t));
+    idx_t *npart = (idx_t*)malloc(this->mesh->numNodes*sizeof(idx_t));
+    idx_t *epart = (idx_t*)malloc(ne*sizeof(idx_t));
 
-    //...Step 2: Compute total edges and max co-nodes
-    mNed = 0;
-    for(i=0;i<3;i++)
-    {
-        for(j=0;j<this->mesh->numElements;j++)
-        {
-            iNode  = this->mesh->elements[j]->connections[i]->id-1;
-            nCount = nedLoc[iNode] + 2;
-            mNed   = mNed + 2;
-            for(k=0;k<maxDuals;k++)
-            {
-                if(iDuals[k][iNode]!=0)
-                {
-                    nCount = nCount + 1;
-                    mNed   = mNed + 1;
-                }
-            }
-            nedLoc[iNode] = nCount;
-        }
-    }
+    //...Save the arrays for METIS
+    for(i=0;i<qptr.size();i++)
+        eptr[i] = qptr[i];
 
-    mNedLoc = 0;
-    for(i=0;i<nNodes;i++)
-    {
-        if(nedLoc[i]>mNedLoc)
-            mNedLoc = nedLoc[i];
-    }
+    for(i=0;i<qind.size();i++)
+        eind[i] = qind[i];
 
-    qDebug() << "Maximum co-nodes for any node: " << mNedLoc;
+    //...Call METIS
+    ierr = METIS_SetDefaultOptions(metis_options);
+    ierr = METIS_MeshToNodal(&ne,&nn,eptr,eind,&numflag,&xadj,&adj);
+    ierr = METIS_PartMeshNodal(&ne,&nn,eptr,eind,NULL,NULL,&nPartitions,NULL,metis_options,&nEdgeCut,epart,npart);
 
-    //...Step 3: Compute co-nodes
-    coNodes.resize(mNedLoc+1);
-    for(i=0;i<mNedLoc+1;i++)
-    {
-        coNodes[i].resize(nNodes);
-        coNodes[i].fill(0);
-    }
+    //...Save the partitioning
+    this->nodePartitionList.resize(this->mesh->numNodes);
+    for(i=0;i<this->mesh->numNodes;i++)
+        this->nodePartitionList[i] = npart[i];
 
-    for(k=0;k<3;k++)
-    {
-        switch(k){
-            case 0:
-                i1=0;
-                i2=1;
-                i3=2;
-                break;
-            case 1:
-                i1=1;
-                i2=2;
-                i3=0;
-                break;
-            case 2:
-                i1=2;
-                i2=0;
-                i3=1;
-                break;
-        }
+    this->elementPartitionList.resize(this->continuousElementTable.length());
+    for(i=0;i<continuousElementTable.length();i++)
+        this->elementPartitionList[i] = epart[i];
 
-        for(i=0;i<this->mesh->numElements;i++)
-        {
-            iNode = this->mesh->elements[i]->connections[i1]->id;
-            coNodes[nEdges[iNode-1]][iNode-1] = this->mesh->elements[i]->connections[i2]->id;
-            coNodes[nEdges[iNode-1]+1][iNode-1] = this->mesh->elements[i]->connections[i3]->id;
-            nCount = nEdges[iNode-1] + 2;
-            for(j=0;j<maxDuals;j++)
-            {
-                if(iDuals[j][iNode-1]!=0)
-                {
-                    nCount = nCount + 1;
-                    coNodes[nCount][iNode-1] = iDuals[j][iNode-1];
-                }
-            }
-            nEdges[iNode-1] = nCount;
-        }
-    }
-
-    //...Remove redundancy in node lists
-    nEdgeTot = 0;
-    for(iNode=0;iNode<nNodes;iNode++)
-    {
-
-        itVect.resize(nEdges[iNode]);
-
-        for(j=0;j<nEdges[iNode];j++)
-            itVect[j] = coNodes[j][iNode];
-
-        if(nEdges[iNode]>1)
-        {
-            nCount = nEdges[iNode];
-            std::sort(itVect.begin(),itVect.end());
-            for(k=0;k<itVect.length();k++)
-            {
-                debug.write(QString(QString::number(itVect[k])+"\n").toUtf8());
-            }
-            jNode = itVect[0];
-            coNodes[0][iNode] = jNode;
-            nCount = 1;
-            for(j=1;j<nEdges[iNode];j++)
-            {
-                if(itVect[j]!=jNode)
-                {
-                    nCount = nCount + 1;
-                    jNode  = itVect[j];
-                    coNodes[nCount][iNode] = jNode;
-                }
-            }
-        }
-        else
-        {
-            qDebug() << "node = " << iNode << " is isolated.";
-            std::exit(-1);
-        }
-        nEdges[iNode] = nCount;
-        nEdgeTot = nEdgeTot + nCount;
-        if(nEdges[iNode]==0)
-        {
-            qDebug() << "node = " << iNode << " belonds to no edges.";
-            std::exit(-1);
-        }
-    }
-    nEdgeTot = nEdgeTot / 2;
-    qDebug() << "Edge Count: " << nEdgeTot;
+    //...Delete the arrays
+    delete eptr;
+    delete eind;
+    delete npart;
+    delete epart;
+    delete xadj;
+    delete adj;
 
     return 0;
+
+}
+
+int Adcirc_hashlib::partitionMesh(int numPartitions)
+{
+
+    int ierr;
+    ierr = this->metisPartition(numPartitions);
+    ierr = this->buildPolygons(numPartitions);
+
+    return 0;
+
+}
+
+int Adcirc_hashlib::buildPolygons(int numPartitions)
+{
+
+    int i,j,k;
+    int nNode,nElements,index;
+    adcirc_mesh *tempMesh;
+
+    for(i=0;i<numPartitions;i++)
+    {
+        //...Count the number of nodes and elements partitioned to this subdomain
+        nNode = 0;
+        nElements = 0;
+        for(j=0;j<this->nodePartitionList.length();j++)
+            if(this->nodePartitionList[j]==i)
+                nNode = nNode+1;
+
+        for(j=0;j<this->elementPartitionList.length();j++)
+            if(this->elementPartitionList[j]==i)
+                nElements = nElements+1;
+
+        //...Build a mesh based upon the partition
+        tempMesh = new adcirc_mesh(this);
+        tempMesh->numNodes = nNode;
+        tempMesh->numElements = nElements;
+        tempMesh->nodes.resize(tempMesh->numNodes);
+        tempMesh->elements.resize(tempMesh->numElements);
+        for(j=0;j<tempMesh->numNodes;j++)
+            tempMesh->nodes[i] = new adcirc_node(this);
+        for(j=0;j<tempMesh->numElements;j++)
+            tempMesh->elements[i] = new adcirc_element(this);
+
+        index = 0;
+        for(j=0;j<this->nodePartitionList.length();j++)
+        {
+            if(this->nodePartitionList[j]==i)
+            {
+                tempMesh->nodes[index] = this->mesh->nodes[j];
+                index = index + 1;
+            }
+        }
+
+        index = 0;
+        for(j=0;j<this->elementPartitionList.length();j++)
+        {
+            if(this->elementPartitionList[j]==i)
+            {
+                tempMesh->elements[index] = this->continuousElementTable[j];
+                index = index + 1;
+            }
+        }
+
+    }
 
 }

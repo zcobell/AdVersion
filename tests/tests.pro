@@ -28,7 +28,6 @@ QADCMODULES_SRCPATH = $$QADCMODULES_PATH/include
 QADCMODULES_BUILDPATH  = $$QADCMODULES_PATH/lib
 LIBS        += -L$$QADCMODULES_BUILDPATH -lQADCModules
 INCLUDEPATH += $$QADCMODULES_SRCPATH
-INCLUDEPATH += $$METISHOME/Lib
 }
 
 #...libAdcircHash
@@ -38,7 +37,7 @@ CONFIG(debug, debug | release): LIBS += -L$$OUT_PWD/../libAdcircHash/debug -lAdc
 CONFIG(release, debug | release): LIBS += -L$$OUT_PWD/../libAdcircHash/release -lAdcircHash
 }
 unix{
-LIBS += -L$$OUT_PWD/../libAdcircHash -lAdcircHash
+LIBS += -L$$OUT_PWD/../libAdcircHash -lAdcircHash -lmetis
 }
 
 SOURCES += main.cpp
