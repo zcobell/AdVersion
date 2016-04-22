@@ -14,30 +14,37 @@ win32 {
 TARGET_EXT = .dll
 }
 
-METISHOME = $$PWD/../thirdparty/metis
-METISPATH = $$METISHOME/Lib
-METISSRC  = $$METISPATH/coarsen.c $$METISPATH/fm.c $$METISPATH/initpart.c \
-            $$METISPATH/match.c $$METISPATH/ccgraph.c $$METISPATH/memory.c \
-            $$METISPATH/pmetis.c $$METISPATH/pqueue.c $$METISPATH/refine.c \
-            $$METISPATH/util.c $$METISPATH/timing.c $$METISPATH/debug.c \
-            $$METISPATH/bucketsort.c $$METISPATH/graph.c $$METISPATH/stat.c \
-            $$METISPATH/kmetis.c $$METISPATH/kwayrefine.c $$METISPATH/kwayfm.c \
-            $$METISPATH/balance.c $$METISPATH/ometis.c $$METISPATH/srefine.c \
-            $$METISPATH/sfm.c $$METISPATH/separator.c $$METISPATH/mincover.c \
-            $$METISPATH/mmd.c $$METISPATH/mesh.c $$METISPATH/meshpart.c \
-            $$METISPATH/frename.c $$METISPATH/fortran.c $$METISPATH/myqsort.c \
-            $$METISPATH/compress.c $$METISPATH/parmetis.c $$METISPATH/estmem.c \
-            $$METISPATH/mpmetis.c $$METISPATH/mcoarsen.c $$METISPATH/mmatch.c \
-            $$METISPATH/minitpart.c $$METISPATH/mbalance.c $$METISPATH/mrefine.c \
-            $$METISPATH/mutil.c $$METISPATH/mfm.c $$METISPATH/mkmetis.c \
-            $$METISPATH/mkwayrefine.c $$METISPATH/mkwayfmh.c $$METISPATH/mrefine2.c \
-            $$METISPATH/minitpart2.c $$METISPATH/mbalance2.c $$METISPATH/mfm2.c \
-            $$METISPATH/kvmetis.c $$METISPATH/kwayvolrefine.c $$METISPATH/kwayvolfm.c \
-            $$METISPATH/subdomains.c
+METISHOME   = $$PWD/../thirdparty/metis-5.1.0
+METISSRCDIR = $$METISHOME/libmetis
+METISSRC    = $$METISSRCDIR/auxapi.c $$METISSRCDIR/balance.c $$METISSRCDIR/bucketsort.c \
+              $$METISSRCDIR/checkgraph.c $$METISSRCDIR/coarsen.c $$METISSRCDIR/compress.c \
+              $$METISSRCDIR/contig.c $$METISSRCDIR/debug.c $$METISSRCDIR/fm.c \
+              $$METISSRCDIR/fortran.c $$METISSRCDIR/frename.c $$METISSRCDIR/gklib.c \
+              $$METISSRCDIR/graph.c $$METISSRCDIR/initpart.c $$METISSRCDIR/kmetis.c \
+              $$METISSRCDIR/kwayfm.c $$METISSRCDIR/kwayrefine.c $$METISSRCDIR/mcutil.c \
+              $$METISSRCDIR/mesh.c $$METISSRCDIR/meshpart.c $$METISSRCDIR/minconn.c \
+              $$METISSRCDIR/mincover.c $$METISSRCDIR/mmd.c $$METISSRCDIR/ometis.c \
+              $$METISSRCDIR/options.c $$METISSRCDIR/parmetis.c $$METISSRCDIR/pmetis.c \
+              $$METISSRCDIR/refine.c $$METISSRCDIR/separator.c $$METISSRCDIR/sfm.c \
+              $$METISSRCDIR/srefine.c $$METISSRCDIR/stat.c $$METISSRCDIR/timing.c \
+              $$METISSRCDIR/util.c $$METISSRCDIR/wspace.c
 
-DEFINES += LIBADCIRCHASH_LIBRARY
+GKLIBSRCDIR  = $$METISHOME/GKlib
+GKLIBSRC     = $$GKLIBSRCDIR/b64.c $$GKLIBSRCDIR/blas.c $$GKLIBSRCDIR/csr.c $$GKLIBSRCDIR/error.c \
+               $$GKLIBSRCDIR/evaluate.c $$GKLIBSRCDIR/fkvkselect.c $$GKLIBSRCDIR/fs.c \
+               $$GKLIBSRCDIR/getopt.c $$GKLIBSRCDIR/gkregex.c $$GKLIBSRCDIR/gklib_graph.c \
+               $$GKLIBSRCDIR/htable.c $$GKLIBSRCDIR/io.c $$GKLIBSRCDIR/itemsets.c \
+               $$GKLIBSRCDIR/mcore.c $$GKLIBSRCDIR/memory.c $$GKLIBSRCDIR/omp.c \
+               $$GKLIBSRCDIR/pdb.c $$GKLIBSRCDIR/pqueue.c $$GKLIBSRCDIR/random.c \
+               $$GKLIBSRCDIR/rw.c $$GKLIBSRCDIR/seq.c $$GKLIBSRCDIR/sort.c \
+               $$GKLIBSRCDIR/string.c $$GKLIBSRCDIR/timers.c $$GKLIBSRCDIR/tokenizer.c \
+               $$GKLIBSRCDIR/gklib_util.c
 
-SOURCES += libAdcircHash.cpp $$METISSRC
+DEFINES += LIBADCIRCHASH_LIBRARY WIN32 MSC _CRT_SECURE_NO_DEPRECATE USE_GKREGEX NDEBUG NDEBUG2 __thread=__declspec(thread)
+
+INCLUDEPATH += $$GKLIBSRCDIR $$METISSRCDIR $$METISHOME/include
+
+SOURCES += $$GKLIBSRC $$METISSRC libAdcircHash.cpp
 
 HEADERS += libAdcircHash.h\
            libAdcircHash_global.h
@@ -51,7 +58,7 @@ INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/boost-library
 INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/kdtree
 INCLUDEPATH += $$QADCMODULES_SRCPATH/netcdf/include
 INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/proj4/src
-INCLUDEPATH += $$METISHOME/Lib
+INCLUDEPATH += $$METISSRCDIR/Lib
 }
 
 unix {
@@ -59,12 +66,12 @@ QADCMODULES_PATH = /home/zcobell/Programs/QADCModules
 QADCMODULES_SRCPATH = $$QADCMODULES_PATH/include
 QADCMODULES_BUILDPATH  = $$QADCMODULES_PATH/lib
 INCLUDEPATH += $$QADCMODULES_SRCPATH
-INCLUDEPATH += $$METISHOME/Lib
+INCLUDEPATH += $$METISSRCDIR/Lib
 }
 
 
 win32 {
-INCLUDEPATH += $$METISHOME/Windows
+INCLUDEPATH += $$METISSRCDIR/Windows
 }
 
 LIBS += -L$$QADCMODULES_BUILDPATH -lQADCModules

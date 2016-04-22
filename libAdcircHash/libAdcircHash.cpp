@@ -421,12 +421,12 @@ int Adcirc_hashlib::metisPartition(int numPartitions)
         this->elementPartitionList[i] = epart[i];
 
     //...Delete the arrays
-    delete eptr;
-    delete eind;
-    delete npart;
-    delete epart;
-    delete xadj;
-    delete adj;
+    free(eptr);
+    free(eind);
+    free(npart);
+    free(epart);
+    free(xadj);
+    free(adj);
 
     return 0;
 
@@ -495,5 +495,7 @@ int Adcirc_hashlib::buildPolygons(int numPartitions)
         }
 
     }
+
+    return 0;
 
 }
