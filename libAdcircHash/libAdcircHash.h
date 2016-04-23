@@ -22,6 +22,7 @@ public:
     int metisPartition(int numPartitions);
     int partitionMesh(int numPartitions);
     int buildPolygons(int numPartitions);
+    int writePolygonPartitions();
 
     QPointer<adcirc_mesh> mesh;
 
@@ -42,10 +43,8 @@ private:
     QVector<adcirc_element*>         continuousElementTable;
     QVector<QPolygonF>               polygons;
 
-    QDir myDir,nodeDir,elemDir,boundDir,openBoundDir,landBoundDir;
-
-    ///Number of files to split into when hashing (default: 3 (4096))
-    int nSplit = 2;
+    QDir myDir,nodeDir,elemDir,boundDir,openBoundDir;
+    QDir landBoundDir,systemDir,partitionDir;
 
 };
 

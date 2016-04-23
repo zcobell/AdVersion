@@ -37,7 +37,7 @@ CONFIG(debug, debug | release): LIBS += -L$$OUT_PWD/../libAdcircHash/debug -lAdc
 CONFIG(release, debug | release): LIBS += -L$$OUT_PWD/../libAdcircHash/release -lAdcircHash
 }
 unix{
-LIBS += -L$$OUT_PWD/../libAdcircHash -lAdcircHash -lmetis
+LIBS += -L$$OUT_PWD/../libAdcircHash -lAdcircHash
 }
 
 SOURCES += main.cpp
