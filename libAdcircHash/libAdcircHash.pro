@@ -42,9 +42,14 @@ GKLIBSRC     = $$GKLIBSRCDIR/b64.c $$GKLIBSRCDIR/blas.c $$GKLIBSRCDIR/csr.c $$GK
 
 DEFINES += LIBADCIRCHASH_LIBRARY 
 
-INCLUDEPATH += $$GKLIBSRCDIR $$METISSRCDIR $$METISHOME/include
-
+win32{
 SOURCES += $$GKLIBSRC $$METISSRC libAdcircHash.cpp
+INCLUDEPATH += $$GKLIBSRCDIR $$METISSRCDIR $$METISHOME/include
+}
+
+unix{
+SOURCES += libAdcircHash.cpp
+}
 
 HEADERS += libAdcircHash.h\
            libAdcircHash_global.h
@@ -68,10 +73,11 @@ QADCMODULES_PATH = /home/zcobell/Programs/QADCModules
 QADCMODULES_SRCPATH = $$QADCMODULES_PATH/include
 QADCMODULES_BUILDPATH  = $$QADCMODULES_PATH/lib
 INCLUDEPATH += $$QADCMODULES_SRCPATH
+INCLUDEPATH += /usr/include
 }
 
 
-LIBS += -L$$QADCMODULES_BUILDPATH -lQADCModules
+LIBS += -L$$QADCMODULES_BUILDPATH -lQADCModules -lmetis
 
 unix {
     target.path = /usr/lib
