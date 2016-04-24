@@ -7,7 +7,7 @@
 #include <QPolygonF>
 #include "libAdcircHash_global.h"
 #include "QADCModules.h"
-
+#include "rectangle.h"
 
 class LIBADCIRCHASHSHARED_EXPORT Adcirc_hashlib : public QObject
 {
@@ -22,19 +22,17 @@ protected:
 
 private:
 
-    int hashAdcircMesh(QString inputFile, QString outputFile);
+    int hashAdcircMesh(QString inputFile);
     int readHashedMesh();
     int organizeHashes();
     int partitionMesh();
     int readPolygons();
-    int metisPartition(int numPartitions);
-    int buildPolygons(int numPartitions);
+    int metisPartition();
+    int buildPolygons();
     int writePolygonPartitions();
     int buildDirectoryTree(QString directory);
     int generateDirectoryNames(QString directory);
     int deletePolygons();
-    bool pointInPolygon(QPointF point,int polygonIndex);
-    int polygonPrecalc();
     bool removeDirectory(const QString &dirName);
     QString formatBoundaryHashLine(adcirc_boundary *boundary, int index);
 
@@ -47,12 +45,9 @@ private:
     QVector<int>                     nodePartitionList;
     QVector<int>                     elementPartitionList;
     QVector<adcirc_element*>         continuousElementTable;
-    QVector<QPolygonF>               polygons;
-    QVector<QRectF>                  rect;
-    QVector<QVector<double> >        polygonConstant;
-    QVector<QVector<double> >        polygonMultiples;
+    QVector<Rectangle>               partitionRectangles;
     QDir myDir,nodeDir,elemDir,boundDir,openBoundDir;
-    QDir landBoundDir,systemDir,partitionDir;
+    QDir landBoundDir,systemDir;
 
 };
 

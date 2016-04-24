@@ -16,10 +16,11 @@ int main(int argc, char *argv[])
 
     qDebug() << "Partitioning...";
     ierr = partition->createPartitions(mesh,outputFile,512);
+    delete partition;
 
-    //qDebug() << "";
-    //qDebug() << "Writing mesh...";
-    //ierr = hashlib->writePartitionedMesh(mesh,outputFile);
+    qDebug() << "";
+    qDebug() << "Writing mesh...";
+    ierr = hashlib->writePartitionedMesh(mesh,outputFile);
 
     return 0;
 }

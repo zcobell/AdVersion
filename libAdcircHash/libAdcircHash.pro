@@ -52,7 +52,8 @@ SOURCES += libAdcircHash.cpp
 }
 
 HEADERS += libAdcircHash.h\
-           libAdcircHash_global.h
+           libAdcircHash_global.h \
+    rectangle.h
 
 
 win32 {
@@ -83,3 +84,6 @@ unix {
     target.path = /usr/lib
     INSTALLS += target
 }
+
+SOURCES += \
+    rectangle.cpp

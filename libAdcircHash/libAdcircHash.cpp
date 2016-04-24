@@ -1,5 +1,6 @@
 #include "libAdcircHash.h"
 #include "metis.h"
+#include <float.h>
 #include <QtMath>
 #include <QStringList>
 #include <QDebug>
@@ -34,6 +35,16 @@ bool boundaryHashLessThan(const adcirc_boundary *boundary1, const adcirc_boundar
 
 
 
+bool rectangeleAreaLessThan(const Rectangle rectangle1, const Rectangle rectangle2)
+{
+    if(rectangle1.area<rectangle2.area)
+        return true;
+    else
+        return false;
+}
+
+
+
 Adcirc_hashlib::Adcirc_hashlib(QObject *parent) : QObject(parent)
 {
     this->mesh = NULL;
@@ -46,6 +57,8 @@ int Adcirc_hashlib::createPartitions(QString meshFile, QString outputFile, int n
 
     int ierr;
 
+    this->nMeshPartitions = numPartitions;
+
     //...Get the adcirc mesh that will be partitioned
     this->mesh = new adcirc_mesh(this);
     ierr = this->mesh->read(meshFile);
@@ -54,19 +67,20 @@ int Adcirc_hashlib::createPartitions(QString meshFile, QString outputFile, int n
 
     //...Build the directory tree (if necessary)
     ierr = this->generateDirectoryNames(outputFile);
-    if(this->partitionDir.exists())
-        this->deletePolygons();
+    if(ierr!=ERROR_NOERROR)
+        return -1;
+
     ierr = this->buildDirectoryTree(outputFile);
     if(ierr!=ERROR_NOERROR)
         return -1;
 
     //...Use METIS to partition the mesh
-    ierr = this->metisPartition(numPartitions);
+    ierr = this->metisPartition();
     if(ierr!=ERROR_NOERROR)
         return -1;
 
     //...Build the polygons from the METIS partition
-    ierr = this->buildPolygons(numPartitions);
+    ierr = this->buildPolygons();
     if(ierr!=ERROR_NOERROR)
         return -1;
 
@@ -83,9 +97,10 @@ int Adcirc_hashlib::createPartitions(QString meshFile, QString outputFile, int n
 
 int Adcirc_hashlib::writePartitionedMesh(QString meshFile, QString outputFile)
 {
-    int ierr,i,j,k;
+    int ierr,i,j;
     QString fileName,file,line,x,y,z,hash;
     QFile thisFile;
+    QVector<adcirc_boundary*> openBCSort,landBCSort;
 
     //...Create a new adcirc_mesh
     this->mesh = new adcirc_mesh(this);
@@ -115,6 +130,8 @@ int Adcirc_hashlib::writePartitionedMesh(QString meshFile, QString outputFile)
         file.sprintf("partition_%4.4i.node",i);
         fileName = this->nodeDir.path()+"/"+file;
         thisFile.setFileName(fileName);
+        if(thisFile.exists())
+            thisFile.remove();
         if(!thisFile.open(QIODevice::WriteOnly))
             return -1;
 
@@ -143,6 +160,8 @@ int Adcirc_hashlib::writePartitionedMesh(QString meshFile, QString outputFile)
         file.sprintf("partition_%4.4i.element",i);
         fileName = this->elemDir.path()+"/"+file;
         thisFile.setFileName(fileName);
+        if(thisFile.exists())
+            thisFile.remove();
         if(!thisFile.open(QIODevice::WriteOnly))
             return -1;
 
@@ -161,66 +180,104 @@ int Adcirc_hashlib::writePartitionedMesh(QString meshFile, QString outputFile)
         thisFile.close();
     }
 
-//    //...Write the open boundary files
-//    for(i=0;i<nFiles;i++)
-//    {
-//        file     = QString::number(i,16);
-//        if(file.length()<this->nSplit)
-//            file = "0"+file;
-//        fileName = this->openBoundDir.path()+"/"+file;
-//        thisFile.setFileName(fileName);
-//        if(!thisFile.open(QIODevice::WriteOnly))
-//            return -1;
+    //...Create the open and land boundary lists for sorting
+    openBCSort.resize(this->mesh->numOpenBoundaries);
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+        openBCSort[i] = this->mesh->openBC[i];
 
-//        line = QString("%1 \n").arg(this->openBCHashList[i].length());
-//        thisFile.write(line.toUtf8());
+    landBCSort.resize(this->mesh->numLandBoundaries);
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+        landBCSort[i] = this->mesh->landBC[i];
 
-//        for(j=0;j<this->openBCHashList[i].length();j++)
-//        {
-//            line = QString("%1 %2 \n").arg(this->openBCHashList[i].value(j)->hash).arg(this->openBCHashList[i].value(j)->numNodes);
-//            thisFile.write(line.toUtf8());
-//            for(k=0;k<this->openBCHashList[i].value(j)->numNodes;k++)
-//            {
-//                line = this->formatBoundaryHashLine(this->openBCHashList[i].value(j),k);
-//                thisFile.write(line.toUtf8());
-//            }
-//        }
-//        thisFile.close();
-//    }
+    std::sort(openBCSort.begin(),openBCSort.end(),boundaryHashLessThan);
+    std::sort(landBCSort.begin(),landBCSort.end(),boundaryHashLessThan);
 
-//    //...Write the land boundary files
-//    for(i=0;i<nFiles;i++)
-//    {
-//        file     = QString::number(i,16);
-//        if(file.length()<this->nSplit)
-//            file = "0"+file;
-//        fileName = this->landBoundDir.path()+"/"+file;
-//        thisFile.setFileName(fileName);
-//        if(!thisFile.open(QIODevice::WriteOnly))
-//            return -1;
+    //...Write the files containing the list of boundaries
+    QFile fileOpenBC(this->openBoundDir.path()+"/open.boundary");
+    QFile fileLandBC(this->landBoundDir.path()+"/land.boundary");
 
-//        line = QString("%1 \n").arg(this->landBCHashList[i].length());
-//        thisFile.write(line.toUtf8());
+    //...Remove if it exists
+    if(fileOpenBC.exists())
+        fileOpenBC.remove();
 
-//        for(j=0;j<this->landBCHashList[i].length();j++)
-//        {
-//            line = QString("%1 %2 \n").arg(this->landBCHashList[i].value(j)->hash).arg(this->landBCHashList[i].value(j)->numNodes);
-//            thisFile.write(line.toUtf8());
-//            for(k=0;k<this->landBCHashList[i].value(j)->numNodes;k++)
-//            {
-//                line = this->formatBoundaryHashLine(this->landBCHashList[i].value(j),k);
-//                thisFile.write(line.toUtf8());
-//            }
-//        }
-//        thisFile.close();
-//    }
+    if(fileLandBC.exists())
+        fileLandBC.remove();
+
+    //...Write the header (nBoundaries) and hash for each open boundary
+    if(!fileOpenBC.open(QIODevice::WriteOnly))
+        return -1;
+    fileOpenBC.write(QString(QString::number(this->mesh->numOpenBoundaries)+"\n").toUtf8());
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+    {
+        line = QString("%1\n").arg(openBCSort[i]->hash);
+        fileOpenBC.write(line.toUtf8());
+    }
+    fileOpenBC.close();
+
+    //...Write the header (nBoundaries) and hash for each land boundary
+    if(!fileLandBC.open(QIODevice::WriteOnly))
+        return -1;
+    fileLandBC.write(QString(QString::number(this->mesh->numLandBoundaries)+"\n").toUtf8());
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+    {
+        line = QString("%1\n").arg(landBCSort[i]->hash);
+        fileLandBC.write(line.toUtf8());
+    }
+    fileLandBC.close();
+
+    //...Write the open boundary files
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+    {
+        //...Create a new file using the hash as the name
+        fileName = this->openBoundDir.path()+"/"+this->mesh->openBC[i]->hash+".bnd";
+        thisFile.setFileName(fileName);
+        if(thisFile.exists())
+            thisFile.remove();
+
+        if(!thisFile.open(QIODevice::WriteOnly))
+            return -1;
+
+        //...Write the boundary
+        line = QString("%1 %2 \n").arg(this->mesh->openBC[i]->hash).arg(this->mesh->openBC[i]->numNodes);
+        thisFile.write(line.toUtf8());
+        for(j=0;j<this->mesh->openBC[i]->numNodes;j++)
+        {
+            line = this->formatBoundaryHashLine(this->mesh->openBC[i],j);
+            thisFile.write(line.toUtf8());
+        }
+        thisFile.close();
+    }
+
+
+    //...Write the land boundary files
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+    {
+        //...Create a new file using the hash as the name
+        fileName = this->landBoundDir.path()+"/"+this->mesh->landBC[i]->hash+".bnd";
+        thisFile.setFileName(fileName);
+        if(thisFile.exists())
+            thisFile.remove();
+
+        if(!thisFile.open(QIODevice::WriteOnly))
+            return -1;
+
+        //...Write the boundary
+        line = QString("%1 %2 \n").arg(this->mesh->landBC[i]->hash).arg(this->mesh->landBC[i]->numNodes);
+        thisFile.write(line.toUtf8());
+        for(j=0;j<this->mesh->landBC[i]->numNodes;j++)
+        {
+            line = this->formatBoundaryHashLine(this->mesh->landBC[i],j);
+            thisFile.write(line.toUtf8());
+        }
+        thisFile.close();
+    }
 
     return ERROR_NOERROR;
 }
 
 
 
-int Adcirc_hashlib::hashAdcircMesh(QString inputFile, QString outputFile)
+int Adcirc_hashlib::hashAdcircMesh(QString inputFile)
 {
     int ierr;
 
@@ -239,58 +296,6 @@ int Adcirc_hashlib::hashAdcircMesh(QString inputFile, QString outputFile)
 
 
 
-int Adcirc_hashlib::organizeHashes()
-{
-    int i,subIndex;
-    bool err;
-    QString subString;
-
-//    this->nodeHashList.resize(qPow(16,this->nSplit));
-//    this->elementHashList.resize(qPow(16,this->nSplit));
-//    this->openBCHashList.resize(qPow(16,this->nSplit));
-//    this->landBCHashList.resize(qPow(16,this->nSplit));
-
-//    for(i=0;i<this->mesh->numNodes;i++)
-//    {
-//        subString = this->mesh->nodes[i]->positionHash.left(this->nSplit);
-//        subIndex  = subString.toInt(&err,16);
-//        this->nodeHashList[subIndex].append(this->mesh->nodes[i]);
-//    }
-
-//    for(i=0;i<this->mesh->numElements;i++)
-//    {
-//        subString = this->mesh->elements[i]->hash.left(this->nSplit);
-//        subIndex  = subString.toInt(&err,16);
-//        this->elementHashList[subIndex].append(this->mesh->elements[i]);
-//    }
-
-//    for(i=0;i<this->mesh->numOpenBoundaries;i++)
-//    {
-//        subString = this->mesh->openBC[i]->hash.left(this->nSplit);
-//        subIndex  = subString.toInt(&err,16);
-//        this->openBCHashList[subIndex].append(this->mesh->openBC[i]);
-//    }
-
-//    for(i=0;i<this->mesh->numLandBoundaries;i++)
-//    {
-//        subString = this->mesh->landBC[i]->hash.left(this->nSplit);
-//        subIndex  = subString.toInt(&err,16);
-//        this->landBCHashList[subIndex].append(this->mesh->landBC[i]);
-//    }
-
-//    for(i=0;i<qPow(16,this->nSplit);i++)
-//    {
-//        std::sort(this->nodeHashList[i].begin(),this->nodeHashList[i].end(),nodeHashLessThan);
-//        std::sort(this->elementHashList[i].begin(),this->elementHashList[i].end(),elementHashLessThan);
-//        std::sort(this->openBCHashList[i].begin(),this->openBCHashList[i].end(),boundaryHashLessThan);
-//        std::sort(this->landBCHashList[i].begin(),this->landBCHashList[i].end(),boundaryHashLessThan);
-//    }
-
-    return ERROR_NOERROR;
-}
-
-
-
 int Adcirc_hashlib::generateDirectoryNames(QString directory)
 {
     this->myDir.setPath(directory);
@@ -300,7 +305,6 @@ int Adcirc_hashlib::generateDirectoryNames(QString directory)
     this->openBoundDir.setPath(directory+"/boundaries/openBoundaries");
     this->landBoundDir.setPath(directory+"/boundaries/landBoundaries");
     this->systemDir.setPath(directory+"/system");
-    this->partitionDir.setPath(directory+"/system/partitions");
     return ERROR_NOERROR;
 }
 
@@ -328,9 +332,23 @@ int Adcirc_hashlib::buildDirectoryTree(QString directory)
         if(!err)
             return -1;
     }
+    else
+    {
+        this->removeDirectory(this->nodeDir.path());
+        err = QDir().mkdir(nodeDir.path());
+        if(!err)
+            return -1;
+    }
 
     if(!elemDir.exists())
     {
+        err = QDir().mkdir(elemDir.path());
+        if(!err)
+            return -1;
+    }
+    else
+    {
+        this->removeDirectory(this->elemDir.path());
         err = QDir().mkdir(elemDir.path());
         if(!err)
             return -1;
@@ -349,9 +367,23 @@ int Adcirc_hashlib::buildDirectoryTree(QString directory)
         if(!err)
             return -1;
     }
+    else
+    {
+        this->removeDirectory(this->openBoundDir.path());
+        err = QDir().mkdir(openBoundDir.path());
+        if(!err)
+            return -1;
+    }
 
     if(!landBoundDir.exists())
     {
+        err = QDir().mkdir(landBoundDir.path());
+        if(!err)
+            return -1;
+    }
+    else
+    {
+        this->removeDirectory(this->landBoundDir.path());
         err = QDir().mkdir(landBoundDir.path());
         if(!err)
             return -1;
@@ -360,13 +392,6 @@ int Adcirc_hashlib::buildDirectoryTree(QString directory)
     if(!systemDir.exists())
     {
         err = QDir().mkdir(systemDir.path());
-        if(!err)
-            return -1;
-    }
-
-    if(!partitionDir.exists())
-    {
-        err = QDir().mkdir(partitionDir.path());
         if(!err)
             return -1;
     }
@@ -426,7 +451,7 @@ QString Adcirc_hashlib::formatBoundaryHashLine(adcirc_boundary *boundary, int in
 
 
 
-int Adcirc_hashlib::metisPartition(int numPartitions)
+int Adcirc_hashlib::metisPartition()
 {
     QVector<int> qptr,qind;
     int i,j,ierr,index;
@@ -479,7 +504,7 @@ int Adcirc_hashlib::metisPartition(int numPartitions)
     ncon = 1;
     numflag = 0;
     ncommon = 1;
-    nPartitions = numPartitions;
+    nPartitions = this->nMeshPartitions;
 
     qptr.resize(ne+1);
 
@@ -521,17 +546,6 @@ int Adcirc_hashlib::metisPartition(int numPartitions)
     for(i=0;i<continuousElementTable.length();i++)
         this->elementPartitionList[i] = epart[i];
 
-
-//    QFile checkOutput("/home/zcobell/Development/adcirc_hashlib/fort.63");
-//    checkOutput.open(QIODevice::WriteOnly);
-//    checkOutput.write(QString("Partitions from METIS \n").toUtf8());
-//    checkOutput.write(QString("1 "+QString::number(this->mesh->numNodes)+" -0.9999900E+005  -99999  1 FileFmtVersion: 12345 \n").toUtf8());
-//    checkOutput.write(QString("10000.0000 10000 \n").toUtf8());
-//    for(i=0;i<this->mesh->numNodes;i++)
-//        checkOutput.write(QString(QString::number(i+1)+" "+QString::number(nodePartitionList[i])+"\n").toUtf8());
-//    checkOutput.close();
-
-
     //...Delete the arrays
     free(eptr);
     free(eind);
@@ -546,156 +560,46 @@ int Adcirc_hashlib::metisPartition(int numPartitions)
 
 
 
-int Adcirc_hashlib::buildPolygons(int numPartitions)
+int Adcirc_hashlib::buildPolygons()
 {
+    int i,partition;
+    qreal x,y;
+    QVector<qreal> xmin,xmax,ymin,ymax;
 
-    int i,j,k,nid1,nid2,previousNode;
-    int nNode,nElements,index,startNode;
-    adcirc_mesh *tempMesh;
-    QString e1,e2,e3;
-    QStringList edgeList,edgeListDuplicates;
-    QVector<QVector<int> > edges;
-    QVector<bool> edgeUsed;
-    bool atEnd;
+    this->partitionRectangles.resize(this->nMeshPartitions);
+    xmin.resize(this->nMeshPartitions);
+    ymin.resize(this->nMeshPartitions);
+    xmax.resize(this->nMeshPartitions);
+    ymax.resize(this->nMeshPartitions);
 
-    this->polygons.resize(numPartitions);
+    xmin.fill(DBL_MAX);
+    xmax.fill(-DBL_MAX);
+    ymin.fill(DBL_MAX);
+    ymax.fill(-DBL_MAX);
 
-    for(i=0;i<numPartitions;i++)
+    for(i=0;i<this->mesh->numNodes;i++)
     {
-
-        //...Count the number of nodes and elements partitioned to this subdomain
-        nNode = 0;
-        nElements = 0;
-        for(j=0;j<this->nodePartitionList.length();j++)
-            if(this->nodePartitionList[j]==i)
-                nNode = nNode+1;
-
-        for(j=0;j<this->elementPartitionList.length();j++)
-            if(this->elementPartitionList[j]==i)
-                nElements = nElements+1;
-
-        //...Build a mesh based upon the partition
-        tempMesh = new adcirc_mesh(this);
-        tempMesh->numNodes = nNode;
-        tempMesh->numElements = nElements;
-        tempMesh->nodes.resize(tempMesh->numNodes);
-        tempMesh->elements.resize(tempMesh->numElements);
-        for(j=0;j<tempMesh->numNodes;j++)
-            tempMesh->nodes[i] = new adcirc_node(this);
-        for(j=0;j<tempMesh->numElements;j++)
-            tempMesh->elements[i] = new adcirc_element(this);
-
-        index = 0;
-        for(j=0;j<this->nodePartitionList.length();j++)
-        {
-            if(this->nodePartitionList[j]==i)
-            {
-                tempMesh->nodes[index] = this->mesh->nodes[j];
-                index = index + 1;
-            }
-        }
-
-        index = 0;
-        for(j=0;j<this->elementPartitionList.length();j++)
-        {
-            if(this->elementPartitionList[j]==i)
-            {
-                tempMesh->elements[index] = this->continuousElementTable[j];
-                index = index + 1;
-            }
-        }
-
-        //...Get list of the boundary edges and create list of edges
-        //   contained by two elements so we can find the boundary
-        edgeList.clear();
-        edgeListDuplicates.clear();
-        for(j=0;j<tempMesh->numElements;j++)
-        {
-            e1   = QString::number(qMin(tempMesh->elements[j]->connections[0]->id,tempMesh->elements[j]->connections[1]->id))+"--"+
-                   QString::number(qMax(tempMesh->elements[j]->connections[0]->id,tempMesh->elements[j]->connections[1]->id));
-            e2   = QString::number(qMin(tempMesh->elements[j]->connections[1]->id,tempMesh->elements[j]->connections[2]->id))+"--"+
-                   QString::number(qMax(tempMesh->elements[j]->connections[1]->id,tempMesh->elements[j]->connections[2]->id));
-            e3   = QString::number(qMin(tempMesh->elements[j]->connections[2]->id,tempMesh->elements[j]->connections[0]->id))+"--"+
-                   QString::number(qMax(tempMesh->elements[j]->connections[2]->id,tempMesh->elements[j]->connections[0]->id));
-            edgeList.append(e1);
-            edgeList.append(e2);
-            edgeList.append(e3);
-
-        }
-
-        //...Remove the edges used more than once, hence they
-        //   are not boundary edges and not part of our outline
-        //   polygon
-        for(j=0;j<edgeList.length();j++)
-        {
-            if(edgeListDuplicates.contains(edgeList.at(j)))
-                edgeListDuplicates.removeOne(edgeList.at(j));
-            else
-                edgeListDuplicates.append(edgeList.at(j));
-        }
-
-        //...Break the edge list out to integer lists
-        edges.resize(2);
-        edges[0].resize(edgeList.length());
-        edges[1].resize(edgeList.length());
-        edgeUsed.resize(edgeList.length());
-        edgeUsed.fill(false);
-        for(j=0;j<edgeList.length();j++)
-        {
-            e1   = edgeList.value(j);
-            e2   = e1.split("--").value(0);
-            nid1 = e2.toInt();
-            e3   = e1.split("--").value(1);
-            nid2 = e3.toInt();
-            edges[0][j] = nid1;
-            edges[1][j] = nid2;
-        }
-
-        //...Begin assembling a closed loop polygon
-        this->polygons[i].append(this->mesh->nodes[edges[0][0]-1]->toPointF());
-        edgeUsed[0] = true;
-        startNode = this->mesh->nodes[edges[0][0]-1]->id;
-        previousNode = startNode;
-        atEnd = false;
-        while(!atEnd)
-        {
-            for(j=0;j<edges[0].length();j++)
-            {
-                if(!edgeUsed[j])
-                {
-                    nid1 = edges[0][j];
-                    nid2 = edges[1][j];
-                    if(nid1==previousNode)
-                    {
-                        this->polygons[i].append(this->mesh->nodes[nid2-1]->toPointF());
-                        previousNode = this->mesh->nodes[nid2-1]->id;
-                        edgeUsed[j] = true;
-                        break;
-                    }
-                    else if(nid2==previousNode)
-                    {
-                        this->polygons[i].append(this->mesh->nodes[nid1-1]->toPointF());
-                        previousNode = this->mesh->nodes[nid1-1]->id;
-                        edgeUsed[j] = true;
-                        break;
-                    }
-                }
-                if(j==edges[0].length()-1)
-                    atEnd = true;
-            }
-        }
-
-        edges[0].clear();
-        edges[1].clear();
-        edgeUsed.clear();
-
-        //...Close the polygon
-        this->polygons[i].append(this->polygons[i].at(0));
-
-        //...Free up memory
-        delete tempMesh;
-
+        partition = this->nodePartitionList[i];
+        x = this->mesh->nodes[i]->position.x();
+        y = this->mesh->nodes[i]->position.y();
+        if(x<xmin[partition])
+            xmin[partition] = x;
+        if(x>xmax[partition])
+            xmax[partition] = x;
+        if(y<ymin[partition])
+            ymin[partition] = y;
+        if(y>ymax[partition])
+            ymax[partition] = y;
     }
+
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        this->partitionRectangles[i].setCoords(xmin[i],ymax[i],xmax[i],ymin[i]);
+        this->partitionRectangles[i].expand(2.0);
+        this->partitionRectangles[i].computeArea();
+    }
+
+    std::sort(this->partitionRectangles.begin(),this->partitionRectangles.end(),rectangeleAreaLessThan);
 
     return ERROR_NOERROR;
 
@@ -705,47 +609,29 @@ int Adcirc_hashlib::buildPolygons(int numPartitions)
 
 int Adcirc_hashlib::writePolygonPartitions()
 {
-    int i,j;
-    double x1,x2,y1,y2;
-    QString line,filename;
-    QFile partitionFile,polygonFile;
+    int i;
+    qreal x1,x2,y1,y2;
+    QString line;
+    QFile partitionFile;
 
     //...Write control file for polygons
-    partitionFile.setFileName(this->partitionDir.path()+"/partition.control");
+    partitionFile.setFileName(this->systemDir.path()+"/partition.control");
+    if(partitionFile.exists())
+        partitionFile.remove();
     if(!partitionFile.open(QIODevice::WriteOnly))
         return -1;
-    partitionFile.write(QString(QString::number(this->polygons.length())+"\n").toUtf8());
-
-    //...Convert the polygons to rectangles
-    this->rect.resize(this->polygons.length());
-    for(i=0;i<this->polygons.length();i++)
-        this->rect[i] = this->polygons[i].boundingRect();
+    partitionFile.write(QString(QString::number(this->partitionRectangles.length())+"\n").toUtf8());
 
     //...Write polygon files for partition boundaries
-    for(i=0;i<this->rect.length();i++)
+    for(i=0;i<this->partitionRectangles.length();i++)
     {
         //...Write the rectangle bounding box to the main file
-        x1   = this->rect[i].bottomLeft().x();
-        y1   = this->rect[i].bottomLeft().y();
-        x2   = this->rect[i].topRight().x();
-        y2   = this->rect[i].topRight().y();
+        x1   = this->partitionRectangles[i].bottomLeft().x();
+        y1   = this->partitionRectangles[i].bottomLeft().y();
+        x2   = this->partitionRectangles[i].topRight().x();
+        y2   = this->partitionRectangles[i].topRight().y();
         line.sprintf("%+018.12e %+018.12e %+018.12e %+018.12e \n",x1,y1,x2,y2);
         partitionFile.write(line.toUtf8());
-
-        //...Write the polygon boundary to its own
-        filename.sprintf("partition_%4.4i.pol",i);
-        filename = this->partitionDir.path()+"/"+filename;
-        polygonFile.setFileName(filename);
-        if(!polygonFile.open(QIODevice::WriteOnly))
-            return -1;
-
-        polygonFile.write(QString(QString::number(this->polygons[i].length())+"\n").toUtf8());
-        for(j=0;j<this->polygons[i].length();j++)
-        {
-            line.sprintf("%+018.12e %+018.12e \n",this->polygons[i].at(j).x(),this->polygons[i].at(j).y());
-            polygonFile.write(QString(line).toUtf8());
-        }
-        polygonFile.close();
     }
     partitionFile.close();
     return ERROR_NOERROR;
@@ -785,7 +671,7 @@ int Adcirc_hashlib::deletePolygons()
     QFile partControl,partFile;
     bool err;
 
-    partControl.setFileName(this->partitionDir.path()+"/partition.control");
+    partControl.setFileName(this->systemDir.path()+"/partition.control");
     if(!partControl.open(QIODevice::ReadOnly))
         return -1;
 
@@ -793,7 +679,7 @@ int Adcirc_hashlib::deletePolygons()
     for(i=0;i<this->nMeshPartitions;i++)
     {
         fileNumber.sprintf("%4.4i",i);
-        partFile.setFileName(this->partitionDir.path()+"/partition_"+fileNumber+".pol");
+        partFile.setFileName(this->systemDir.path()+"/partition_"+fileNumber+".pol");
         err = partFile.remove();
         if(!err)
             return -1;
@@ -805,19 +691,18 @@ int Adcirc_hashlib::deletePolygons()
 
 int Adcirc_hashlib::readPolygons()
 {
-    int i,j,nPoints;
-    QString line,x1s,x2s,y1s,y2s,filename;
+    int i;
+    QString line,x1s,x2s,y1s,y2s;
     QStringList tempList;
-    QFile partControl,polygonFile;
-    double x1,y1,x2,y2;
+    QFile partControl;
+    qreal x1,y1,x2,y2;
 
-    partControl.setFileName(this->partitionDir.path()+"/partition.control");
+    partControl.setFileName(this->systemDir.path()+"/partition.control");
     if(!partControl.open(QIODevice::ReadOnly))
         return -1;
 
     this->nMeshPartitions = partControl.readLine().simplified().toInt();
-    this->rect.resize(this->nMeshPartitions);
-    this->polygons.resize(this->nMeshPartitions);
+    this->partitionRectangles.resize(this->nMeshPartitions);
 
     for(i=0;i<this->nMeshPartitions;i++)
     {
@@ -831,35 +716,8 @@ int Adcirc_hashlib::readPolygons()
         y1       = y1s.toDouble();
         x2       = x2s.toDouble();
         y2       = y2s.toDouble();
-        this->rect[i].setBottomLeft(QPointF(x1,y1));
-        this->rect[i].setTopRight(QPointF(x2,y2));
-
-        filename.sprintf("partition_%4.4i.pol",i);
-        filename = this->partitionDir.path()+"/"+filename;
-        polygonFile.setFileName(filename);
-
-        if(!polygonFile.open(QIODevice::ReadOnly))
-            return -1;
-
-        nPoints = polygonFile.readLine().simplified().toInt();
-
-        for(j=0;j<nPoints;j++)
-        {
-            line     = polygonFile.readLine().simplified();
-            tempList = line.split(" ");
-            x1s      = tempList.value(0);
-            y1s      = tempList.value(1);
-            x1       = x1s.toDouble();
-            y1       = y1s.toDouble();
-            this->polygons[i].append(QPointF(x1,y1));
-        }
-
-        if(!this->polygons[i].isClosed())
-        {
-            qDebug() << "ERROR: Polygon not closed.";
-            return -1;
-        }
-        polygonFile.close();
+        this->partitionRectangles[i].setBottomLeft(QPointF(x1,y1));
+        this->partitionRectangles[i].setTopRight(QPointF(x2,y2));
     }
     partControl.close();
 
@@ -870,22 +728,10 @@ int Adcirc_hashlib::readPolygons()
 
 int Adcirc_hashlib::partitionMesh()
 {
-    int i,j,ierr,nNodesFound,nElementsFound,nearestPartition;
-    int nSearch;
-    double x,y,x1,x2,x3,y1,y2,y3;
-    QVector<QPointF> elementCenters,polygonCenters;
-    QVector<bool> nodeFound,elementFound;
-    QVector<int> partitionRank;
-    qKdtree2 partitionLocator;
-    bool found;
-
-    nNodesFound = 0;
-    nElementsFound = 0;
-
-    nodeFound.resize(this->mesh->numNodes);
-    elementFound.resize(this->mesh->numElements);
-    nodeFound.fill(false);
-    elementFound.fill(false);
+    int i,j,ierr,nNodeFound,nElementFound;
+    qreal x,y,x1,x2,x3,y1,y2,y3;
+    QVector<QPointF> elementCenters;
+    bool partitioned,expanded;
 
     //...Read the partitioning
     ierr = this->readPolygons();
@@ -906,131 +752,83 @@ int Adcirc_hashlib::partitionMesh()
         elementCenters[i].setY(y);
     }
 
-    //...Create the polygon center locations
-    //   This is used as a backup for nodes not quickly found using ray tracing
-    polygonCenters.resize(this->nMeshPartitions);
-    for(i=0;i<this->nMeshPartitions;i++)
-        polygonCenters[i] = this->rect[i].center();
-
-    //...Build kd-tree of polygon centers
-    partitionLocator.build(polygonCenters);
-
-    //...Allocate the containers for each partition
-    this->nodeList.resize(this->nMeshPartitions);
-    this->elementList.resize(this->nMeshPartitions);
-
-    nSearch = qMin(10,this->nMeshPartitions);
-    ierr = this->polygonPrecalc();
-
-    //...Start organizing the nodes into polygons
-    qDebug() << "Starting nodes...";
-    for(i=0;i<this->mesh->numNodes;i++)
+    //...This loop runs until all nodes are found by slowly expanding
+    //   the search box for each polygon. This takes care of some potential
+    //   round off error when searching for which rectangle a node falls in.
+    //   Generally, it shouldn't be used much since by default the rectangles
+    //   have a 2% expansion to cover this, so this is mostly a failsafe.
+    partitioned = false;
+    while(!partitioned)
     {
-        partitionRank.clear();
-        partitionLocator.findXNearest(this->mesh->nodes[i]->toPointF(),nSearch,partitionRank);
-        found = false;
-        for(j=0;j<nSearch;j++)
+
+        //...Counters
+        nNodeFound = 0;
+        nElementFound = 0;
+
+        //...Allocate the containers for each partition
+        this->nodeList.clear();
+        this->elementList.clear();
+        this->nodeList.resize(this->nMeshPartitions);
+        this->elementList.resize(this->nMeshPartitions);
+
+        //...Start organizing the nodes into polygons
+        for(i=0;i<this->mesh->numNodes;i++)
         {
-            if(this->pointInPolygon(this->mesh->nodes[i]->toPointF(),partitionRank[j]))
+            for(j=0;j<this->nMeshPartitions;j++)
             {
-                found = true;
-                this->nodeList[partitionRank[j]].append(this->mesh->nodes[i]);
-                break;
+                if(this->partitionRectangles[j].containsPoint(this->mesh->nodes[i]->toPointF()))
+                {
+                    this->nodeList[j].append(this->mesh->nodes[i]);
+                    nNodeFound = nNodeFound + 1;
+                    break;
+                }
             }
         }
-        if(!found)
-            this->nodeList[partitionRank[0]].append(this->mesh->nodes[i]);
-    }
 
-    //...Organize the elements into polygons
-    for(i=0;i<this->mesh->numElements;i++)
-    {
-        partitionRank.clear();
-        partitionLocator.findXNearest(elementCenters[i],nSearch,partitionRank);
-        found = false;
-//        for(j=0;j<nSearch;j++)
-//        {
-//            if(this->polygons[partitionRank[j]].containsPoint(elementCenters[i],Qt::OddEvenFill))
-//            {
-//                found = true;
-//                this->elementList[partitionRank[j]].append(this->mesh->elements[i]);
-//                break;
-//            }
-//        }
-//        if(!found)
-            this->elementList[partitionRank[0]].append(this->mesh->elements[i]);
-    }
-
-    return ERROR_NOERROR;
-}
-
-
-
-bool Adcirc_hashlib::pointInPolygon(QPointF point,int polygonIndex)
-{
-    int i,j,polyCorners;
-    double x,y,x1,x2,y1,y2;
-    bool oddNodes;
-
-    polyCorners = this->polygons[polygonIndex].length();
-    j = polyCorners-1;
-
-    x = point.x();
-    y = point.y();
-
-    for (i=0; i<polyCorners; i++)
-    {
-        x1 = this->polygons[polygonIndex].at(i).x();
-        y1 = this->polygons[polygonIndex].at(j).y();
-        x2 = this->polygons[polygonIndex].at(i).x();
-        y2 = this->polygons[polygonIndex].at(j).y();
-        if ((y1 < y && y2 >= y || y2 < y && y1 >= y))
-            oddNodes^=(y*this->polygonMultiples[polygonIndex][i]+this->polygonConstant[polygonIndex][i]<x);
-        j=i;
-    }
-
-    return oddNodes;
-}
-
-
-
-int Adcirc_hashlib::polygonPrecalc()
-{
-    int i,j,k;
-    double x1,x2,y1,y2;
-
-    this->polygonConstant.resize(this->nMeshPartitions);
-    this->polygonMultiples.resize(this->nMeshPartitions);
-
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
-        this->polygonConstant[i].resize(this->polygons[i].length());
-        this->polygonMultiples[i].resize(this->polygons[i].length());
-    }
-
-    for(k=0;k<this->nMeshPartitions;k++)
-    {
-        j = this->polygons[k].length()-1;
-        for(i=0;i<this->polygons[k].length();i++)
+        if(nNodeFound!=this->mesh->numNodes)
         {
-            x1 = this->polygons[k].at(i).x();
-            y1 = this->polygons[k].at(j).y();
-            x2 = this->polygons[k].at(i).x();
-            y2 = this->polygons[k].at(j).y();
+            expanded = true;
 
-            if(y2==y1)
-            {
-                this->polygonConstant[k][i] = x1;
-                this->polygonMultiples[k][i] = 0.0;
-            }
-            else
-            {
-                this->polygonConstant[k][i]  = x1-(y1*x2)/(y2-y1)+(y1*x1)/(y2-y1);
-                this->polygonMultiples[k][i] = (x2-x1)/(y2-y1);
-            }
-            j=i;
+            //...Expand the rectangles by 0.5%. Then
+            //   try partitioning again.
+            for(i=0;i<this->nMeshPartitions;i++)
+                this->partitionRectangles[i].expand(0.5);
+            continue;
         }
 
+        //...Organize the elements into polygons
+        for(i=0;i<this->mesh->numElements;i++)
+        {
+            for(j=0;j<this->nMeshPartitions;j++)
+            {
+                if(this->partitionRectangles[j].containsPoint(elementCenters[i]))
+                {
+                    this->elementList[j].append(this->mesh->elements[i]);
+                    nElementFound = nElementFound + 1;
+                    break;
+                }
+            }
+        }
+
+        if(nElementFound!=this->mesh->numElements)
+        {
+            expanded = true;
+
+            //...Expand the rectangles by 0.5%. Then
+            //   try partitioning again.
+            for(i=0;i<this->nMeshPartitions;i++)
+                this->partitionRectangles[i].expand(0.5);
+            continue;
+        }
+
+        //...Success, exit loop
+        partitioned = true;
     }
+
+    //...If we needed to expand the partitions,
+    //   save them so we don't need to do it again
+    if(expanded)
+        this->writePolygonPartitions();
+
     return ERROR_NOERROR;
 }
