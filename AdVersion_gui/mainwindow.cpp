@@ -63,16 +63,18 @@ void MainWindow::on_button_browseInMesh_2_clicked()
             line = partition.readLine().simplified();
             n    = line.toInt();
             ui->spin_nPartitions->setValue(n);
-            ui->spin_nPartitions->setDisabled(true);
-            ui->label_nPartitions->setDisabled(true);
-            ui->groupBox_partition->setChecked(false);
             ui->groupBox_partition->setCheckable(true);
+            ui->groupBox_partition->setChecked(false);
             partition.close();
         }
         else
         {
             ui->groupBox_partition->setCheckable(false);
+            ui->groupBox_partition->setChecked(true);
+            ui->spin_nPartitions->setEnabled(true);
+            ui->label_nPartitions->setEnabled(true);
         }
+
     }
 
     return;
