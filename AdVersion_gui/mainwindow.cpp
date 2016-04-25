@@ -26,6 +26,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+
 void MainWindow::on_button_browseInMesh_clicked()
 {
     QString file = QFileDialog::getOpenFileName(this,tr("Select Mesh File"),this->previousDirectory,tr("ADCIRC Mesh (*.grd, *.14)"));
@@ -37,6 +38,7 @@ void MainWindow::on_button_browseInMesh_clicked()
     ui->text_inputMeshFile->setText(file);
     return;
 }
+
 
 void MainWindow::on_button_browseInMesh_2_clicked()
 {
@@ -75,10 +77,29 @@ void MainWindow::on_button_browseInMesh_2_clicked()
             ui->label_nPartitions->setEnabled(true);
         }
 
+        QFile hashStyle(dir.path()+"/system/hash.type");
+        if(hashStyle.exists())
+        {
+            if(!hashStyle.open(QIODevice::ReadOnly))
+                return;
+
+            line = hashStyle.readLine().simplified();
+            if(line=="md5")
+            {
+                ui->radio_hashMd5->setChecked(true);
+                ui->radio_hashSha1->setChecked(false);
+            }
+            else if(line=="sha1")
+            {
+                ui->radio_hashMd5->setChecked(false);
+                ui->radio_hashSha1->setChecked(true);
+            }
+        }
     }
 
     return;
 }
+
 
 void MainWindow::on_groupBox_partition_clicked(bool checked)
 {
@@ -87,6 +108,7 @@ void MainWindow::on_groupBox_partition_clicked(bool checked)
     return;
 }
 
+
 void MainWindow::on_pushButton_clicked()
 {
     bool doPartition;
@@ -94,6 +116,8 @@ void MainWindow::on_pushButton_clicked()
     this->versioning          = new AdVersion(this);
     QString meshFilename      = ui->text_inputMeshFile->text();
     QString meshFoldername    = ui->text_outputMeshFolder->text();
+
+    this->versioning->setHashAlgorithm(this->hashAlgorithm);
 
     nPartitions = 0;
 
@@ -140,6 +164,22 @@ void MainWindow::on_pushButton_clicked()
     QApplication::restoreOverrideCursor();
     QMessageBox::information(this,"Success","The mesh was written successfully.");
 
+    return;
+}
+
+
+void MainWindow::on_radio_hashSha1_toggled(bool checked)
+{
+    if(checked)
+        this->hashAlgorithm = QCryptographicHash::Sha1;
+    return;
+}
+
+
+void MainWindow::on_radio_hashMd5_toggled(bool checked)
+{
+    if(checked)
+        this->hashAlgorithm = QCryptographicHash::Md5;
     return;
 }
 

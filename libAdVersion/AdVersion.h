@@ -1,6 +1,6 @@
 //-----GPL----------------------------------------------------------------------
 //
-// This file is part of libAdVersion
+// This file is part of AdVersion
 // Copyright (C) 2015  Zach Cobell
 //
 //
@@ -19,7 +19,7 @@
 //
 //------------------------------------------------------------------------------
 //
-//  File: libAdVersion.h
+//  File: AdVersion.h
 //
 //------------------------------------------------------------------------------
 #ifndef ADVERSION_H
@@ -43,6 +43,7 @@ public:
 
     int createPartitions(QString meshFile, QString outputFile, int numPartitions);
     int writePartitionedMesh(QString meshFile,QString outputFile);
+    int setHashAlgorithm(QCryptographicHash::Algorithm algorithm);
 
 protected:
 
@@ -72,8 +73,10 @@ private:
     QVector<int>                     elementPartitionList;
     QVector<adcirc_element*>         continuousElementTable;
     QVector<Rectangle>               partitionRectangles;
-    QDir myDir,nodeDir,elemDir,boundDir,openBoundDir;
-    QDir landBoundDir,systemDir;
+    QDir                             myDir,nodeDir,elemDir;
+    QDir                             boundDir,openBoundDir;
+    QDir                             landBoundDir,systemDir;
+    QCryptographicHash::Algorithm    hashAlgorithm;
 
 };
 

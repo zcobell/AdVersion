@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>712</width>
-    <height>262</height>
+    <height>282</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,7 +24,7 @@
        <attribute name="title">
         <string>Convert to Adv Format</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
@@ -188,33 +188,111 @@
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
           <item>
            <widget class="QGroupBox" name="groupBox_partition">
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="title">
              <string>Partition Mesh</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <widget class="QLabel" name="label_nPartitions">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>23</y>
+               <width>102</width>
+               <height>16</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Number of Partitions:</string>
+             </property>
+            </widget>
+            <widget class="QSpinBox" name="spin_nPartitions">
+             <property name="geometry">
+              <rect>
+               <x>118</x>
+               <y>23</y>
+               <width>49</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>2048</number>
+             </property>
+             <property name="value">
+              <number>24</number>
+             </property>
+            </widget>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupbox_algorothm">
+            <property name="title">
+             <string>Algorithm</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout">
              <item>
-              <widget class="QLabel" name="label_nPartitions">
+              <widget class="QRadioButton" name="radio_hashSha1">
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;More complex algorithm and generates a longer hash. File sizes will be larger.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
-                <string>Number of Partitions:</string>
+                <string>SHA1</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QSpinBox" name="spin_nPartitions">
-               <property name="minimum">
-                <number>1</number>
+              <widget class="QRadioButton" name="radio_hashMd5">
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
                </property>
-               <property name="maximum">
-                <number>2048</number>
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
                </property>
-               <property name="value">
-                <number>24</number>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Less complex algorithm, and generates a shorter hash leading to smaller file sizes. Should still be fine for most applications&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>MD5</string>
                </property>
               </widget>
              </item>

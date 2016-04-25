@@ -27,10 +27,15 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_radio_hashSha1_toggled(bool checked);
+
+    void on_radio_hashMd5_toggled(bool checked);
+
 private:
     Ui::MainWindow *ui;
     QString previousDirectory;
     AdVersion *versioning;
+    QCryptographicHash::Algorithm hashAlgorithm;
 
 };
 

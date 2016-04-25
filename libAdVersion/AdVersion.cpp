@@ -1,6 +1,6 @@
 //-----GPL----------------------------------------------------------------------
 //
-// This file is part of libAdVersion
+// This file is part of AdVersion
 // Copyright (C) 2015  Zach Cobell
 //
 //
@@ -19,7 +19,7 @@
 //
 //------------------------------------------------------------------------------
 //
-//  File: libAdVersion.cpp
+//  File: AdVersion.cpp
 //
 //------------------------------------------------------------------------------
 #include "AdVersion.h"
@@ -72,6 +72,7 @@ bool rectangeleAreaLessThan(const Rectangle rectangle1, const Rectangle rectangl
 AdVersion::AdVersion(QObject *parent) : QObject(parent)
 {
     this->mesh = NULL;
+    this->hashAlgorithm = QCryptographicHash::Sha1;
 }
 
 
@@ -148,6 +149,7 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
     }
 
     //...Compute the SHA1 hashes for the mesh
+    ierr = this->mesh->setHashAlgorithm(this->hashAlgorithm);
     ierr = this->mesh->hashMesh();
     if(ierr!=ERROR_NOERROR)
         return -1;
@@ -320,6 +322,20 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
 
     thisFile.write(this->mesh->title.toUtf8());
     thisFile.close();
+
+    //...Write the type of hashing algorithm used
+    thisFile.setFileName(this->systemDir.path()+"/hash.type");
+    if(thisFile.exists())
+        thisFile.remove();
+    if(!thisFile.open(QIODevice::WriteOnly))
+        return -1;
+
+    if(this->hashAlgorithm==QCryptographicHash::Sha1)
+        thisFile.write("sha1");
+    else
+        thisFile.write("md5");
+    thisFile.close();
+
 
     return ERROR_NOERROR;
 }
@@ -838,5 +854,13 @@ int AdVersion::partitionMesh()
     if(expanded)
         this->writePolygonPartitions();
 
+    return ERROR_NOERROR;
+}
+
+
+
+int AdVersion::setHashAlgorithm(QCryptographicHash::Algorithm algorithm)
+{
+    this->hashAlgorithm = algorithm;
     return ERROR_NOERROR;
 }
