@@ -1,19 +1,43 @@
-#ifndef ADCIRC_HASHLIB_H
-#define ADCIRC_HASHLIB_H
+//-----GPL----------------------------------------------------------------------
+//
+// This file is part of libAdVersion
+// Copyright (C) 2015  Zach Cobell
+//
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//------------------------------------------------------------------------------
+//
+//  File: libAdVersion.h
+//
+//------------------------------------------------------------------------------
+#ifndef ADVERSION_H
+#define ADVERSION_H
 
 #include <QDir>
 #include <QObject>
 #include <QVector>
 #include <QPolygonF>
-#include "libAdcircHash_global.h"
+#include "libAdVersion_global.h"
 #include "QADCModules.h"
 #include "rectangle.h"
 
-class LIBADCIRCHASHSHARED_EXPORT Adcirc_hashlib : public QObject
+class LIBADVERSIONSHARED_EXPORT AdVersion : public QObject
 {
 
 public:
-    explicit Adcirc_hashlib(QObject *parent = 0);
+    explicit AdVersion(QObject *parent = 0);
 
     int createPartitions(QString meshFile, QString outputFile, int numPartitions);
     int writePartitionedMesh(QString meshFile,QString outputFile);
@@ -53,4 +77,4 @@ private:
 
 
 
-#endif // ADCIRC_HASHLIB_H
+#endif // AdVersion_H

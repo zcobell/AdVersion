@@ -1,12 +1,31 @@
-#-------------------------------------------------
+#-----GPL----------------------------------------------------------------------
 #
-# Project created by QtCreator 2016-04-15T13:20:46
+# This file is part of libAdVersion
+# Copyright (C) 2015  Zach Cobell
 #
-#-------------------------------------------------
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#------------------------------------------------------------------------------
+#
+#  File: libAdVersion.pro
+#
+#------------------------------------------------------------------------------
 
 QT       += gui
 
-TARGET   = AdcircHash
+TARGET   = AdVersion
 TEMPLATE = lib
 VERSION  = 0.0.0.1
 
@@ -40,20 +59,21 @@ GKLIBSRC     = $$GKLIBSRCDIR/b64.c $$GKLIBSRCDIR/blas.c $$GKLIBSRCDIR/csr.c $$GK
                $$GKLIBSRCDIR/string.c $$GKLIBSRCDIR/timers.c $$GKLIBSRCDIR/tokenizer.c \
                $$GKLIBSRCDIR/gklib_util.c
 
-DEFINES += LIBADCIRCHASH_LIBRARY 
+DEFINES += LIBADVERSION_LIBRARY
 
 win32{
-SOURCES += $$GKLIBSRC $$METISSRC libAdcircHash.cpp
+SOURCES += $$GKLIBSRC $$METISSRC
 INCLUDEPATH += $$GKLIBSRCDIR $$METISSRCDIR $$METISHOME/include
 }
 
 unix{
-SOURCES += libAdcircHash.cpp
+SOURCES +=
 }
 
-HEADERS += libAdcircHash.h\
-           libAdcircHash_global.h \
-    rectangle.h
+HEADERS +=\
+           rectangle.h \
+    libAdVersion.h \
+    libAdVersion_global.h
 
 
 win32 {
@@ -86,4 +106,5 @@ unix {
 }
 
 SOURCES += \
-    rectangle.cpp
+    rectangle.cpp \
+    libAdVersion.cpp

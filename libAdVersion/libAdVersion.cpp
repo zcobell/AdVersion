@@ -1,4 +1,28 @@
-#include "libAdcircHash.h"
+//-----GPL----------------------------------------------------------------------
+//
+// This file is part of libAdVersion
+// Copyright (C) 2015  Zach Cobell
+//
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//------------------------------------------------------------------------------
+//
+//  File: libAdVersion.cpp
+//
+//------------------------------------------------------------------------------
+#include "libAdVersion.h"
 #include "metis.h"
 #include <float.h>
 #include <QtMath>
@@ -45,14 +69,14 @@ bool rectangeleAreaLessThan(const Rectangle rectangle1, const Rectangle rectangl
 
 
 
-Adcirc_hashlib::Adcirc_hashlib(QObject *parent) : QObject(parent)
+AdVersion::AdVersion(QObject *parent) : QObject(parent)
 {
     this->mesh = NULL;
 }
 
 
 
-int Adcirc_hashlib::createPartitions(QString meshFile, QString outputFile, int numPartitions)
+int AdVersion::createPartitions(QString meshFile, QString outputFile, int numPartitions)
 {
 
     int ierr;
@@ -95,7 +119,7 @@ int Adcirc_hashlib::createPartitions(QString meshFile, QString outputFile, int n
 
 
 
-int Adcirc_hashlib::writePartitionedMesh(QString meshFile, QString outputFile)
+int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
 {
     int ierr,i,j;
     QString fileName,file,line,x,y,z,hash;
@@ -277,7 +301,7 @@ int Adcirc_hashlib::writePartitionedMesh(QString meshFile, QString outputFile)
 
 
 
-int Adcirc_hashlib::hashAdcircMesh(QString inputFile)
+int AdVersion::hashAdcircMesh(QString inputFile)
 {
     int ierr;
 
@@ -296,7 +320,7 @@ int Adcirc_hashlib::hashAdcircMesh(QString inputFile)
 
 
 
-int Adcirc_hashlib::generateDirectoryNames(QString directory)
+int AdVersion::generateDirectoryNames(QString directory)
 {
     this->myDir.setPath(directory);
     this->nodeDir.setPath(directory+"/nodes");
@@ -310,7 +334,7 @@ int Adcirc_hashlib::generateDirectoryNames(QString directory)
 
 
 
-int Adcirc_hashlib::buildDirectoryTree(QString directory)
+int AdVersion::buildDirectoryTree(QString directory)
 {
     int ierr;
     bool err;
@@ -401,7 +425,7 @@ int Adcirc_hashlib::buildDirectoryTree(QString directory)
 
 
 
-QString Adcirc_hashlib::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
+QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
 {
 
     QString line;
@@ -451,7 +475,7 @@ QString Adcirc_hashlib::formatBoundaryHashLine(adcirc_boundary *boundary, int in
 
 
 
-int Adcirc_hashlib::metisPartition()
+int AdVersion::metisPartition()
 {
     QVector<int> qptr,qind;
     int i,j,ierr,index;
@@ -560,7 +584,7 @@ int Adcirc_hashlib::metisPartition()
 
 
 
-int Adcirc_hashlib::buildPolygons()
+int AdVersion::buildPolygons()
 {
     int i,partition;
     qreal x,y;
@@ -607,7 +631,7 @@ int Adcirc_hashlib::buildPolygons()
 
 
 
-int Adcirc_hashlib::writePolygonPartitions()
+int AdVersion::writePolygonPartitions()
 {
     int i;
     qreal x1,x2,y1,y2;
@@ -639,7 +663,7 @@ int Adcirc_hashlib::writePolygonPartitions()
 
 
 
-bool Adcirc_hashlib::removeDirectory(const QString &dirName)
+bool AdVersion::removeDirectory(const QString &dirName)
 {
     bool result = true;
     QDir dir(dirName);
@@ -664,7 +688,7 @@ bool Adcirc_hashlib::removeDirectory(const QString &dirName)
 
 
 
-int Adcirc_hashlib::deletePolygons()
+int AdVersion::deletePolygons()
 {
     int i;
     QString fileNumber;
@@ -689,7 +713,7 @@ int Adcirc_hashlib::deletePolygons()
 
 
 
-int Adcirc_hashlib::readPolygons()
+int AdVersion::readPolygons()
 {
     int i;
     QString line,x1s,x2s,y1s,y2s;
@@ -726,7 +750,7 @@ int Adcirc_hashlib::readPolygons()
 
 
 
-int Adcirc_hashlib::partitionMesh()
+int AdVersion::partitionMesh()
 {
     int i,j,ierr,nNodeFound,nElementFound;
     qreal x,y,x1,x2,x3,y1,y2,y3;
@@ -776,7 +800,7 @@ int Adcirc_hashlib::partitionMesh()
         {
             for(j=0;j<this->nMeshPartitions;j++)
             {
-                if(this->partitionRectangles[j].containsPoint(this->mesh->nodes[i]->toPointF()))
+                if(this->partitionRectangles[j].contains(this->mesh->nodes[i]->toPointF()))
                 {
                     this->nodeList[j].append(this->mesh->nodes[i]);
                     nNodeFound = nNodeFound + 1;
@@ -801,7 +825,7 @@ int Adcirc_hashlib::partitionMesh()
         {
             for(j=0;j<this->nMeshPartitions;j++)
             {
-                if(this->partitionRectangles[j].containsPoint(elementCenters[i]))
+                if(this->partitionRectangles[j].contains(elementCenters[i]))
                 {
                     this->elementList[j].append(this->mesh->elements[i]);
                     nElementFound = nElementFound + 1;

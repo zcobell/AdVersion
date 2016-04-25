@@ -30,14 +30,14 @@ LIBS        += -L$$QADCMODULES_BUILDPATH -lQADCModules
 INCLUDEPATH += $$QADCMODULES_SRCPATH
 }
 
-#...libAdcircHash
-INCLUDEPATH += $$PWD/../libAdcircHash
+#...libAdVersion
+INCLUDEPATH += $$PWD/../libAdVersion
 win32{
-CONFIG(debug, debug | release): LIBS += -L$$OUT_PWD/../libAdcircHash/debug -lAdcircHash
-CONFIG(release, debug | release): LIBS += -L$$OUT_PWD/../libAdcircHash/release -lAdcircHash
+CONFIG(debug, debug | release): LIBS += -L$$OUT_PWD/../libAdcircHash/debug -lAdVersion
+CONFIG(release, debug | release): LIBS += -L$$OUT_PWD/../libAdcircHash/release -lAdVersion
 }
 unix{
-LIBS += -L$$OUT_PWD/../libAdcircHash -lAdcircHash
+LIBS += -L$$OUT_PWD/../libAdVersion -lAdVersion
 }
 
 SOURCES += main.cpp
