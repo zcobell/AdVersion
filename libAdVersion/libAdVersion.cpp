@@ -153,7 +153,9 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
 
         file.sprintf("partition_%4.4i.node",i);
         fileName = this->nodeDir.path()+"/"+file;
+
         thisFile.setFileName(fileName);
+
         if(thisFile.exists())
             thisFile.remove();
         if(!thisFile.open(QIODevice::WriteOnly))
@@ -296,24 +298,15 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
         thisFile.close();
     }
 
-    return ERROR_NOERROR;
-}
-
-
-
-int AdVersion::hashAdcircMesh(QString inputFile)
-{
-    int ierr;
-
-    this->mesh = new adcirc_mesh();
-    ierr = this->mesh->read(inputFile);
-    if(ierr!=ERROR_NOERROR)
+    //...Write the mesh name from the header
+    thisFile.setFileName(this->systemDir.path()+"/mesh.header");
+    if(thisFile.exists())
+        thisFile.remove();
+    if(!thisFile.open(QIODevice::WriteOnly))
         return -1;
 
-    ierr = this->mesh->hashMesh();
-
-    if(ierr!=ERROR_NOERROR)
-        return -1;
+    thisFile.write(this->mesh->title.toUtf8());
+    thisFile.close();
 
     return ERROR_NOERROR;
 }
@@ -688,31 +681,6 @@ bool AdVersion::removeDirectory(const QString &dirName)
 
 
 
-int AdVersion::deletePolygons()
-{
-    int i;
-    QString fileNumber;
-    QFile partControl,partFile;
-    bool err;
-
-    partControl.setFileName(this->systemDir.path()+"/partition.control");
-    if(!partControl.open(QIODevice::ReadOnly))
-        return -1;
-
-    this->nMeshPartitions = partControl.readLine().simplified().toInt();
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
-        fileNumber.sprintf("%4.4i",i);
-        partFile.setFileName(this->systemDir.path()+"/partition_"+fileNumber+".pol");
-        err = partFile.remove();
-        if(!err)
-            return -1;
-    }
-    return ERROR_NOERROR;
-}
-
-
-
 int AdVersion::readPolygons()
 {
     int i;
@@ -722,6 +690,8 @@ int AdVersion::readPolygons()
     qreal x1,y1,x2,y2;
 
     partControl.setFileName(this->systemDir.path()+"/partition.control");
+    if(!partControl.exists())
+        return -1;
     if(!partControl.open(QIODevice::ReadOnly))
         return -1;
 
