@@ -1,5 +1,5 @@
 #include <QCoreApplication>
-#include "libAdVersion.h"
+#include "AdVersion.h"
 #include <QDebug>
 #include <QPointer>
 #include <QElapsedTimer>

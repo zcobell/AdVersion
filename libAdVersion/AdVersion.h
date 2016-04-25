@@ -35,9 +35,11 @@
 
 class LIBADVERSIONSHARED_EXPORT AdVersion : public QObject
 {
-
+    Q_OBJECT
 public:
     explicit AdVersion(QObject *parent = 0);
+
+    ~AdVersion();
 
     int createPartitions(QString meshFile, QString outputFile, int numPartitions);
     int writePartitionedMesh(QString meshFile,QString outputFile);
@@ -61,8 +63,8 @@ private:
     QString formatBoundaryHashLine(adcirc_boundary *boundary, int index);
 
     int                              nMeshPartitions;
-    QString                          meshPath;
-    QString                          outputPath;
+    QString                          meshFile;
+    QString                          outputFile;
     adcirc_mesh                     *mesh;
     QVector<QList<adcirc_node*>>     nodeList;
     QVector<QList<adcirc_element*>>  elementList;

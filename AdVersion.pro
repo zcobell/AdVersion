@@ -25,5 +25,6 @@
 TEMPLATE = subdirs
 
 SUBDIRS  = libAdVersion \
-           tests
+           tests \
+           AdVersion_gui
 CONFIG += ordered           

@@ -22,7 +22,7 @@
 //  File: libAdVersion.cpp
 //
 //------------------------------------------------------------------------------
-#include "libAdVersion.h"
+#include "AdVersion.h"
 #include "metis.h"
 #include <float.h>
 #include <QtMath>
@@ -76,6 +76,13 @@ AdVersion::AdVersion(QObject *parent) : QObject(parent)
 
 
 
+AdVersion::~AdVersion()
+{
+
+}
+
+
+
 int AdVersion::createPartitions(QString meshFile, QString outputFile, int numPartitions)
 {
 
@@ -84,10 +91,13 @@ int AdVersion::createPartitions(QString meshFile, QString outputFile, int numPar
     this->nMeshPartitions = numPartitions;
 
     //...Get the adcirc mesh that will be partitioned
-    this->mesh = new adcirc_mesh(this);
-    ierr = this->mesh->read(meshFile);
-    if(ierr!=ERROR_NOERROR)
-        return -1;
+    if(this->mesh==NULL)
+    {
+        this->mesh = new adcirc_mesh(this);
+        ierr = this->mesh->read(meshFile);
+        if(ierr!=ERROR_NOERROR)
+            return -1;
+    }
 
     //...Build the directory tree (if necessary)
     ierr = this->generateDirectoryNames(outputFile);
@@ -126,18 +136,21 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
     QFile thisFile;
     QVector<adcirc_boundary*> openBCSort,landBCSort;
 
-    //...Create a new adcirc_mesh
-    this->mesh = new adcirc_mesh(this);
+    //...Create a new adcirc_mesh if needed
+    if(this->mesh==NULL)
+    {
+        this->mesh = new adcirc_mesh(this);
 
-    //...Read the mesh file in ADCIRC format
-    ierr = this->mesh->read(meshFile);
-    if(ierr!=ERROR_NOERROR)
-        return -1;
+        //...Read the mesh file in ADCIRC format
+        ierr = this->mesh->read(meshFile);
+        if(ierr!=ERROR_NOERROR)
+            return -1;
 
-    //...Compute the SHA1 hashes for the mesh
-    ierr = this->mesh->hashMesh();
-    if(ierr!=ERROR_NOERROR)
-        return -1;
+        //...Compute the SHA1 hashes for the mesh
+        ierr = this->mesh->hashMesh();
+        if(ierr!=ERROR_NOERROR)
+            return -1;
+    }
 
     //...Build the directory tree for writing
     ierr = this->buildDirectoryTree(outputFile);
@@ -728,7 +741,8 @@ int AdVersion::partitionMesh()
     bool partitioned,expanded;
 
     //...Read the partitioning
-    ierr = this->readPolygons();
+    if(this->partitionRectangles.isEmpty())
+        ierr = this->readPolygons();
 
     //...Create element center locations
     elementCenters.resize(this->mesh->numElements);

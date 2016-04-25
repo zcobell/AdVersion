@@ -72,8 +72,8 @@ SOURCES +=
 
 HEADERS +=\
            rectangle.h \
-    libAdVersion.h \
-    libAdVersion_global.h
+    libAdVersion_global.h \
+    AdVersion.h
 
 
 win32 {
@@ -107,4 +107,4 @@ unix {
 
 SOURCES += \
     rectangle.cpp \
-    libAdVersion.cpp
+    AdVersion.cpp
