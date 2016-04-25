@@ -145,12 +145,12 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
         ierr = this->mesh->read(meshFile);
         if(ierr!=ERROR_NOERROR)
             return -1;
-
-        //...Compute the SHA1 hashes for the mesh
-        ierr = this->mesh->hashMesh();
-        if(ierr!=ERROR_NOERROR)
-            return -1;
     }
+
+    //...Compute the SHA1 hashes for the mesh
+    ierr = this->mesh->hashMesh();
+    if(ierr!=ERROR_NOERROR)
+        return -1;
 
     //...Build the directory tree for writing
     ierr = this->buildDirectoryTree(outputFile);
