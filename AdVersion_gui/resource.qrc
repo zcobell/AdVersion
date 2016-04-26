@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>images/advIcon.png</file>
+    </qresource>
+</RCC>

@@ -1,5 +1,30 @@
+//-----GPL----------------------------------------------------------------------
+//
+// This file is part of AdVersion
+// Copyright (C) 2015  Zach Cobell
+//
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//------------------------------------------------------------------------------
+//
+//  File: mainwindow.cpp
+//
+//------------------------------------------------------------------------------
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "advfolderchooser.h"
 #include <QFileDialog>
 #include <QProgressDialog>
 #include <QMessageBox>
@@ -40,62 +65,66 @@ void MainWindow::on_button_browseInMesh_clicked()
 }
 
 
-void MainWindow::on_button_browseInMesh_2_clicked()
+void MainWindow::on_button_browseAdv_clicked()
 {
-    QString line;
+    QString line,directory;
     QDir dir;
-    int n;
-    QString directory = QFileDialog::getExistingDirectory(this,tr("Choose or Create Directory"),this->previousDirectory);
+    int n,folderReturn;
+    AdvFolderChooser *folderChooser = new AdvFolderChooser(this);
+    folderChooser->initialize(this->previousDirectory);
 
-    if(directory.isNull())
-        return;
-
-    this->previousDirectory = QFileInfo(directory).absoluteDir().path();
-    ui->text_outputMeshFolder->setText(directory);
-
-    dir.setPath(directory);
-    if(dir.exists())
+    folderReturn = folderChooser->exec();
+    if(folderReturn==QDialog::Accepted)
     {
-        QFile partition(dir.path()+"/system/partition.control");
-        if(partition.exists())
-        {
-            if(!partition.open(QIODevice::ReadOnly))
-                return;
+        directory = folderChooser->selectedFile;
+        this->previousDirectory = QFileInfo(directory).absoluteDir().path();
+        ui->text_outputMeshFolder->setText(directory);
 
-            line = partition.readLine().simplified();
-            n    = line.toInt();
-            ui->spin_nPartitions->setValue(n);
-            ui->groupBox_partition->setCheckable(true);
-            ui->groupBox_partition->setChecked(false);
-            partition.close();
-        }
-        else
+        dir.setPath(directory);
+        if(dir.exists())
         {
-            ui->groupBox_partition->setCheckable(false);
-            ui->groupBox_partition->setChecked(true);
-            ui->spin_nPartitions->setEnabled(true);
-            ui->label_nPartitions->setEnabled(true);
-        }
-
-        QFile hashStyle(dir.path()+"/system/hash.type");
-        if(hashStyle.exists())
-        {
-            if(!hashStyle.open(QIODevice::ReadOnly))
-                return;
-
-            line = hashStyle.readLine().simplified();
-            if(line=="md5")
+            QFile partition(dir.path()+"/system/partition.control");
+            if(partition.exists())
             {
-                ui->radio_hashMd5->setChecked(true);
-                ui->radio_hashSha1->setChecked(false);
+                if(!partition.open(QIODevice::ReadOnly))
+                    return;
+
+                line = partition.readLine().simplified();
+                n    = line.toInt();
+                ui->spin_nPartitions->setValue(n);
+                ui->groupBox_partition->setCheckable(true);
+                ui->groupBox_partition->setChecked(false);
+                partition.close();
             }
-            else if(line=="sha1")
+            else
             {
-                ui->radio_hashMd5->setChecked(false);
-                ui->radio_hashSha1->setChecked(true);
+                ui->groupBox_partition->setCheckable(false);
+                ui->groupBox_partition->setChecked(true);
+                ui->spin_nPartitions->setEnabled(true);
+                ui->label_nPartitions->setEnabled(true);
+            }
+
+            QFile hashStyle(dir.path()+"/system/hash.type");
+            if(hashStyle.exists())
+            {
+                if(!hashStyle.open(QIODevice::ReadOnly))
+                    return;
+
+                line = hashStyle.readLine().simplified();
+                if(line=="md5")
+                {
+                    ui->radio_hashMd5->setChecked(true);
+                    ui->radio_hashSha1->setChecked(false);
+                }
+                else if(line=="sha1")
+                {
+                    ui->radio_hashMd5->setChecked(false);
+                    ui->radio_hashSha1->setChecked(true);
+                }
             }
         }
     }
+    delete folderChooser;
 
     return;
 }
@@ -109,7 +138,23 @@ void MainWindow::on_groupBox_partition_clicked(bool checked)
 }
 
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_radio_hashSha1_toggled(bool checked)
+{
+    if(checked)
+        this->hashAlgorithm = QCryptographicHash::Sha1;
+    return;
+}
+
+
+void MainWindow::on_radio_hashMd5_toggled(bool checked)
+{
+    if(checked)
+        this->hashAlgorithm = QCryptographicHash::Md5;
+    return;
+}
+
+
+void MainWindow::on_button_processData_clicked()
 {
     bool doPartition;
     int ierr,nPartitions;
@@ -166,20 +211,3 @@ void MainWindow::on_pushButton_clicked()
 
     return;
 }
-
-
-void MainWindow::on_radio_hashSha1_toggled(bool checked)
-{
-    if(checked)
-        this->hashAlgorithm = QCryptographicHash::Sha1;
-    return;
-}
-
-
-void MainWindow::on_radio_hashMd5_toggled(bool checked)
-{
-    if(checked)
-        this->hashAlgorithm = QCryptographicHash::Md5;
-    return;
-}
-
