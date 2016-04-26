@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->previousDirectory = QDir::homePath();
 #endif
 
-    this->hashAlgorithm = QCryptographicHash::Sha1;
+    this->hashAlgorithm = QCryptographicHash::Md5;
 
 }
 
@@ -93,13 +93,11 @@ void MainWindow::on_button_browseAdv_clicked()
                 line = partition.readLine().simplified();
                 n    = line.toInt();
                 ui->spin_nPartitions->setValue(n);
-                ui->groupBox_partition->setCheckable(true);
                 ui->groupBox_partition->setChecked(false);
                 partition.close();
             }
             else
             {
-                ui->groupBox_partition->setCheckable(false);
                 ui->groupBox_partition->setChecked(true);
                 ui->spin_nPartitions->setEnabled(true);
                 ui->label_nPartitions->setEnabled(true);

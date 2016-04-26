@@ -255,6 +255,31 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout">
              <item>
+              <widget class="QRadioButton" name="radio_hashMd5">
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Less complex algorithm, and generates a shorter hash leading to smaller file sizes. Should still be fine for most applications&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>MD5</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QRadioButton" name="radio_hashSha1">
                <property name="minimumSize">
                 <size>
@@ -275,29 +300,7 @@
                 <string>SHA1</string>
                </property>
                <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="radio_hashMd5">
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>100</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Less complex algorithm, and generates a shorter hash leading to smaller file sizes. Should still be fine for most applications&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>MD5</string>
+                <bool>false</bool>
                </property>
               </widget>
              </item>
@@ -343,7 +346,7 @@
      <x>0</x>
      <y>0</y>
      <width>720</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
