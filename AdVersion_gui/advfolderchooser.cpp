@@ -49,6 +49,7 @@ int AdvFolderChooser::initialize(QString directory)
     ui->listview_advfile->setRootIndex(this->fileModel->setRootPath(directory));
     ui->text_currentPath->setText(directory);
     ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Create File");
+    this->currentDirectory = directory;
     return 0;
 }
 
