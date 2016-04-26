@@ -43,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->previousDirectory = QDir::homePath();
 #endif
 
+    this->hashAlgorithm = QCryptographicHash::Sha1;
 
 }
 
