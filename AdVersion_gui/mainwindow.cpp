@@ -55,7 +55,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_button_browseInMesh_clicked()
 {
-    QString file = QFileDialog::getOpenFileName(this,tr("Select Mesh File"),this->previousDirectory,tr("ADCIRC Mesh (*.grd, *.14)"));
+    QString file = QFileDialog::getOpenFileName(this,tr("Select Mesh File"),this->previousDirectory,tr("ADCIRC Mesh (*.grd *.14)"));
 
     if(file.isNull())
         return;
