@@ -49,9 +49,8 @@ win32{
 LIBS += -L$$QADCMODULES_PATH/bin -L$$LIBGIT2_PATH/bin -lQADCModules -lgit2
 }
 unix{
-LIBS += -L$$QACDMODULES_PATH/lib -L$$LIBGIT2_PATH/lib -lQADCModules -lgit2 -lmetis
+LIBS += -L$$QADCMODULES_PATH/lib -L$$LIBGIT2_PATH/lib -lQADCModules -lgit2 -lmetis
 }
-
 
 #...Including libAdVersion. Note that METIS is built directly for win32 while
 #   Unix assumes it is installed
