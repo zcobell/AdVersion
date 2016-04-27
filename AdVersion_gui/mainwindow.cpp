@@ -88,17 +88,13 @@ void MainWindow::on_button_processData_clicked()
     QString version;
     bool doPartition;
     int ierr,nPartitions;
-    this->versioning          = new AdVersion(this);
+    AdVersion versioning;
     QString meshFilename      = ui->text_inputMeshFile->text();
     QString meshFoldername    = ui->text_outputMeshFolder->text();
 
-    this->versioning->setHashAlgorithm(this->hashAlgorithm);
+    versioning.setHashAlgorithm(this->hashAlgorithm);
 
     nPartitions = 0;
-
-    ierr = AdVersion::getGitVersion(ui->text_outputMeshFolder->text(),version);
-    qDebug() << "Version: " << version << ierr;
-    return;
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -123,7 +119,7 @@ void MainWindow::on_button_processData_clicked()
 
     if(doPartition)
     {
-        ierr = this->versioning->createPartitions(meshFilename,meshFoldername,nPartitions);
+        ierr = versioning.createPartitions(meshFilename,meshFoldername,nPartitions);
         if(ierr!=ERROR_NOERROR)
         {
             QApplication::restoreOverrideCursor();
@@ -132,7 +128,7 @@ void MainWindow::on_button_processData_clicked()
         }
     }
 
-    ierr = this->versioning->writePartitionedMesh(meshFilename,meshFoldername);
+    ierr = versioning.writePartitionedMesh(meshFilename,meshFoldername);
     if(ierr!=ERROR_NOERROR)
     {
         QApplication::restoreOverrideCursor();
@@ -246,7 +242,7 @@ void MainWindow::on_button_browseInputAdv_clicked()
 
 void MainWindow::on_button_browseOutputMesh_clicked()
 {
-    QString file = QFileDialog::getOpenFileName(this,tr("Select Mesh File"),this->previousDirectory,tr("ADCIRC Mesh (*.grd *.14)"));
+    QString file = QFileDialog::getSaveFileName(this,tr("Select Mesh File"),this->previousDirectory,tr("ADCIRC Mesh (*.grd *.14)"));
 
     if(file.isNull())
         return;
@@ -260,5 +256,16 @@ void MainWindow::on_button_browseOutputMesh_clicked()
 
 void MainWindow::on_button_retrieveMesh_clicked()
 {
+    AdVersion versioning;
+    QString inputFolder, outputFile;
 
+    inputFolder = ui->text_inputMeshFolder->text();
+
+    inputFolder = "/home/zcobell/Development/AdVersion/test.adv";
+    outputFile  = "/home/zcobell/Development/AdVersion/test.grd";
+
+    versioning.readPartitionedMesh(inputFolder);
+    versioning.writeMesh(outputFile);
+
+    return;
 }

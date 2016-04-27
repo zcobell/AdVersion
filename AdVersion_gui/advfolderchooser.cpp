@@ -128,7 +128,10 @@ void AdvFolderChooser::on_buttonBox_accepted()
     {
         QFile file(this->currentDirectory+"/"+newFileText);
         if(file.exists())
+        {
+            this->selectedFile = this->currentDirectory+"/"+newFileText;
             this->accept();
+        }
         else
             QMessageBox::information(this,"ERROR","File does not exist");
     }

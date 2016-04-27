@@ -64,7 +64,6 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QString previousDirectory;
-    AdVersion *versioning;
     QCryptographicHash::Algorithm hashAlgorithm;
 
 };

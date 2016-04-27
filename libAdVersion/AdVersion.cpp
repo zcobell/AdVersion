@@ -305,7 +305,9 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
             return -1;
 
         //...Write the boundary
-        line = QString("%1 %2 \n").arg(this->mesh->landBC[i]->hash).arg(this->mesh->landBC[i]->numNodes);
+        line = QString("%1 %2 %3 \n").arg(this->mesh->landBC[i]->hash)
+                                     .arg(this->mesh->landBC[i]->numNodes)
+                                     .arg(this->mesh->landBC[i]->code);
         thisFile.write(line.toUtf8());
         for(j=0;j<this->mesh->landBC[i]->numNodes;j++)
         {
@@ -495,6 +497,78 @@ QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
         line = QString("%1 \n").arg(boundary->n1[index]->positionHash);
 
     return line;
+}
+
+
+
+int AdVersion::readBoundaryHashLine(QString line, adcirc_boundary *boundary, int index, QMap<QString,adcirc_node*> map)
+{
+    qreal   crest,super,sub,pipeht,pipediam,pipecoef;
+    QString crestS,superS,subS,pipehtS,pipediamS,pipecoefS;
+    QString nodeHash1,nodeHash2;
+    QStringList tempList;
+
+    line     = line.simplified();
+    tempList = line.split(" ");
+
+    if(boundary->code==3 || boundary->code==13 || boundary->code==23)
+    {
+        nodeHash1 = tempList.value(0);
+        crestS    = tempList.value(1);
+        superS    = tempList.value(2);
+        crest     = crestS.toDouble();
+        super     = superS.toDouble();
+        boundary->n1[index]            = map[nodeHash1];
+        boundary->crest[index]         = crest;
+        boundary->supercritical[index] = super;
+    }
+    else if(boundary->code==4 || boundary->code == 24)
+    {
+        nodeHash1 = tempList.value(0);
+        nodeHash2 = tempList.value(1);
+        crestS    = tempList.value(2);
+        subS      = tempList.value(3);
+        superS    = tempList.value(4);
+        crest     = crestS.toDouble();
+        sub       = subS.toDouble();
+        super     = superS.toDouble();
+        boundary->n1[index]            = map[nodeHash1];
+        boundary->n2[index]            = map[nodeHash2];
+        boundary->crest[index]         = crest;
+        boundary->subcritical[index]   = sub;
+        boundary->supercritical[index] = super;
+
+    }
+    else if(boundary->code==5 || boundary->code == 25)
+    {
+        nodeHash1 = tempList.value(0);
+        nodeHash2 = tempList.value(1);
+        crestS    = tempList.value(2);
+        subS      = tempList.value(3);
+        superS    = tempList.value(4);
+        pipehtS   = tempList.value(5);
+        pipecoefS = tempList.value(6);
+        pipediamS = tempList.value(7);
+        crest     = crestS.toDouble();
+        sub       = subS.toDouble();
+        super     = superS.toDouble();
+        pipeht    = pipehtS.toDouble();
+        pipecoef  = pipecoefS.toDouble();
+        pipediam  = pipediamS.toDouble();
+        boundary->n1[index]            = map[nodeHash1];
+        boundary->n2[index]            = map[nodeHash2];
+        boundary->crest[index]         = crest;
+        boundary->subcritical[index]   = sub;
+        boundary->supercritical[index] = super;
+    }
+    else
+    {
+        nodeHash1 = tempList.value(0);
+        boundary->n1[index] = map[nodeHash1];
+    }
+
+    return 0;
+
 }
 
 
@@ -868,6 +942,7 @@ int AdVersion::setHashAlgorithm(QCryptographicHash::Algorithm algorithm)
 }
 
 
+
 int AdVersion::getGitVersion(QString gitDirectory, QString &version)
 {
     int ierr;
@@ -946,3 +1021,295 @@ int AdVersion::getGitVersion(QString gitDirectory, QString &version)
     return ERROR_NOERROR;
 }
 
+
+
+int AdVersion::readPartitionedMesh(QString meshFolder)
+{
+    int i,j,nNodes,nNodesInMesh,nElements,nElementsInMesh;
+    int nodeIndex,elementIndex,code,ierr;
+    qreal x,y,z;
+    QString tempLine,filename,file,tempString,boundaryHash;
+    QString tempX,tempY,tempZ,codeString,nNodesString;
+    QString nodeHash,elementHash,nodeHash1,nodeHash2,nodeHash3;
+    QStringList tempList,tempList2;
+    QByteArray fileData;
+    QFile thisFile,openBoundFile,landBoundFile;
+    QVector<QString> openBoundaryHashFilenames;
+    QVector<QString> landBoundaryHashFilenames;
+    QMap<QString,adcirc_node*> nodeMap;
+    adcirc_node *tempNode;
+    adcirc_element *tempElement;
+    adcirc_boundary *tempBoundary;
+
+    //...Check if folder exists
+    QFile folder(meshFolder);
+    if(!folder.exists())
+        return -1;
+
+    //...Generate the directory names
+    this->generateDirectoryNames(meshFolder);
+
+    //...Check that all the system files we need exist
+    QFile meshHeaderFile(this->systemDir.path()+"/mesh.header");
+    QFile partitionFile(this->systemDir.path()+"/partition.control");
+    QFile hashFile(this->systemDir.path()+"/hash.type");
+
+    if(!meshHeaderFile.exists())
+        return -1;
+
+    if(!partitionFile.exists())
+        return -1;
+
+    if(!hashFile.exists())
+        return -1;
+
+    //...Start up a new mesh
+    this->mesh = new adcirc_mesh(this);
+
+    //...Read the system files
+    if(!meshHeaderFile.open(QIODevice::ReadOnly))
+        return -1;
+
+    if(!partitionFile.open(QIODevice::ReadOnly))
+        return -1;
+
+    tempLine = meshHeaderFile.readLine().simplified();
+    this->mesh->title = tempLine;
+    meshHeaderFile.close();
+
+    tempLine = partitionFile.readLine().simplified();
+    this->nMeshPartitions = tempLine.toInt();
+
+    //...Check if all the node files exist
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        file.sprintf("partition_%4.4i.node",i);
+        filename = this->nodeDir.path()+"/"+file;
+        thisFile.setFileName(filename);
+        if(!thisFile.exists())
+            return -1;
+    }
+
+    //...Check if all the element files exist
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        file.sprintf("partition_%4.4i.element",i);
+        filename = this->elemDir.path()+"/"+file;
+        thisFile.setFileName(filename);
+        if(!thisFile.exists())
+            return -1;
+    }
+
+    //...Check if all the boundary files exists
+    openBoundFile.setFileName(this->openBoundDir.path()+"/open.boundary");
+    if(!openBoundFile.open(QIODevice::ReadOnly))
+        return -1;
+
+    tempLine = openBoundFile.readLine().simplified();
+    this->mesh->numOpenBoundaries = tempLine.toInt();
+    openBoundaryHashFilenames.resize(this->mesh->numOpenBoundaries);
+
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+    {
+        openBoundaryHashFilenames[i] = this->openBoundDir.path()+"/"+openBoundFile.readLine().simplified()+".bnd";
+        thisFile.setFileName(openBoundaryHashFilenames[i]);
+        if(!thisFile.exists())
+            return -1;
+    }
+    openBoundFile.close();
+
+    landBoundFile.setFileName(this->landBoundDir.path()+"/land.boundary");
+    if(!landBoundFile.open(QIODevice::ReadOnly))
+        return -1;
+
+    tempLine = landBoundFile.readLine().simplified();
+    this->mesh->numLandBoundaries = tempLine.toInt();
+    landBoundaryHashFilenames.resize(this->mesh->numLandBoundaries);
+
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+    {
+        landBoundaryHashFilenames[i] = this->landBoundDir.path()+"/"+landBoundFile.readLine().simplified()+".bnd";
+        thisFile.setFileName(landBoundaryHashFilenames[i]);
+        if(!thisFile.exists())
+            return -1;
+    }
+    landBoundFile.close();
+
+    //...Start reading the node files
+    this->nodeList.resize(this->nMeshPartitions);
+    nNodesInMesh = 0;
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        file.sprintf("partition_%4.4i.node",i);
+        filename = this->nodeDir.path()+"/"+file;
+        thisFile.setFileName(filename);
+        if(!thisFile.open(QIODevice::ReadOnly))
+            return -1;
+
+        fileData = thisFile.readAll();
+        tempList = QString(fileData).split("\n");
+        thisFile.close();
+
+        tempLine = tempList.value(0);
+        nNodes   = tempLine.toInt();
+
+        for(j=0;j<nNodes;j++)
+        {
+            tempString = tempList.value(j+1);
+            tempList2  = tempString.simplified().split(" ");
+            nodeHash   = tempList2.value(0);
+            tempX      = tempList2.value(1);
+            tempY      = tempList2.value(2);
+            tempZ      = tempList2.value(3);
+            x          = tempX.toDouble();
+            y          = tempY.toDouble();
+            z          = tempZ.toDouble();
+            tempNode   = new adcirc_node(this);
+            tempNode->position.setX(x);
+            tempNode->position.setY(y);
+            tempNode->position.setZ(z);
+            tempNode->positionHash = nodeHash;
+            this->nodeList[i].append(tempNode);
+            nNodesInMesh = nNodesInMesh + 1;
+        }
+    }
+    this->mesh->numNodes = nNodesInMesh;
+
+
+    //...Rectify the nodes to the mesh object
+    nodeIndex = 0;
+    this->mesh->nodes.resize(nNodesInMesh);
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        for(j=0;j<this->nodeList[i].length();j++)
+        {
+            this->mesh->nodes[nodeIndex] = nodeList[i].at(j);
+            this->mesh->nodes[nodeIndex]->id = nodeIndex+1;
+            nodeMap[this->mesh->nodes[nodeIndex]->positionHash] = this->mesh->nodes[nodeIndex];
+            nodeIndex = nodeIndex + 1;
+        }
+    }
+
+    //...Read the element files
+    this->elementList.resize(this->nMeshPartitions);
+    nElementsInMesh = 0;
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        file.sprintf("partition_%4.4i.element",i);
+        filename = this->elemDir.path()+"/"+file;
+        thisFile.setFileName(filename);
+        if(!thisFile.open(QIODevice::ReadOnly))
+            return -1;
+
+        fileData = thisFile.readAll();
+        tempList = QString(fileData).split("\n");
+        thisFile.close();
+
+        tempLine  = tempList.value(0);
+        nElements = tempLine.toInt();
+
+        for(j=0;j<nElements;j++)
+        {
+            tempString  = tempList.value(j+1);
+            tempList2   = tempString.simplified().split(" ");
+            elementHash = tempList2.value(0);
+            nodeHash1   = tempList2.value(1);
+            nodeHash2   = tempList2.value(2);
+            nodeHash3   = tempList2.value(3);
+            tempElement = new adcirc_element(this);
+
+            tempElement->hash = elementHash;
+            tempElement->connections[0] = nodeMap[nodeHash1];
+            tempElement->connections[1] = nodeMap[nodeHash2];
+            tempElement->connections[2] = nodeMap[nodeHash3];
+            nElementsInMesh = nElementsInMesh + 1;
+
+        }
+    }
+    this->mesh->numElements = nElementsInMesh;
+
+    //...Rectify the elements to the mesh object
+    elementIndex = 0;
+    this->mesh->nodes.resize(nElementsInMesh);
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        for(j=0;j<this->elementList[i].length();j++)
+        {
+            this->mesh->elements[elementIndex] = elementList[i].at(j);
+            this->mesh->elements[elementIndex]->id = elementIndex+1;
+            elementIndex = elementIndex + 1;
+        }
+    }
+
+    //...Read the open boundaries
+    this->mesh->openBC.resize(this->mesh->numOpenBoundaries);
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+    {
+        thisFile.setFileName(openBoundaryHashFilenames[i]);
+        if(!thisFile.open(QIODevice::ReadOnly))
+                return -1;
+
+        tempLine     = thisFile.readLine().simplified();
+        tempList     = tempLine.split(" ");
+        boundaryHash = tempList.value(0);
+        nNodesString = tempList.value(1);
+        nNodes       = nNodesString.toInt();
+        codeString   = tempList.value(2);
+        code         = codeString.toInt();
+
+        tempBoundary = new adcirc_boundary(this);
+        tempBoundary->setupBoundary(code,nNodes);
+
+        for(j=0;j<tempBoundary->numNodes;j++)
+        {
+            tempLine = thisFile.readLine().simplified();
+            ierr     = this->readBoundaryHashLine(tempLine,tempBoundary,j,nodeMap);
+        }
+
+        thisFile.close();
+
+        this->mesh->openBC[i] = tempBoundary;
+
+    }
+
+
+    //...Read the land boundaries
+    this->mesh->landBC.resize(this->mesh->numLandBoundaries);
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+    {
+        thisFile.setFileName(landBoundaryHashFilenames[i]);
+        if(!thisFile.open(QIODevice::ReadOnly))
+                return -1;
+
+        tempLine     = thisFile.readLine().simplified();
+        tempList     = tempLine.split(" ");
+        boundaryHash = tempList.value(0);
+        nNodesString = tempList.value(1);
+        nNodes       = nNodesString.toInt();
+        codeString   = tempList.value(2);
+        code         = codeString.toInt();
+
+        tempBoundary = new adcirc_boundary(this);
+        tempBoundary->setupBoundary(code,nNodes);
+
+        for(j=0;j<tempBoundary->numNodes;j++)
+        {
+            tempLine = thisFile.readLine().simplified();
+            ierr     = this->readBoundaryHashLine(tempLine,tempBoundary,j,nodeMap);
+        }
+
+        thisFile.close();
+
+        this->mesh->landBC[i] = tempBoundary;
+
+    }
+
+    return 0;
+}
+
+
+
+int AdVersion::writeMesh(QString outputFile)
+{
+    return this->mesh->write(outputFile);
+}

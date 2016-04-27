@@ -45,6 +45,9 @@ public:
     int writePartitionedMesh(QString meshFile,QString outputFile);
     int setHashAlgorithm(QCryptographicHash::Algorithm algorithm);
 
+    int readPartitionedMesh(QString meshFolder);
+    int writeMesh(QString outputFile);
+
     static int getGitVersion(QString gitDirectory, QString &version);
 
 protected:
@@ -64,6 +67,7 @@ private:
     int deletePolygons();
     bool removeDirectory(const QString &dirName);
     QString formatBoundaryHashLine(adcirc_boundary *boundary, int index);
+    int readBoundaryHashLine(QString line, adcirc_boundary *boundary, int index, QMap<QString,adcirc_node*> map);
 
     int                              nMeshPartitions;
     QString                          meshFile;
