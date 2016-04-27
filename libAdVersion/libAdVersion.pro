@@ -23,15 +23,70 @@
 #
 #------------------------------------------------------------------------------
 
+#...User should set paths in this file
+include(../config.pri)
+
 QT       += gui
 
 TARGET   = AdVersion
 TEMPLATE = lib
-VERSION  = 0.0.0.1
+VERSION  = 0.0.1
 
 win32 {
 TARGET_EXT = .dll
 }
+
+DEFINES += LIBADVERSION_LIBRARY
+
+HEADERS += rectangle.h \
+           libAdVersion_global.h \
+           AdVersion.h
+
+#...QADCModules
+INCLUDEPATH += $$QADCMODULES_PATH/include
+
+#...LibGit2
+INCLUDEPATH += $$LIBGIT2_PATH/include
+
+#...Add libraries
+win32{
+LIBS += -L$$QADCMODULES_PATH/bin -lQADCModules -L$$LIBGIT2_PATH/bin -lgit2
+}
+unix {
+LIBS += -L$$QADCMODULES_PATH/lib -lQADCModules -lmetis -L$$LIBGIT2_PATH/lib -lgit2 -lmetis
+}
+
+
+#...Source files
+SOURCES += \
+    rectangle.cpp \
+    AdVersion.cpp
+
+#...Install location
+win32{
+    isEmpty(PREFIX) {
+        PREFIX = $$OUT_PWD
+    }
+    target.path = $$PREFIX/bin
+    header_files.files = $$HEADERS
+    header_files.path = $$PREFIX/include
+    INSTALLS += header_files target
+}
+
+unix{
+    isEmpty(PREFIX) {
+        PREFIX = /usr/local
+    }
+    target.path = $$PREFIX/lib
+    header_files.files = $$HEADERS
+    header_files.path = $$PREFIX/include
+    INSTALLS += header_files target
+}
+
+
+#############################
+#    METIS (windows only)   #
+#############################
 
 METISHOME   = $$PWD/../thirdparty/metis-5.1.0
 METISSRCDIR = $$METISHOME/libmetis
@@ -59,52 +114,10 @@ GKLIBSRC     = $$GKLIBSRCDIR/b64.c $$GKLIBSRCDIR/blas.c $$GKLIBSRCDIR/csr.c $$GK
                $$GKLIBSRCDIR/string.c $$GKLIBSRCDIR/timers.c $$GKLIBSRCDIR/tokenizer.c \
                $$GKLIBSRCDIR/gklib_util.c
 
-DEFINES += LIBADVERSION_LIBRARY
-
 win32{
 SOURCES += $$GKLIBSRC $$METISSRC
 INCLUDEPATH += $$GKLIBSRCDIR $$METISSRCDIR $$METISHOME/include
-}
-
-unix{
-SOURCES +=
-}
-
-HEADERS +=\
-           rectangle.h \
-    libAdVersion_global.h \
-    AdVersion.h
-
-
-win32 {
-QADCMODULES_SRCPATH   = "C:/Users/zcobell/Documents/Codes/QADCModules"
-QADCMODULES_BUILDPATH = "C:/Users/zcobell/Documents/Codes/build-QADCModules-Desktop_Qt_5_6_0_MSVC2015_64bit-Release/QADCModules_lib/release"
-INCLUDEPATH += $$QADCMODULES_SRCPATH/QADCModules_lib
-INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/boost-library
-INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/kdtree
-INCLUDEPATH += $$QADCMODULES_SRCPATH/netcdf/include
-INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/proj4/src
 
 #...Metis needs these defines under MSVC2015 (64 bit)
 DEFINES     += WIN32 MSC _CRT_SECURE_NO_DEPRECATE USE_GKREGEX NDEBUG NDEBUG2 __thread=__declspec(thread)
-
-LIBS += -L$$QADCMODULES_BUILDPATH -lQADCModules
 }
-
-unix {
-QADCMODULES_PATH = /home/zcobell/Programs/QADCModules
-QADCMODULES_SRCPATH = $$QADCMODULES_PATH/include
-QADCMODULES_BUILDPATH  = $$QADCMODULES_PATH/lib
-INCLUDEPATH += $$QADCMODULES_SRCPATH
-INCLUDEPATH += /usr/include
-LIBS += -L$$QADCMODULES_BUILDPATH -lQADCModules -lmetis
-}
-
-unix {
-    target.path = /usr/lib
-    INSTALLS += target
-}
-
-SOURCES += \
-    rectangle.cpp \
-    AdVersion.cpp

@@ -23,57 +23,60 @@
 #
 #------------------------------------------------------------------------------
 
+#...User should set paths in this file
+include(../config.pri)
+
+
+#...Base Qt Configuration
 QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+#...Target configuration
 TARGET = AdVersion_gui
 TEMPLATE = app
 
-#...QADCMODULES
+#...Grab the external libraries
+
+#...QADCModules
+INCLUDEPATH += $$QADCMODULES_PATH/include
+
+#...LibGit2
+INCLUDEPATH += $$LIBGIT2_PATH/include
+
+#...Add the libraries
 win32{
-QADCMODULES_SRCPATH   = "C:/Users/zcobell/Documents/Codes/QADCModules"
-QADCMODULES_BUILDPATH = "C:/Users/zcobell/Documents/Codes/build-QADCModules-Desktop_Qt_5_6_0_MSVC2015_64bit-Release/QADCModules_lib/release"
-INCLUDEPATH += $$QADCMODULES_SRCPATH/QADCModules_lib
-INCLUDEPATH += $$QADCMODULES_SRCPATH/QADCModules_lib
-INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/boost-library
-INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/kdtree
-INCLUDEPATH += $$QADCMODULES_SRCPATH/netcdf/include
-INCLUDEPATH += $$QADCMODULES_SRCPATH/thirdparty/proj4/src
-LIBS        += -L$$QADCMODULES_BUILDPATH -lQADCModules
+LIBS += -L$$QADCMODULES_PATH/bin -L$$LIBGIT2_PATH/bin -lQADCModules -lgit2
 }
-
 unix{
-QADCMODULES_PATH = /home/zcobell/Programs/QADCModules
-QADCMODULES_SRCPATH = $$QADCMODULES_PATH/include
-QADCMODULES_BUILDPATH  = $$QADCMODULES_PATH/lib
-LIBS        += -L$$QADCMODULES_BUILDPATH -lQADCModules
-INCLUDEPATH += $$QADCMODULES_SRCPATH
+LIBS += -L$$QACDMODULES_PATH/lib -L$$LIBGIT2_PATH/lib -lQADCModules -lgit2 -lmetis
 }
 
-#...libAdVersion
+
+#...Including libAdVersion. Note that METIS is built directly for win32 while
+#   Unix assumes it is installed
 INCLUDEPATH += $$PWD/../libAdVersion
 win32{
 CONFIG(debug, debug | release): LIBS += -L$$OUT_PWD/../libAdVersion/debug -lAdVersion
 CONFIG(release, debug | release): LIBS += -L$$OUT_PWD/../libAdVersion/release -lAdVersion
 }
+
 unix{
-LIBS += -L$$OUT_PWD/../libAdVersion -lAdVersion -lmetis
+LIBS += -L$$OUT_PWD/../libAdVersion -lAdVersion
 }
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    advfolderchooser.cpp \
-    advqfilesystemmodel.cpp
+        advfolderchooser.cpp \
+        advqfilesystemmodel.cpp
 
 HEADERS  += mainwindow.h \
-    advfolderchooser.h \
-    advqfilesystemmodel.h
+            advfolderchooser.h \
+            advqfilesystemmodel.h
 
 FORMS    += mainwindow.ui \
-    advfolderchooser.ui
+            advfolderchooser.ui
 
 DISTFILES +=
 
-RESOURCES += \
-    resource.qrc
+RESOURCES += resource.qrc

@@ -85,6 +85,7 @@ void MainWindow::on_button_browseAdv_clicked()
         if(dir.exists())
         {
             QFile partition(dir.path()+"/system/partition.control");
+
             if(partition.exists())
             {
                 if(!partition.open(QIODevice::ReadOnly))
@@ -155,6 +156,7 @@ void MainWindow::on_radio_hashMd5_toggled(bool checked)
 
 void MainWindow::on_button_processData_clicked()
 {
+    QString version;
     bool doPartition;
     int ierr,nPartitions;
     this->versioning          = new AdVersion(this);
@@ -164,6 +166,10 @@ void MainWindow::on_button_processData_clicked()
     this->versioning->setHashAlgorithm(this->hashAlgorithm);
 
     nPartitions = 0;
+
+    ierr = AdVersion::getGitVersion(ui->text_outputMeshFolder->text(),version);
+    qDebug() << "Version: " << version << ierr;
+    return;
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
