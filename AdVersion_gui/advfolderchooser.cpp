@@ -42,9 +42,15 @@ AdvFolderChooser::~AdvFolderChooser()
 
 int AdvFolderChooser::initialize(QString directory)
 {
+
+    QPixmap pixmap(":/img/images/arrow_up.png");
+    QIcon ButtonIcon(pixmap);
+    ui->button_upDirectory->setIcon(ButtonIcon);
+    ui->button_upDirectory->setIconSize(pixmap.rect().size());
+
     this->startDirectory = directory;
     this->fileModel = new AdvQFileSystemModel(this);
-    this->fileModel->setFilter(QDir::NoDot | QDir::AllDirs);
+    this->fileModel->setFilter(QDir::NoDotAndDotDot | QDir::AllDirs);
     ui->listview_advfile->setModel(this->fileModel);
     ui->listview_advfile->setRootIndex(this->fileModel->setRootPath(directory));
     ui->text_currentPath->setText(directory);
@@ -109,5 +115,17 @@ void AdvFolderChooser::on_listview_advfile_clicked(const QModelIndex &index)
         ui->text_newFile->setText("");
         ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Create File");
     }
+    return;
+}
+
+void AdvFolderChooser::on_button_upDirectory_clicked()
+{
+
+    QDir dir(this->currentDirectory);
+    dir.cdUp();
+    ui->listview_advfile->setRootIndex(this->fileModel->setRootPath(dir.path()));
+    ui->text_currentPath->setText(dir.path());
+    this->currentDirectory = dir.path();
+
     return;
 }

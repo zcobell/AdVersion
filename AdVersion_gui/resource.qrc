@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/img">
         <file>images/advIcon.png</file>
+        <file>images/arrow_up.png</file>
     </qresource>
 </RCC>

@@ -54,6 +54,8 @@ private slots:
 
     void on_listview_advfile_clicked(const QModelIndex &index);
 
+    void on_button_upDirectory_clicked();
+
 private:
     Ui::AdvFolderChooser *ui;
     AdvQFileSystemModel     *dirModel;
