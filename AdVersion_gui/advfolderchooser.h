@@ -42,6 +42,8 @@ public:
 
     int initialize(QString directory);
 
+    QString getCurrentDirectory();
+
     QString selectedFile;
 
 private slots:
@@ -57,7 +59,7 @@ private slots:
     void on_button_upDirectory_clicked();
 
 private:
-    Ui::AdvFolderChooser *ui;
+    Ui::AdvFolderChooser    *ui;
     AdvQFileSystemModel     *dirModel;
     AdvQFileSystemModel     *fileModel;
     QString                  startDirectory;

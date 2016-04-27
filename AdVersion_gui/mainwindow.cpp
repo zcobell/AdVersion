@@ -78,7 +78,7 @@ void MainWindow::on_button_browseAdv_clicked()
     if(folderReturn==QDialog::Accepted)
     {
         directory = folderChooser->selectedFile;
-        this->previousDirectory = QFileInfo(directory).absoluteDir().path();
+        this->previousDirectory = folderChooser->getCurrentDirectory();
         ui->text_outputMeshFolder->setText(directory);
 
         dir.setPath(directory);

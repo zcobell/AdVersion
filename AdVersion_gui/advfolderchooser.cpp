@@ -35,10 +35,14 @@ AdvFolderChooser::AdvFolderChooser(QWidget *parent) :
 
 }
 
+
+
 AdvFolderChooser::~AdvFolderChooser()
 {
     delete ui;
 }
+
+
 
 int AdvFolderChooser::initialize(QString directory)
 {
@@ -60,6 +64,7 @@ int AdvFolderChooser::initialize(QString directory)
 }
 
 
+
 void AdvFolderChooser::on_listview_advfile_doubleClicked(const QModelIndex &index)
 {
 
@@ -78,10 +83,14 @@ void AdvFolderChooser::on_listview_advfile_doubleClicked(const QModelIndex &inde
     }
 }
 
+
+
 void AdvFolderChooser::on_buttonBox_rejected()
 {
     this->reject();
 }
+
+
 
 void AdvFolderChooser::on_buttonBox_accepted()
 {
@@ -102,6 +111,8 @@ void AdvFolderChooser::on_buttonBox_accepted()
     this->accept();
 }
 
+
+
 void AdvFolderChooser::on_listview_advfile_clicked(const QModelIndex &index)
 {
     QString currentFile = this->fileModel->fileInfo(index).absoluteFilePath();
@@ -118,6 +129,8 @@ void AdvFolderChooser::on_listview_advfile_clicked(const QModelIndex &index)
     return;
 }
 
+
+
 void AdvFolderChooser::on_button_upDirectory_clicked()
 {
 
@@ -128,4 +141,11 @@ void AdvFolderChooser::on_button_upDirectory_clicked()
     this->currentDirectory = dir.path();
 
     return;
+}
+
+
+
+QString AdvFolderChooser::getCurrentDirectory()
+{
+    return this->currentDirectory;
 }
