@@ -264,6 +264,9 @@ void MainWindow::on_button_retrieveMesh_clicked()
     inputFolder = "/home/zcobell/Development/AdVersion/test.adv";
     outputFile  = "/home/zcobell/Development/AdVersion/test.grd";
 
+    inputFolder = "C:/Users/zcobell/Desktop/test.adv";
+    outputFile  = "C:/Users/zcobell/Desktop/outputTest.grd";
+
     versioning.readPartitionedMesh(inputFolder);
     versioning.writeMesh(outputFile);
 

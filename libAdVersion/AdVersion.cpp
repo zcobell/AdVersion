@@ -1224,13 +1224,15 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
             tempElement->connections[2] = nodeMap[nodeHash3];
             nElementsInMesh = nElementsInMesh + 1;
 
+            this->elementList[i].append(tempElement);
+
         }
     }
     this->mesh->numElements = nElementsInMesh;
 
     //...Rectify the elements to the mesh object
     elementIndex = 0;
-    this->mesh->nodes.resize(nElementsInMesh);
+    this->mesh->elements.resize(nElementsInMesh);
     for(i=0;i<this->nMeshPartitions;i++)
     {
         for(j=0;j<this->elementList[i].length();j++)
