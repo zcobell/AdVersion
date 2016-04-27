@@ -23,7 +23,7 @@ AdVersion serves as a proxy for versioning ADCIRC model meshes using Git. The co
 In order to create a unique ID that is immutable, AdVersion uses cryptographic hashes constructed from the nodal positioning. This allows the code to generate a completely unique identifier for a node that does not change in time, and thus, will not change the mesh numbering
 
 ###File Storage
-Files are stored using a series of directories. ADCIRC Mesh nodes and elements are partitioned using METIS into a user specified number of domains. These partitions are generalized into rectangles so that future nodal and elemental searches occur in O(n) time instead of O(n^2) time.
+Files are stored using a series of directories. ADCIRC Mesh nodes and elements are partitioned using METIS into a user specified number of domains. These partitions are generalized into rectangles so that future nodal and elemental searches occur in O(n) time instead of O(nlog(m)) time.
 
 By partitioning the mesh into small subdomains, mesh edits generally create trivial changes to the files within the folder structure making the new format an excellent candidate for versioning using Git.
 
