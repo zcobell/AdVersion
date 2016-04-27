@@ -225,7 +225,8 @@ void MainWindow::on_button_browseOutputAdv_clicked()
 
 void MainWindow::on_button_browseInputAdv_clicked()
 {
-    QString directory;
+    int ierr;
+    QString directory,meshVersion;
     AdvFolderChooser *folderChooser = new AdvFolderChooser(this);
     folderChooser->initialize(this->previousDirectory,false);
     int folderReturn = folderChooser->exec();
@@ -234,6 +235,13 @@ void MainWindow::on_button_browseInputAdv_clicked()
         directory = folderChooser->selectedFile;
         this->previousDirectory = folderChooser->getCurrentDirectory();
         ui->text_inputMeshFolder->setText(directory);
+
+        QFile isGit(directory+"/.git");
+        if(isGit.exists())
+        {
+            ierr = AdVersion::getGitVersion(directory,meshVersion);
+            ui->text_outputMeshFile->setText("myMesh-"+meshVersion+".grd");
+        }
     }
     return;
 }
@@ -242,33 +250,70 @@ void MainWindow::on_button_browseInputAdv_clicked()
 
 void MainWindow::on_button_browseOutputMesh_clicked()
 {
-    QString file = QFileDialog::getSaveFileName(this,tr("Select Mesh File"),this->previousDirectory,tr("ADCIRC Mesh (*.grd *.14)"));
+    QString file = QFileDialog::getExistingDirectory(this,tr("Select Output Folder"),this->previousDirectory);
 
     if(file.isNull())
         return;
 
-    this->previousDirectory = QFileInfo(file).absoluteDir().path();
-    ui->text_outputMeshFile->setText(file);
+    this->previousDirectory = file;
+    ui->text_outputMeshDirectory->setText(file);
 
     return;
 }
 
 
+
 void MainWindow::on_button_retrieveMesh_clicked()
 {
+    int ierr;
     AdVersion versioning;
-    QString inputFolder, outputFile;
+    QString inputFolder, outputFile, outputFolder;
 
-    inputFolder = ui->text_inputMeshFolder->text();
+    if(ui->text_inputMeshFolder->text().isEmpty())
+    {
+        QMessageBox::critical(this,"ERROR","You must select an input mesh adv.");
+        return;
+    }
 
-    inputFolder = "/home/zcobell/Development/AdVersion/test.adv";
-    outputFile  = "/home/zcobell/Development/AdVersion/test.grd";
+    if(ui->text_outputMeshDirectory->text().isEmpty())
+    {
+        QMessageBox::critical(this,"ERROR","You must select an output folder");
+        return;
+    }
 
-    inputFolder = "C:/Users/zcobell/Desktop/test.adv";
-    outputFile  = "C:/Users/zcobell/Desktop/outputTest.grd";
+    if(ui->text_outputMeshFile->text().isEmpty())
+    {
+        QMessageBox::critical(this,"ERROR","You must set an output filename");
+        return;
+    }
 
-    versioning.readPartitionedMesh(inputFolder);
-    versioning.writeMesh(outputFile);
+    inputFolder  = ui->text_inputMeshFolder->text();
+    outputFolder = ui->text_outputMeshDirectory->text();
+    outputFile   = ui->text_outputMeshFile->text();
+
+    outputFile = outputFolder + "/" + outputFile;
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    ierr = versioning.readPartitionedMesh(inputFolder);
+    if(ierr!=0)
+    {
+        QApplication::restoreOverrideCursor();
+        QMessageBox::critical(this,"ERROR","Error while reading the partitioned mesh.");
+        return;
+    }
+
+    ierr = versioning.writeMesh(outputFile);
+    if(ierr!=ERROR_NOERROR)
+    {
+        QApplication::restoreOverrideCursor();
+        QMessageBox::critical(this,"ERROR","Error while writing the output mesh file.");
+        return;
+    }
+
+    QApplication::restoreOverrideCursor();
+
+    QMessageBox::information(this,"Success","The mesh was written successfully.");
 
     return;
 }

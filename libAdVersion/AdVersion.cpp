@@ -968,6 +968,7 @@ int AdVersion::getGitVersion(QString gitDirectory, QString &version)
     }
 
     ierr = git_describe_init_options(&options,GIT_DESCRIBE_OPTIONS_VERSION);
+    options.show_commit_oid_as_fallback = 1;
     if(ierr<0)
     {
         git_repository_free(repo);
