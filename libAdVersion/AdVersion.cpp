@@ -24,10 +24,12 @@
 //------------------------------------------------------------------------------
 #include "AdVersion.h"
 #include "metis.h"
+#include "git2.h"
 #include <float.h>
 #include <QtMath>
 #include <QStringList>
 #include <QDebug>
+#include <stdlib.h>
 
 bool nodeHashLessThan(const adcirc_node *node1, const adcirc_node *node2)
 {
@@ -864,3 +866,83 @@ int AdVersion::setHashAlgorithm(QCryptographicHash::Algorithm algorithm)
     this->hashAlgorithm = algorithm;
     return ERROR_NOERROR;
 }
+
+
+int AdVersion::getGitVersion(QString gitDirectory, QString &version)
+{
+    int ierr;
+    QByteArray tempData;
+    git_repository *repo;
+    git_describe_result *description;
+    git_describe_options options;
+    git_describe_format_options format;
+    git_object *headObject;
+    git_buf buffer = { 0 };
+
+    tempData = gitDirectory.toLatin1();
+    const char *cgitDirectory = tempData.data();
+
+    git_libgit2_init();
+
+    ierr = git_repository_open(&repo,cgitDirectory);
+    if(ierr<0)
+    {
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_describe_init_options(&options,GIT_DESCRIBE_OPTIONS_VERSION);
+    if(ierr<0)
+    {
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_describe_init_format_options(&format,GIT_DESCRIBE_FORMAT_OPTIONS_VERSION);
+    if(ierr<0)
+    {
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_revparse_single(&headObject,repo,"HEAD");
+    if(ierr<0)
+    {
+        git_object_free(headObject);
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_describe_commit(&description,headObject,&options);
+    if(ierr<0)
+    {
+        git_object_free(headObject);
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_describe_format(&buffer,description,&format);
+    if(ierr<0)
+    {
+        git_object_free(headObject);
+        git_describe_result_free(description);
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    version.sprintf("%s",buffer.ptr);
+
+    git_object_free(headObject);
+    git_describe_result_free(description);
+    git_repository_free(repo);
+    git_libgit2_shutdown();
+
+    return ERROR_NOERROR;
+}
+

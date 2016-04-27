@@ -45,6 +45,8 @@ public:
     int writePartitionedMesh(QString meshFile,QString outputFile);
     int setHashAlgorithm(QCryptographicHash::Algorithm algorithm);
 
+    static int getGitVersion(QString gitDirectory, QString &version);
+
 protected:
 
 private:
