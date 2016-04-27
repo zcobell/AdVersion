@@ -40,7 +40,7 @@ public:
     explicit AdvFolderChooser(QWidget *parent = 0);
     ~AdvFolderChooser();
 
-    int initialize(QString directory);
+    int initialize(QString directory, bool allowCreate);
 
     QString getCurrentDirectory();
 
@@ -64,6 +64,7 @@ private:
     AdvQFileSystemModel     *fileModel;
     QString                  startDirectory;
     QString                  currentDirectory;
+    bool                     create;
 
 };
 

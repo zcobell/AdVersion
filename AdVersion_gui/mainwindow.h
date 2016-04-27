@@ -43,10 +43,6 @@ public:
 
 private slots:
 
-    void on_button_browseInMesh_clicked();
-
-    void on_button_browseAdv_clicked();
-
     void on_groupBox_partition_clicked(bool checked);
 
     void on_radio_hashSha1_toggled(bool checked);
@@ -54,6 +50,16 @@ private slots:
     void on_radio_hashMd5_toggled(bool checked);
 
     void on_button_processData_clicked();
+
+    void on_button_browseInputMesh_clicked();
+
+    void on_button_browseOutputAdv_clicked();
+
+    void on_button_browseInputAdv_clicked();
+
+    void on_button_browseOutputMesh_clicked();
+
+    void on_button_retrieveMesh_clicked();
 
 private:
     Ui::MainWindow *ui;

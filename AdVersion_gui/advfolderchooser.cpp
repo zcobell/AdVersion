@@ -44,7 +44,7 @@ AdvFolderChooser::~AdvFolderChooser()
 
 
 
-int AdvFolderChooser::initialize(QString directory)
+int AdvFolderChooser::initialize(QString directory, bool allowCreate)
 {
 
     QPixmap pixmap(":/img/images/arrow_up.png");
@@ -52,14 +52,23 @@ int AdvFolderChooser::initialize(QString directory)
     ui->button_upDirectory->setIcon(ButtonIcon);
     ui->button_upDirectory->setIconSize(pixmap.rect().size());
 
+    this->create = allowCreate;
     this->startDirectory = directory;
     this->fileModel = new AdvQFileSystemModel(this);
     this->fileModel->setFilter(QDir::NoDotAndDotDot | QDir::AllDirs);
     ui->listview_advfile->setModel(this->fileModel);
     ui->listview_advfile->setRootIndex(this->fileModel->setRootPath(directory));
     ui->text_currentPath->setText(directory);
-    ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Create File");
+
+    ui->text_newFile->setReadOnly(!allowCreate);
+
+    if(this->create)
+        ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Create File");
+    else
+        ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Select File");
+
     this->currentDirectory = directory;
+
     return 0;
 }
 
@@ -79,7 +88,10 @@ void AdvFolderChooser::on_listview_advfile_doubleClicked(const QModelIndex &inde
         ui->listview_advfile->setRootIndex(this->fileModel->setRootPath(this->fileModel->fileInfo(index).absoluteFilePath()));
         ui->text_currentPath->setText(this->fileModel->fileInfo(index).absoluteFilePath());
         this->currentDirectory = this->fileModel->fileInfo(index).absoluteFilePath();
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Create File");
+
+        if(this->create)
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Create File");
+
     }
 }
 
@@ -103,12 +115,23 @@ void AdvFolderChooser::on_buttonBox_accepted()
         return;
     }
 
-    if(!newFileText.contains(".adv"))
-        newFileText = newFileText+".adv";
+    if(this->create)
+    {
+        if(!newFileText.contains(".adv"))
+            newFileText = newFileText+".adv";
 
-    this->selectedFile = this->currentDirectory+"/"+newFileText;
+        this->selectedFile = this->currentDirectory+"/"+newFileText;
 
-    this->accept();
+        this->accept();
+    }
+    else
+    {
+        QFile file(this->currentDirectory+"/"+newFileText);
+        if(file.exists())
+            this->accept();
+        else
+            QMessageBox::information(this,"ERROR","File does not exist");
+    }
 }
 
 
@@ -123,8 +146,11 @@ void AdvFolderChooser::on_listview_advfile_clicked(const QModelIndex &index)
     }
     else
     {
-        ui->text_newFile->setText("");
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Create File");
+        if(this->create)
+        {
+            ui->text_newFile->setText("");
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Create File");
+        }
     }
     return;
 }

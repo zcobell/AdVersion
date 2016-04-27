@@ -47,87 +47,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
 }
 
+
+
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
-
-void MainWindow::on_button_browseInMesh_clicked()
-{
-    QString file = QFileDialog::getOpenFileName(this,tr("Select Mesh File"),this->previousDirectory,tr("ADCIRC Mesh (*.grd *.14)"));
-
-    if(file.isNull())
-        return;
-
-    this->previousDirectory = QFileInfo(file).absoluteDir().path();
-    ui->text_inputMeshFile->setText(file);
-    return;
-}
-
-
-void MainWindow::on_button_browseAdv_clicked()
-{
-    QString line,directory;
-    QDir dir;
-    int n,folderReturn;
-    AdvFolderChooser *folderChooser = new AdvFolderChooser(this);
-    folderChooser->initialize(this->previousDirectory);
-
-    folderReturn = folderChooser->exec();
-    if(folderReturn==QDialog::Accepted)
-    {
-        directory = folderChooser->selectedFile;
-        this->previousDirectory = folderChooser->getCurrentDirectory();
-        ui->text_outputMeshFolder->setText(directory);
-
-        dir.setPath(directory);
-        if(dir.exists())
-        {
-            QFile partition(dir.path()+"/system/partition.control");
-
-            if(partition.exists())
-            {
-                if(!partition.open(QIODevice::ReadOnly))
-                    return;
-
-                line = partition.readLine().simplified();
-                n    = line.toInt();
-                ui->spin_nPartitions->setValue(n);
-                ui->groupBox_partition->setChecked(false);
-                partition.close();
-            }
-            else
-            {
-                ui->groupBox_partition->setChecked(true);
-                ui->spin_nPartitions->setEnabled(true);
-                ui->label_nPartitions->setEnabled(true);
-            }
-
-            QFile hashStyle(dir.path()+"/system/hash.type");
-            if(hashStyle.exists())
-            {
-                if(!hashStyle.open(QIODevice::ReadOnly))
-                    return;
-
-                line = hashStyle.readLine().simplified();
-                if(line=="md5")
-                {
-                    ui->radio_hashMd5->setChecked(true);
-                    ui->radio_hashSha1->setChecked(false);
-                }
-                else if(line=="sha1")
-                {
-                    ui->radio_hashMd5->setChecked(false);
-                    ui->radio_hashSha1->setChecked(true);
-                }
-            }
-        }
-    }
-    delete folderChooser;
-
-    return;
-}
 
 
 void MainWindow::on_groupBox_partition_clicked(bool checked)
@@ -138,6 +64,7 @@ void MainWindow::on_groupBox_partition_clicked(bool checked)
 }
 
 
+
 void MainWindow::on_radio_hashSha1_toggled(bool checked)
 {
     if(checked)
@@ -146,12 +73,14 @@ void MainWindow::on_radio_hashSha1_toggled(bool checked)
 }
 
 
+
 void MainWindow::on_radio_hashMd5_toggled(bool checked)
 {
     if(checked)
         this->hashAlgorithm = QCryptographicHash::Md5;
     return;
 }
+
 
 
 void MainWindow::on_button_processData_clicked()
@@ -215,4 +144,121 @@ void MainWindow::on_button_processData_clicked()
     QMessageBox::information(this,"Success","The mesh was written successfully.");
 
     return;
+}
+
+
+
+void MainWindow::on_button_browseInputMesh_clicked()
+{
+    QString file = QFileDialog::getOpenFileName(this,tr("Select Mesh File"),this->previousDirectory,tr("ADCIRC Mesh (*.grd *.14)"));
+
+    if(file.isNull())
+        return;
+
+    this->previousDirectory = QFileInfo(file).absoluteDir().path();
+    ui->text_inputMeshFile->setText(file);
+    return;
+}
+
+
+
+void MainWindow::on_button_browseOutputAdv_clicked()
+{
+    QString line,directory;
+    QDir dir;
+    int n,folderReturn;
+    AdvFolderChooser *folderChooser = new AdvFolderChooser(this);
+    folderChooser->initialize(this->previousDirectory,true);
+
+    folderReturn = folderChooser->exec();
+    if(folderReturn==QDialog::Accepted)
+    {
+        directory = folderChooser->selectedFile;
+        this->previousDirectory = folderChooser->getCurrentDirectory();
+        ui->text_outputMeshFolder->setText(directory);
+
+        dir.setPath(directory);
+        if(dir.exists())
+        {
+            QFile partition(dir.path()+"/system/partition.control");
+
+            if(partition.exists())
+            {
+                if(!partition.open(QIODevice::ReadOnly))
+                    return;
+
+                line = partition.readLine().simplified();
+                n    = line.toInt();
+                ui->spin_nPartitions->setValue(n);
+                ui->groupBox_partition->setChecked(false);
+                partition.close();
+            }
+            else
+            {
+                ui->groupBox_partition->setChecked(true);
+                ui->spin_nPartitions->setEnabled(true);
+                ui->label_nPartitions->setEnabled(true);
+            }
+
+            QFile hashStyle(dir.path()+"/system/hash.type");
+            if(hashStyle.exists())
+            {
+                if(!hashStyle.open(QIODevice::ReadOnly))
+                    return;
+
+                line = hashStyle.readLine().simplified();
+                if(line=="md5")
+                {
+                    ui->radio_hashMd5->setChecked(true);
+                    ui->radio_hashSha1->setChecked(false);
+                }
+                else if(line=="sha1")
+                {
+                    ui->radio_hashMd5->setChecked(false);
+                    ui->radio_hashSha1->setChecked(true);
+                }
+            }
+        }
+    }
+    delete folderChooser;
+
+    return;
+}
+
+
+
+void MainWindow::on_button_browseInputAdv_clicked()
+{
+    QString directory;
+    AdvFolderChooser *folderChooser = new AdvFolderChooser(this);
+    folderChooser->initialize(this->previousDirectory,false);
+    int folderReturn = folderChooser->exec();
+    if(folderReturn==QDialog::Accepted)
+    {
+        directory = folderChooser->selectedFile;
+        this->previousDirectory = folderChooser->getCurrentDirectory();
+        ui->text_inputMeshFolder->setText(directory);
+    }
+    return;
+}
+
+
+
+void MainWindow::on_button_browseOutputMesh_clicked()
+{
+    QString file = QFileDialog::getOpenFileName(this,tr("Select Mesh File"),this->previousDirectory,tr("ADCIRC Mesh (*.grd *.14)"));
+
+    if(file.isNull())
+        return;
+
+    this->previousDirectory = QFileInfo(file).absoluteDir().path();
+    ui->text_outputMeshFile->setText(file);
+
+    return;
+}
+
+
+void MainWindow::on_button_retrieveMesh_clicked()
+{
+
 }

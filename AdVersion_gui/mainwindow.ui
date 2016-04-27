@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>720</width>
+    <width>765</width>
     <height>316</height>
    </rect>
   </property>
@@ -31,7 +31,7 @@
            <widget class="QLabel" name="label_meshfile">
             <property name="minimumSize">
              <size>
-              <width>75</width>
+              <width>120</width>
               <height>0</height>
              </size>
             </property>
@@ -43,13 +43,14 @@
             </property>
             <property name="font">
              <font>
+              <family>Sans</family>
               <pointsize>8</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
             <property name="text">
-             <string>Mesh File:</string>
+             <string>Input Mesh File:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -85,7 +86,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="button_browseInMesh">
+           <widget class="QPushButton" name="button_browseInputMesh">
             <property name="text">
              <string>Browse</string>
             </property>
@@ -109,10 +110,10 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="QLabel" name="label_meshfile_2">
+           <widget class="QLabel" name="label_outputFolder">
             <property name="minimumSize">
              <size>
-              <width>75</width>
+              <width>120</width>
               <height>0</height>
              </size>
             </property>
@@ -124,13 +125,14 @@
             </property>
             <property name="font">
              <font>
+              <family>Sans</family>
               <pointsize>8</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
             <property name="text">
-             <string>Output File:</string>
+             <string>Output Adv File:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -166,7 +168,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="button_browseAdv">
+           <widget class="QPushButton" name="button_browseOutputAdv">
             <property name="text">
              <string>Browse</string>
             </property>
@@ -325,7 +327,7 @@
         <item>
          <widget class="QPushButton" name="button_processData">
           <property name="text">
-           <string>Process Mesh</string>
+           <string>Process Mesh To Adv</string>
           </property>
          </widget>
         </item>
@@ -335,6 +337,192 @@
        <attribute name="title">
         <string>Retrieve From Adv Format</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QLabel" name="label_inputFolder">
+            <property name="minimumSize">
+             <size>
+              <width>120</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>75</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Sans</family>
+              <pointsize>8</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Input Adv File:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="text_inputMeshFolder">
+            <property name="minimumSize">
+             <size>
+              <width>500</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>500</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="placeholderText">
+             <string/>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="button_browseInputAdv">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>248</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QLabel" name="label_outputMeshFile">
+            <property name="minimumSize">
+             <size>
+              <width>120</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Sans</family>
+              <pointsize>8</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Output Mesh File:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="text_outputMeshFile">
+            <property name="minimumSize">
+             <size>
+              <width>500</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>500</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="placeholderText">
+             <string/>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="button_browseOutputMesh">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>248</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>88</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="button_retrieveMesh">
+          <property name="text">
+           <string>Retrieve Mesh From Adv</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -345,8 +533,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>720</width>
-     <height>21</height>
+     <width>765</width>
+     <height>23</height>
     </rect>
    </property>
   </widget>
