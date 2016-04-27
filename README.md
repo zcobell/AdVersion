@@ -27,5 +27,5 @@ Files are stored using a series of directories. ADCIRC Mesh nodes and elements a
 
 By partitioning the mesh into small subdomains, mesh edits generally create trivial changes to the files within the folder structure making the new format an excellent candidate for versioning using Git.
 
-###Disclosure
+##Disclosure
 The code is not production ready. Any use is at the user's own risk and I take no responsibility for meshes that become unrecoverable. If you do encounter an issue, please submit a bug report so the first release version can be improved.
