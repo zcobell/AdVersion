@@ -60,6 +60,7 @@ private:
     int partitionMesh();
     int readPolygons();
     int metisPartition();
+    int renumber();
     int buildPolygons();
     int writePolygonPartitions();
     int buildDirectoryTree(QString directory);

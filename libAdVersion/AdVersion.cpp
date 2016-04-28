@@ -71,6 +71,22 @@ bool rectangeleAreaLessThan(const Rectangle rectangle1, const Rectangle rectangl
 
 
 
+bool nodeNumberLessThan(const adcirc_node *node1, const adcirc_node *node2)
+{
+    return node1->id<node2->id;
+}
+
+
+
+bool elementSumLessThan(const adcirc_element *element1, const adcirc_element *element2)
+{
+    int s1 = element1->connections[0]->id + element1->connections[1]->id + element1->connections[2]->id;
+    int s2 = element2->connections[0]->id + element2->connections[1]->id + element1->connections[2]->id;
+    return s1<s2;
+}
+
+
+
 AdVersion::AdVersion(QObject *parent) : QObject(parent)
 {
     this->mesh = NULL;
@@ -1307,6 +1323,8 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
 
     }
 
+    this->renumber();
+
     return 0;
 }
 
@@ -1315,4 +1333,79 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
 int AdVersion::writeMesh(QString outputFile)
 {
     return this->mesh->write(outputFile);
+}
+
+
+
+int AdVersion::renumber()
+{
+
+    QVector<int> qptr,qind;
+    int i,ierr;
+    idx_t ne,nn,numflag,*xadj,*adj;
+    idx_t nPartitions,ncon;
+    idx_t metis_options[METIS_NOPTIONS];
+
+    //...Begin setting things up for metis
+    ne = this->mesh->numElements;
+    nn = this->mesh->numNodes;
+    ncon = 1;
+    numflag = 0;
+    nPartitions = this->nMeshPartitions;
+
+    qptr.resize(ne+1);
+
+    //...Build the connectivity table for METIS
+    for(i=0;i<ne;i++)
+    {
+        qind.push_back(this->mesh->elements[i]->connections[0]->id-1);
+        qind.push_back(this->mesh->elements[i]->connections[1]->id-1);
+        qind.push_back(this->mesh->elements[i]->connections[2]->id-1);
+        qptr[i] = qind.length()-1-2;
+    }
+    qptr[ne] = qind.length()-1;
+
+    //...Allocate the arrays for METIS
+    idx_t *eptr  = (idx_t*)malloc(qptr.length()*sizeof(idx_t));
+    idx_t *eind  = (idx_t*)malloc(qind.length()*sizeof(idx_t));
+    idx_t *npart = (idx_t*)malloc(this->mesh->numNodes*sizeof(idx_t));
+    idx_t *epart = (idx_t*)malloc(ne*sizeof(idx_t));
+    idx_t *perm  = (idx_t*)malloc(nn*sizeof(idx_t));
+    idx_t *iperm = (idx_t*)malloc(nn*sizeof(idx_t));
+
+    //...Save the arrays for METIS
+    for(i=0;i<qptr.size();i++)
+        eptr[i] = qptr[i];
+
+    for(i=0;i<qind.size();i++)
+        eind[i] = qind[i];
+
+    //...Call METIS
+    ierr = METIS_SetDefaultOptions(metis_options);
+    ierr = METIS_MeshToNodal(&ne,&nn,eptr,eind,&numflag,&xadj,&adj);
+    ierr = METIS_NodeND(&nn,xadj,adj,NULL,metis_options,perm,iperm);
+
+    //...Renumber the nodes in the mesh object
+    for(i=0;i<this->mesh->numNodes;i++)
+        this->mesh->nodes[i]->id = (int)iperm[i]+1;
+
+    //...Sort the nodes
+    std::sort(this->mesh->nodes.begin(),this->mesh->nodes.end(),nodeNumberLessThan);
+
+    //...Sort the elements
+    std::sort(this->mesh->elements.begin(),this->mesh->elements.end(),elementSumLessThan);
+    for(i=0;i<this->mesh->numElements;i++)
+        this->mesh->elements[i]->id = i+1;
+
+    //...Delete the arrays
+    free(eptr);
+    free(eind);
+    free(npart);
+    free(epart);
+    free(xadj);
+    free(adj);
+    free(perm);
+    free(iperm);
+
+    return 0;
 }
