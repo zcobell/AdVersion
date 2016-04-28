@@ -333,23 +333,28 @@ void MainWindow::on_button_retrieveMesh_clicked()
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
+    ui->statusBar->showMessage("Reading partitioned mesh...");
     ierr = versioning.readPartitionedMesh(inputFolder);
     if(ierr!=0)
     {
         QApplication::restoreOverrideCursor();
         QMessageBox::critical(this,"ERROR","Error while reading the partitioned mesh.");
+        ui->statusBar->clearMessage();
         return;
     }
 
+    ui->statusBar->showMessage("Writing ADCIRC formatted mesh...");
     ierr = versioning.writeMesh(outputFile);
     if(ierr!=ERROR_NOERROR)
     {
         QApplication::restoreOverrideCursor();
         QMessageBox::critical(this,"ERROR","Error while writing the output mesh file.");
+        ui->statusBar->clearMessage();
         return;
     }
 
     QApplication::restoreOverrideCursor();
+    ui->statusBar->clearMessage();
 
     QMessageBox::information(this,"Success","The mesh was written successfully.");
 

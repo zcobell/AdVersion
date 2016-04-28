@@ -88,27 +88,7 @@ bool elementSumLessThan(const adcirc_element *element1, const adcirc_element *el
 
 bool boundaryPositionLessThan(const adcirc_boundary *boundary1,const adcirc_boundary *boundary2)
 {
-    int i;
-    qreal position1,position2;
-    qreal n1,n2;
-
-    position1 = 0.0;
-    position2 = 0.0;
-
-    n1 = static_cast<qreal>(boundary1->numNodes);
-    n2 = static_cast<qreal>(boundary2->numNodes);
-
-    for(i=0;i<boundary1->numNodes;i++)
-        position1 = position1 + boundary1->n1[i]->position.x();
-
-    for(i=0;i<boundary2->numNodes;i++)
-        position2 = position2 + boundary2->n1[i]->position.x();
-
-    position1 = position1 / n1;
-    position2 = position2 / n2;
-
-    return position1>position2;
-
+    return boundary1->averageLongitude > boundary2->averageLongitude;
 }
 
 
@@ -556,7 +536,7 @@ QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
 
 
 
-int AdVersion::readBoundaryHashLine(QString line, adcirc_boundary *boundary, int index, QMap<QString,adcirc_node*> map)
+int AdVersion::readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QMap<QString,adcirc_node*> &map)
 {
     qreal   crest,super,sub,pipeht,pipediam,pipecoef;
     QString crestS,superS,subS,pipehtS,pipediamS,pipecoefS;
@@ -1231,7 +1211,6 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
     }
     this->mesh->numNodes = nNodesInMesh;
 
-
     //...Rectify the nodes to the mesh object
     nodeIndex = 0;
     this->mesh->nodes.resize(nNodesInMesh);
@@ -1285,6 +1264,7 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
         }
     }
     this->mesh->numElements = nElementsInMesh;
+
 
     //...Rectify the elements to the mesh object
     elementIndex = 0;
@@ -1363,6 +1343,12 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
     }
 
     //...Sort the boundaries from east-->west
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+        this->mesh->openBC[i]->calculateAverageLongitude();
+
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+        this->mesh->landBC[i]->calculateAverageLongitude();
+
     std::sort(this->mesh->openBC.begin(),this->mesh->openBC.end(),boundaryPositionLessThan);
     std::sort(this->mesh->landBC.begin(),this->mesh->landBC.end(),boundaryPositionLessThan);
 

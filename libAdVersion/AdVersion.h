@@ -68,7 +68,7 @@ private:
     int deletePolygons();
     bool removeDirectory(const QString &dirName);
     QString formatBoundaryHashLine(adcirc_boundary *boundary, int index);
-    int readBoundaryHashLine(QString line, adcirc_boundary *boundary, int index, QMap<QString,adcirc_node*> map);
+    int readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QMap<QString, adcirc_node *> &map);
 
     int                              nMeshPartitions;
     QString                          meshFile;
