@@ -26,7 +26,6 @@
 #include "ui_mainwindow.h"
 #include "advfolderchooser.h"
 #include <QFileDialog>
-#include <QProgressDialog>
 #include <QMessageBox>
 #include <QThread>
 #include <QDebug>
@@ -44,6 +43,13 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
 
     this->hashAlgorithm = QCryptographicHash::Md5;
+
+    //...Blank out text in info boxes
+    ui->label_showMeshVersion->setText("");
+    ui->label_showNumNodes->setText("");
+    ui->label_showNumElements->setText("");
+    ui->label_showNumOpenBC->setText("");
+    ui->label_showNumLandBC->setText("");
 
 }
 
@@ -85,7 +91,6 @@ void MainWindow::on_radio_hashMd5_toggled(bool checked)
 
 void MainWindow::on_button_processData_clicked()
 {
-    QString version;
     bool doPartition;
     int ierr,nPartitions;
     AdVersion versioning;
@@ -226,7 +231,7 @@ void MainWindow::on_button_browseOutputAdv_clicked()
 void MainWindow::on_button_browseInputAdv_clicked()
 {
     int ierr;
-    QString directory,meshVersion;
+    QString directory,meshVersion,tempString;
     AdvFolderChooser *folderChooser = new AdvFolderChooser(this);
     folderChooser->initialize(this->previousDirectory,false);
     int folderReturn = folderChooser->exec();
@@ -241,7 +246,27 @@ void MainWindow::on_button_browseInputAdv_clicked()
         {
             ierr = AdVersion::getGitVersion(directory,meshVersion);
             ui->text_outputMeshFile->setText("myMesh-"+meshVersion+".grd");
+            ui->label_showMeshVersion->setText(meshVersion);
         }
+        else
+            ui->label_showMeshVersion->setText("Not Versioned");
+
+        QFile metaFile(directory+"/system/mesh.header");
+        if(!metaFile.open(QIODevice::ReadOnly))
+            return;
+
+        tempString = metaFile.readLine().simplified();
+        tempString = metaFile.readLine().simplified();
+        ui->label_showNumNodes->setText(tempString);
+        tempString = metaFile.readLine().simplified();
+        ui->label_showNumElements->setText(tempString);
+        tempString = metaFile.readLine().simplified();
+        ui->label_showNumOpenBC->setText(tempString);
+        tempString = metaFile.readLine().simplified();
+        ui->label_showNumLandBC->setText(tempString);
+
+        metaFile.close();
+
     }
     return;
 }

@@ -28,7 +28,6 @@
 #include <float.h>
 #include <QtMath>
 #include <QStringList>
-#include <QDebug>
 #include <stdlib.h>
 
 bool nodeHashLessThan(const adcirc_node *node1, const adcirc_node *node2)
@@ -150,10 +149,15 @@ int AdVersion::createPartitions(QString meshFile, QString outputFile, int numPar
 
 int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
 {
-    int ierr,i,j;
+    int ierr,i,j,nn,ne;
+    int nLoops,nLoopsMax;
     QString fileName,file,line,x,y,z,hash;
+    QStringList tempList;
     QFile thisFile;
     QVector<adcirc_boundary*> openBCSort,landBCSort;
+
+    nLoops = 0;
+    nLoopsMax = 0;
 
     //...Create a new adcirc_mesh if needed
     if(this->mesh==NULL)
@@ -205,9 +209,12 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
             z.sprintf("%+018.12e",this->nodeList[i].value(j)->position.z());
             line = QString("%1 %2 %3 %4 \n").arg(hash).arg(x).arg(y).arg(z);
             thisFile.write(line.toUtf8());
+
+            nLoops = nLoops + 1;
         }
 
         thisFile.close();
+
     }
 
     //...Write the element files
@@ -237,6 +244,8 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
             thisFile.write(line.toUtf8());
         }
         thisFile.close();
+
+        nLoops = nLoops + 1;
     }
 
     //...Create the open and land boundary lists for sorting
@@ -281,7 +290,7 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
     {
         line = QString("%1\n").arg(landBCSort[i]->hash);
         fileLandBC.write(line.toUtf8());
-    }
+     }
     fileLandBC.close();
 
     //...Write the open boundary files
@@ -333,14 +342,18 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
         thisFile.close();
     }
 
-    //...Write the mesh name from the header
+    //...Write the mesh header (title, nNodes, nElements)
     thisFile.setFileName(this->systemDir.path()+"/mesh.header");
     if(thisFile.exists())
         thisFile.remove();
     if(!thisFile.open(QIODevice::WriteOnly))
         return -1;
 
-    thisFile.write(this->mesh->title.toUtf8());
+    thisFile.write(QString(this->mesh->title+"\n").toUtf8());
+    thisFile.write(QString(QString::number(this->mesh->numNodes)+"\n").toUtf8());
+    thisFile.write(QString(QString::number(this->mesh->numElements)+"\n").toUtf8());
+    thisFile.write(QString(QString::number(this->mesh->numOpenBoundaries)+"\n").toUtf8());
+    thisFile.write(QString(QString::number(this->mesh->numLandBoundaries)+"\n").toUtf8());
     thisFile.close();
 
     //...Write the type of hashing algorithm used
@@ -355,7 +368,6 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
     else
         thisFile.write("md5");
     thisFile.close();
-
 
     return ERROR_NOERROR;
 }
