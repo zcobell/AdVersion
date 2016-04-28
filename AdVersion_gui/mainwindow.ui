@@ -657,6 +657,55 @@
               </widget>
              </item>
              <item>
+              <widget class="QLabel" name="label_numPartitions">
+               <property name="minimumSize">
+                <size>
+                 <width>200</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>200</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Sans</family>
+                 <pointsize>9</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Number of Partitions:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_showNumPartitions">
+               <property name="minimumSize">
+                <size>
+                 <width>150</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>150</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>nPartitions</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <spacer name="horizontalSpacer_7">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -707,13 +756,13 @@
               <widget class="QLabel" name="label_showNumNodes">
                <property name="minimumSize">
                 <size>
-                 <width>100</width>
+                 <width>150</width>
                  <height>0</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>100</width>
+                 <width>150</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -756,13 +805,13 @@
               <widget class="QLabel" name="label_showNumOpenBC">
                <property name="minimumSize">
                 <size>
-                 <width>100</width>
+                 <width>150</width>
                  <height>0</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>100</width>
+                 <width>150</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -822,13 +871,13 @@
               <widget class="QLabel" name="label_showNumElements">
                <property name="minimumSize">
                 <size>
-                 <width>100</width>
+                 <width>150</width>
                  <height>0</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>100</width>
+                 <width>150</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -871,13 +920,13 @@
               <widget class="QLabel" name="label_showNumLandBC">
                <property name="minimumSize">
                 <size>
-                 <width>100</width>
+                 <width>150</width>
                  <height>0</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>100</width>
+                 <width>150</width>
                  <height>16777215</height>
                 </size>
                </property>

@@ -27,8 +27,6 @@
 #include "advfolderchooser.h"
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QThread>
-#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -50,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_showNumElements->setText("");
     ui->label_showNumOpenBC->setText("");
     ui->label_showNumLandBC->setText("");
+    ui->label_showNumPartitions->setText("");
 
 }
 
@@ -124,23 +123,28 @@ void MainWindow::on_button_processData_clicked()
 
     if(doPartition)
     {
+        ui->statusBar->showMessage("Partitioning mesh...");
         ierr = versioning.createPartitions(meshFilename,meshFoldername,nPartitions);
         if(ierr!=ERROR_NOERROR)
         {
             QApplication::restoreOverrideCursor();
             QMessageBox::critical(this,"ERROR","There was an error while creating partitions.");
+            ui->statusBar->clearMessage();
             return;
         }
     }
 
+    ui->statusBar->showMessage("Writing partitioned mesh...");
     ierr = versioning.writePartitionedMesh(meshFilename,meshFoldername);
     if(ierr!=ERROR_NOERROR)
     {
         QApplication::restoreOverrideCursor();
         QMessageBox::critical(this,"ERROR","There was an error while creating partitions.");
+        ui->statusBar->clearMessage();
         return;
     }
 
+    ui->statusBar->clearMessage();
     QApplication::restoreOverrideCursor();
     QMessageBox::information(this,"Success","The mesh was written successfully.");
 
@@ -257,13 +261,22 @@ void MainWindow::on_button_browseInputAdv_clicked()
 
         tempString = metaFile.readLine().simplified();
         tempString = metaFile.readLine().simplified();
-        ui->label_showNumNodes->setText(tempString);
+        ui->label_showNumNodes->setText(QLocale().toString(tempString.toInt()));
         tempString = metaFile.readLine().simplified();
-        ui->label_showNumElements->setText(tempString);
+        ui->label_showNumElements->setText(QLocale().toString(tempString.toInt()));
         tempString = metaFile.readLine().simplified();
-        ui->label_showNumOpenBC->setText(tempString);
+        ui->label_showNumOpenBC->setText(QLocale().toString(tempString.toInt()));
         tempString = metaFile.readLine().simplified();
-        ui->label_showNumLandBC->setText(tempString);
+        ui->label_showNumLandBC->setText(QLocale().toString(tempString.toInt()));
+
+        metaFile.close();
+
+        metaFile.setFileName(directory+"/system/partition.control");
+        if(!metaFile.open(QIODevice::ReadOnly))
+            return;
+
+        tempString = metaFile.readLine().simplified();
+        ui->label_showNumPartitions->setText(tempString);
 
         metaFile.close();
 
