@@ -86,6 +86,33 @@ bool elementSumLessThan(const adcirc_element *element1, const adcirc_element *el
 
 
 
+bool boundaryPositionLessThan(const adcirc_boundary *boundary1,const adcirc_boundary *boundary2)
+{
+    int i;
+    qreal position1,position2;
+    qreal n1,n2;
+
+    position1 = 0.0;
+    position2 = 0.0;
+
+    n1 = static_cast<qreal>(boundary1->numNodes);
+    n2 = static_cast<qreal>(boundary2->numNodes);
+
+    for(i=0;i<boundary1->numNodes;i++)
+        position1 = position1 + boundary1->n1[i]->position.x();
+
+    for(i=0;i<boundary2->numNodes;i++)
+        position2 = position2 + boundary2->n1[i]->position.x();
+
+    position1 = position1 / n1;
+    position2 = position2 / n2;
+
+    return position1>position2;
+
+}
+
+
+
 AdVersion::AdVersion(QObject *parent) : QObject(parent)
 {
     this->mesh = NULL;
@@ -1334,6 +1361,10 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
         this->mesh->landBC[i] = tempBoundary;
 
     }
+
+    //...Sort the boundaries from east-->west
+    std::sort(this->mesh->openBC.begin(),this->mesh->openBC.end(),boundaryPositionLessThan);
+    std::sort(this->mesh->landBC.begin(),this->mesh->landBC.end(),boundaryPositionLessThan);
 
     this->renumber();
 
