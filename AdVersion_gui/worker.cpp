@@ -43,6 +43,7 @@ int Worker::setOperation(QThread *thread, bool doPartition, bool doWrite, bool d
     return 0;
 }
 
+
 void Worker::writePartitionMesh()
 {
 

@@ -153,18 +153,21 @@ int AdVersion::createPartitions(QString meshFile, QString outputFile, int numPar
 }
 
 
-
 int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
 {
-    int ierr,i,j,nn,ne;
+    int ierr,i,j;
     int nLoops,nLoopsMax;
-    QString fileName,file,line,x,y,z,hash;
-    QStringList tempList;
+    QString fileName,file,line,x,y,z,hash,versionString;
     QFile thisFile;
     QVector<adcirc_boundary*> openBCSort,landBCSort;
 
     nLoops = 0;
     nLoopsMax = 0;
+
+    //...Initialize an empty git repository if necessary
+    ierr = AdVersion::getGitVersion(outputFile,versionString);
+    if(versionString==QString())
+        ierr = AdVersion::gitInit(outputFile);
 
     //...Create a new adcirc_mesh if needed
     if(this->mesh==NULL)
@@ -981,6 +984,7 @@ int AdVersion::setHashAlgorithm(QCryptographicHash::Algorithm algorithm)
 int AdVersion::getGitVersion(QString gitDirectory, QString &version)
 {
     int ierr;
+    QFile dir(gitDirectory+"/.git");
     QByteArray tempData;
     git_repository *repo;
     git_describe_result *description;
@@ -988,6 +992,11 @@ int AdVersion::getGitVersion(QString gitDirectory, QString &version)
     git_describe_format_options format;
     git_object *headObject;
     git_buf buffer = { 0 };
+
+    version = QString();
+
+    if(!dir.exists())
+        return -1;
 
     tempData = gitDirectory.toLatin1();
     const char *cgitDirectory = tempData.data();
@@ -1057,6 +1066,21 @@ int AdVersion::getGitVersion(QString gitDirectory, QString &version)
     return ERROR_NOERROR;
 }
 
+
+int AdVersion::gitInit(QString gitDirectory)
+{
+
+    int ierr;
+    git_repository *repository;
+    QByteArray tempData = gitDirectory.toLatin1();
+    const char *cgitDirectory = tempData.data();
+
+    git_libgit2_init();
+    ierr = git_repository_init(&repository,cgitDirectory,0);
+    git_repository_free(repository);
+    git_libgit2_shutdown();
+    return ERROR_NOERROR;
+}
 
 
 int AdVersion::readPartitionedMesh(QString meshFolder)

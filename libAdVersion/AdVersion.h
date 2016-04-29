@@ -50,6 +50,8 @@ public:
 
     static int getGitVersion(QString gitDirectory, QString &version);
 
+    static int gitInit(QString gitDirectory);
+
 protected:
 
 private:
