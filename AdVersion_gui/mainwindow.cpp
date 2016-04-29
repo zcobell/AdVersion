@@ -215,7 +215,6 @@ void MainWindow::on_button_browseOutputAdv_clicked()
             }
         }
     }
-    delete folderChooser;
 
     return;
 }
@@ -364,6 +363,5 @@ void MainWindow::closeProgressBar()
 {
     QApplication::restoreOverrideCursor();
     this->progress->close();
-    delete this->progress;
 }
 

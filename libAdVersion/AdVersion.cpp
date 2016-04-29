@@ -157,7 +157,7 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
 {
     int ierr,i,j;
     int nLoops,nLoopsMax;
-    QString fileName,file,line,x,y,z,hash,versionString;
+    QString fileName,file,line,x,y,z,hash;
     QFile thisFile;
     QVector<adcirc_boundary*> openBCSort,landBCSort;
 
@@ -165,8 +165,11 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
     nLoopsMax = 0;
 
     //...Initialize an empty git repository if necessary
-    ierr = AdVersion::getGitVersion(outputFile,versionString);
-    if(versionString==QString())
+    QFile mainDirectory(outputFile);
+    if(!mainDirectory.exists())
+        QDir().mkdir(outputFile);
+    QFile gitDirectory(outputFile+"/.git");
+    if(!gitDirectory.exists())
         ierr = AdVersion::gitInit(outputFile);
 
     //...Create a new adcirc_mesh if needed
