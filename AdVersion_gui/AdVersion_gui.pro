@@ -67,11 +67,13 @@ LIBS += -L$$OUT_PWD/../libAdVersion -lAdVersion
 SOURCES += main.cpp\
         mainwindow.cpp \
         advfolderchooser.cpp \
-        advqfilesystemmodel.cpp
+        advqfilesystemmodel.cpp \
+    worker.cpp
 
 HEADERS  += mainwindow.h \
             advfolderchooser.h \
-            advqfilesystemmodel.h
+            advqfilesystemmodel.h \
+    worker.h
 
 FORMS    += mainwindow.ui \
             advfolderchooser.ui

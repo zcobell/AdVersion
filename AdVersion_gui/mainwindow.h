@@ -27,7 +27,9 @@
 
 #include <QMainWindow>
 #include <QProgressDialog>
+#include <QThread>
 #include "AdVersion.h"
+#include "worker.h"
 
 namespace Ui {
 class MainWindow;
@@ -61,10 +63,19 @@ private slots:
 
     void on_button_retrieveMesh_clicked();
 
+    void updateProgressBar(int);
+
+    void updateProgressText(QString);
+
+    void closeProgressBar();
+
 private:
     Ui::MainWindow *ui;
     QString previousDirectory;
     QCryptographicHash::Algorithm hashAlgorithm;
+    Worker  *thisWorker;
+    QThread *workThread;
+    QProgressDialog *progress;
 
 };
 

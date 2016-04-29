@@ -25,6 +25,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "advfolderchooser.h"
+#include "worker.h"
 #include <QFileDialog>
 #include <QMessageBox>
 
@@ -92,11 +93,8 @@ void MainWindow::on_button_processData_clicked()
 {
     bool doPartition;
     int ierr,nPartitions;
-    AdVersion versioning;
     QString meshFilename      = ui->text_inputMeshFile->text();
     QString meshFoldername    = ui->text_outputMeshFolder->text();
-
-    versioning.setHashAlgorithm(this->hashAlgorithm);
 
     nPartitions = 0;
 
@@ -121,32 +119,24 @@ void MainWindow::on_button_processData_clicked()
 
     meshFoldername = ui->text_outputMeshFolder->text();
 
-    if(doPartition)
-    {
-        ui->statusBar->showMessage("Partitioning mesh...");
-        ierr = versioning.createPartitions(meshFilename,meshFoldername,nPartitions);
-        if(ierr!=ERROR_NOERROR)
-        {
-            QApplication::restoreOverrideCursor();
-            QMessageBox::critical(this,"ERROR","There was an error while creating partitions.");
-            ui->statusBar->clearMessage();
-            return;
-        }
-    }
+    this->progress = new QProgressDialog(this);
+    this->progress->setMinimum(0);
+    this->progress->setMaximum(0);
+    this->progress->setCancelButton(NULL);
+    this->progress->setWindowTitle("Progress");
+    this->progress->setWindowModality(Qt::WindowModal);
 
-    ui->statusBar->showMessage("Writing partitioned mesh...");
-    ierr = versioning.writePartitionedMesh(meshFilename,meshFoldername);
-    if(ierr!=ERROR_NOERROR)
-    {
-        QApplication::restoreOverrideCursor();
-        QMessageBox::critical(this,"ERROR","There was an error while creating partitions.");
-        ui->statusBar->clearMessage();
-        return;
-    }
+    this->workThread = new QThread(this);
+    this->thisWorker = new Worker();
+    this->thisWorker->setOperation(this->workThread,doPartition,true,false);
+    this->thisWorker->setPartitionMeshData(meshFilename,nPartitions,meshFoldername,this->hashAlgorithm);
 
-    ui->statusBar->clearMessage();
-    QApplication::restoreOverrideCursor();
-    QMessageBox::information(this,"Success","The mesh was written successfully.");
+    connect(this->thisWorker,SIGNAL(processingStep(QString)),this,SLOT(updateProgressText(QString)));
+    connect(this->thisWorker,SIGNAL(finished()),this,SLOT(closeProgressBar()));
+
+    this->thisWorker->moveToThread(this->workThread);
+    this->workThread->start();
+    this->progress->show();
 
     return;
 }
@@ -303,8 +293,6 @@ void MainWindow::on_button_browseOutputMesh_clicked()
 
 void MainWindow::on_button_retrieveMesh_clicked()
 {
-    int ierr;
-    AdVersion versioning;
     QString inputFolder, outputFile, outputFolder;
 
     if(ui->text_inputMeshFolder->text().isEmpty())
@@ -333,30 +321,49 @@ void MainWindow::on_button_retrieveMesh_clicked()
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
-    ui->statusBar->showMessage("Reading partitioned mesh...");
-    ierr = versioning.readPartitionedMesh(inputFolder);
-    if(ierr!=0)
-    {
-        QApplication::restoreOverrideCursor();
-        QMessageBox::critical(this,"ERROR","Error while reading the partitioned mesh.");
-        ui->statusBar->clearMessage();
-        return;
-    }
+    this->progress = new QProgressDialog(this);
+    this->progress->setMinimum(0);
+    this->progress->setMaximum(0);
+    this->progress->setCancelButton(NULL);
+    this->progress->setWindowTitle("Progress");
+    this->progress->setWindowModality(Qt::WindowModal);
 
-    ui->statusBar->showMessage("Writing ADCIRC formatted mesh...");
-    ierr = versioning.writeMesh(outputFile);
-    if(ierr!=ERROR_NOERROR)
-    {
-        QApplication::restoreOverrideCursor();
-        QMessageBox::critical(this,"ERROR","Error while writing the output mesh file.");
-        ui->statusBar->clearMessage();
-        return;
-    }
+    this->workThread = new QThread(this);
+    this->thisWorker = new Worker();
+    this->thisWorker->setOperation(this->workThread,false,false,true);
+    this->thisWorker->setRetrieveMeshData(inputFolder,outputFile);
 
-    QApplication::restoreOverrideCursor();
-    ui->statusBar->clearMessage();
+    connect(this->thisWorker,SIGNAL(processingStep(QString)),this,SLOT(updateProgressText(QString)));
+    connect(this->thisWorker,SIGNAL(finished()),this,SLOT(closeProgressBar()));
 
-    QMessageBox::information(this,"Success","The mesh was written successfully.");
+    this->thisWorker->moveToThread(this->workThread);
+    this->workThread->start();
+    this->progress->show();
 
     return;
 }
+
+
+
+void MainWindow::updateProgressBar(int pct)
+{
+    this->progress->setValue(pct);
+}
+
+
+
+void MainWindow::updateProgressText(QString string)
+{
+    this->progress->setLabelText(string);
+    return;
+}
+
+
+
+void MainWindow::closeProgressBar()
+{
+    QApplication::restoreOverrideCursor();
+    this->progress->close();
+    delete this->progress;
+}
+
