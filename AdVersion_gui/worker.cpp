@@ -50,6 +50,8 @@ void Worker::writePartitionMesh()
     int ierr;
     AdVersion versioning;
 
+    versioning.setHashAlgorithm(this->hashType);
+
     if(this->doPartition)
     {
         emit processingStep("Developing mesh partitions...");

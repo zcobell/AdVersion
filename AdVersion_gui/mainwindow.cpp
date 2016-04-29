@@ -51,6 +51,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_showNumLandBC->setText("");
     ui->label_showNumPartitions->setText("");
 
+    this->hashAlgorithm = QCryptographicHash::Md5;
+
 }
 
 
