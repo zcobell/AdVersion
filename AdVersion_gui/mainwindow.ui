@@ -35,20 +35,20 @@
            <widget class="QLabel" name="label_meshfile">
             <property name="minimumSize">
              <size>
-              <width>120</width>
+              <width>160</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>75</width>
+              <width>160</width>
               <height>16777215</height>
              </size>
             </property>
             <property name="font">
              <font>
               <family>Sans</family>
-              <pointsize>8</pointsize>
+              <pointsize>10</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -117,20 +117,20 @@
            <widget class="QLabel" name="label_outputFolder">
             <property name="minimumSize">
              <size>
-              <width>120</width>
+              <width>160</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>75</width>
+              <width>160</width>
               <height>16777215</height>
              </size>
             </property>
             <property name="font">
              <font>
               <family>Sans</family>
-              <pointsize>8</pointsize>
+              <pointsize>10</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -209,6 +209,12 @@
               <height>16777215</height>
              </size>
             </property>
+            <property name="font">
+             <font>
+              <family>Sans</family>
+              <pointsize>10</pointsize>
+             </font>
+            </property>
             <property name="title">
              <string>Partition Mesh</string>
             </property>
@@ -229,6 +235,12 @@
                  <width>150</width>
                  <height>16777215</height>
                 </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Sans</family>
+                 <pointsize>9</pointsize>
+                </font>
                </property>
                <property name="text">
                 <string>Number of Partitions:</string>
@@ -256,6 +268,12 @@
           </item>
           <item>
            <widget class="QGroupBox" name="groupbox_algorothm">
+            <property name="font">
+             <font>
+              <family>Sans</family>
+              <pointsize>10</pointsize>
+             </font>
+            </property>
             <property name="title">
              <string>Algorithm</string>
             </property>
@@ -273,6 +291,12 @@
                  <width>100</width>
                  <height>16777215</height>
                 </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Sans</family>
+                 <pointsize>9</pointsize>
+                </font>
                </property>
                <property name="toolTip">
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Less complex algorithm, and generates a shorter hash leading to smaller file sizes. Should still be fine for most applications&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -298,6 +322,12 @@
                  <width>100</width>
                  <height>16777215</height>
                 </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Sans</family>
+                 <pointsize>9</pointsize>
+                </font>
                </property>
                <property name="toolTip">
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;More complex algorithm and generates a longer hash. File sizes will be larger.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -361,20 +391,20 @@
            <widget class="QLabel" name="label_inputFolder">
             <property name="minimumSize">
              <size>
-              <width>150</width>
+              <width>160</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>150</width>
+              <width>160</width>
               <height>16777215</height>
              </size>
             </property>
             <property name="font">
              <font>
               <family>Sans</family>
-              <pointsize>9</pointsize>
+              <pointsize>10</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -443,20 +473,20 @@
            <widget class="QLabel" name="label_outputMeshFolder">
             <property name="minimumSize">
              <size>
-              <width>150</width>
+              <width>160</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>150</width>
+              <width>160</width>
               <height>16777215</height>
              </size>
             </property>
             <property name="font">
              <font>
               <family>Sans</family>
-              <pointsize>9</pointsize>
+              <pointsize>10</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -525,20 +555,20 @@
            <widget class="QLabel" name="label_outputMeshFile">
             <property name="minimumSize">
              <size>
-              <width>150</width>
+              <width>160</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>150</width>
+              <width>160</width>
               <height>16777215</height>
              </size>
             </property>
             <property name="font">
              <font>
               <family>Sans</family>
-              <pointsize>9</pointsize>
+              <pointsize>10</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -655,6 +685,11 @@
                  <height>16777215</height>
                 </size>
                </property>
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
+               </property>
                <property name="text">
                 <string>meshVersion</string>
                </property>
@@ -703,6 +738,11 @@
                  <width>150</width>
                  <height>16777215</height>
                 </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
                </property>
                <property name="text">
                 <string>nPartitions</string>
@@ -770,6 +810,11 @@
                  <height>16777215</height>
                 </size>
                </property>
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
+               </property>
                <property name="text">
                 <string>numNodes</string>
                </property>
@@ -818,6 +863,11 @@
                  <width>150</width>
                  <height>16777215</height>
                 </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
                </property>
                <property name="text">
                 <string>numOBC</string>
@@ -885,6 +935,11 @@
                  <height>16777215</height>
                 </size>
                </property>
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
+               </property>
                <property name="text">
                 <string>numElements</string>
                </property>
@@ -933,6 +988,11 @@
                  <width>150</width>
                  <height>16777215</height>
                 </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
                </property>
                <property name="text">
                 <string>numLBC</string>
