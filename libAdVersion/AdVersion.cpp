@@ -1592,7 +1592,14 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
 //-----------------------------------------------------------------------------------------//
 int AdVersion::writeMesh(QString outputFile)
 {
-    return this->mesh->write(outputFile);
+
+    QFile thisFile(outputFile);
+    if(thisFile.exists())
+        thisFile.remove();
+
+    int ierr;
+    ierr = this->mesh->write(outputFile);
+    return ierr;
 }
 //-----------------------------------------------------------------------------------------//
 

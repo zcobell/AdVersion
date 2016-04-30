@@ -240,7 +240,10 @@ void MainWindow::on_button_browseInputAdv_clicked()
         if(isGit.exists())
         {
             ierr = AdVersion::getGitVersion(directory,meshVersion);
-            ui->text_outputMeshFile->setText("myMesh-"+meshVersion+".grd");
+            if(meshVersion==QString())
+                meshVersion = "Not Versioned";
+            else
+                ui->text_outputMeshFile->setText("myMesh-"+meshVersion+".grd");
             ui->label_showMeshVersion->setText(meshVersion);
         }
         else
