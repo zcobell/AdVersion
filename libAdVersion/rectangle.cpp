@@ -1,6 +1,6 @@
 //-----GPL----------------------------------------------------------------------
 //
-// This file is part of libAdVersion
+// This file is part of AdVersion
 // Copyright (C) 2015  Zach Cobell
 //
 //
@@ -23,14 +23,38 @@
 //
 //------------------------------------------------------------------------------
 #include "rectangle.h"
-#include <QDebug>
 
+
+//-----------------------------------------------------------------------------------------//
+//...Constructor
+//-----------------------------------------------------------------------------------------//
+/**
+ * \fn Rectangle::Rectangle
+ * \brief Constructor with reference to QObject
+ *
+ * Constructor with reference to QObject
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 Rectangle::Rectangle(QObject *parent)
 {
 
 }
+//-----------------------------------------------------------------------------------------//
 
 
+
+//-----------------------------------------------------------------------------------------//
+//...Method to enlarge the boundary of a rectangle
+//-----------------------------------------------------------------------------------------//
+/**
+ * \fn Rectangle::extend
+ * \brief Method to enlarge the boundary of a rectangle
+ *
+ * Method to enlarge the boundary of a rectangle
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int Rectangle::extend(QPointF &point)
 {
     qreal xmin,ymin,xmax,ymax;
@@ -80,15 +104,41 @@ int Rectangle::extend(QPointF &point)
 
 
 }
+//-----------------------------------------------------------------------------------------//
 
 
+
+//-----------------------------------------------------------------------------------------//
+//...Method to compute the area of a rectangle
+//-----------------------------------------------------------------------------------------//
+/**
+ * \fn Rectangle::computeArea
+ * \brief Method to compute the area of a rectangle
+ *
+ * Method to compute the area of a rectangle
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 qreal Rectangle::computeArea()
 {
     this->area = qAbs(this->width() * this->height());
     return this->area;
 }
+//-----------------------------------------------------------------------------------------//
 
 
+
+//-----------------------------------------------------------------------------------------//
+//...Method to decide if a point resides within a rectangle
+//-----------------------------------------------------------------------------------------//
+/**
+ * \fn Rectangle::containsPoint
+ * \brief Method to decide if a point resides within a rectangle
+ *
+ * Method to decide if a point resides within a rectangle
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 bool Rectangle::containsPoint(const QPointF &p)
 {
 
@@ -108,8 +158,21 @@ bool Rectangle::containsPoint(const QPointF &p)
     else
         return false;
 }
+//-----------------------------------------------------------------------------------------//
 
 
+
+//-----------------------------------------------------------------------------------------//
+//...Method to enlarge a rectangle by a specified percentage
+//-----------------------------------------------------------------------------------------//
+/**
+ * \fn Rectangle::expand
+ * \brief Method to enlarge a rectangle by a specified percentage
+ *
+ * Method to enlarge a rectangle by a specified percentage
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int Rectangle::expand(qreal percent)
 {
     qreal width_new,height_new,dx,dy;
@@ -121,4 +184,4 @@ int Rectangle::expand(qreal percent)
     this->adjust(-dx,-dy,dx,dy);
     return 0;
 }
-
+//-----------------------------------------------------------------------------------------//

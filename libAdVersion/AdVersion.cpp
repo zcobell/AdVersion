@@ -30,6 +30,30 @@
 #include <QStringList>
 #include <stdlib.h>
 
+
+//-----------------------------------------------------------------------------------------//
+//
+//
+//   C O M P A R I S O N
+//             M E T H O D S
+//
+//
+//-----------------------------------------------------------------------------------------//
+
+
+//-----------------------------------------------------------------------------------------//
+//...Comparison operator for ordering node hashes
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Comparison operator for ordering node hashes
+ *
+ * @param[in] node1  first node for comparison
+ * @param[in] node2  second node for comparison
+ *
+ * Comparison operator for ordering node hashes. Return is if node1 < node2
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 bool nodeHashLessThan(const adcirc_node *node1, const adcirc_node *node2)
 {
     if(node1->positionHash<node2->positionHash)
@@ -37,9 +61,23 @@ bool nodeHashLessThan(const adcirc_node *node1, const adcirc_node *node2)
     else
         return false;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Comparison operator for ordering element hashes
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Comparison operator for ordering element hashes
+ *
+ * @param[in] element1  first element for comparison
+ * @param[in] element2  second element for comparison
+ *
+ * Comparison operator for ordering node hashes. Return is if element1 < element2
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 bool elementHashLessThan(const adcirc_element *element1, const adcirc_element *element2)
 {
     if(element1->hash<element2->hash)
@@ -47,9 +85,23 @@ bool elementHashLessThan(const adcirc_element *element1, const adcirc_element *e
     else
         return false;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Comparison operator for ordering boundary hashes
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Comparison operator for ordering boundary hashes
+ *
+ * @param[in] boundary1  first boundary for comparison
+ * @param[in] boundary2  second boundary for comparison
+ *
+ * Comparison operator for ordering boundary hashes. Return is if boundary1 < boundary2
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 bool boundaryHashLessThan(const adcirc_boundary *boundary1, const adcirc_boundary *boundary2)
 {
     if(boundary1->hash<boundary2->hash)
@@ -57,9 +109,23 @@ bool boundaryHashLessThan(const adcirc_boundary *boundary1, const adcirc_boundar
     else
         return false;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Comparison operator for ordering rectangle areas
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Comparison operator for ordering rectangle areas
+ *
+ * @param[in] rectangle1  first rectangle for comparison
+ * @param[in] rectangle2  second rectangle for comparison
+ *
+ * Comparison operator for ordering node hashes. Return is if rectangle1 < rectangle2
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 bool rectangeleAreaLessThan(const Rectangle rectangle1, const Rectangle rectangle2)
 {
     if(rectangle1.area<rectangle2.area)
@@ -67,47 +133,330 @@ bool rectangeleAreaLessThan(const Rectangle rectangle1, const Rectangle rectangl
     else
         return false;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Comparison operator for ordering node IDs
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Comparison operator for ordering node IDs
+ *
+ * @param[in] node1  first node for comparison
+ * @param[in] node2  second node for comparison
+ *
+ * Comparison operator for ordering node IDs. Return is if node1 < node2
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 bool nodeNumberLessThan(const adcirc_node *node1, const adcirc_node *node2)
 {
     return node1->id<node2->id;
 }
+//-----------------------------------------------------------------------------------------//
 
 
-
+//-----------------------------------------------------------------------------------------//
+//...Comparison operator for ordering element by the sum of their nodes
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Comparison operator for ordering elements by the sum of their node IDs
+ *
+ * @param[in] node1  first node for comparison
+ * @param[in] node2  second node for comparison
+ *
+ * Comparison operator for ordering elements by the sum of their node IDs. This does a decent
+ * job of ordering the element IDs without doing something more complex
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 bool elementSumLessThan(const adcirc_element *element1, const adcirc_element *element2)
 {
     int s1 = element1->connections[0]->id + element1->connections[1]->id + element1->connections[2]->id;
     int s2 = element2->connections[0]->id + element2->connections[1]->id + element1->connections[2]->id;
     return s1<s2;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Comparison operator for ordering boundary conditions
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Comparison operator for ordering boundaries by position geographicly
+ *
+ * @param[in] boundary1  first boundary for comparison
+ * @param[in] boundary2  second boundary for comparison
+ *
+ * Comparison operator for ordering boundary conditions. Return is if boundary1 > boundary2
+ * so that boundaries are positioned east-->west
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 bool boundaryPositionLessThan(const adcirc_boundary *boundary1,const adcirc_boundary *boundary2)
 {
     return boundary1->averageLongitude > boundary2->averageLongitude;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+
+//-----------------------------------------------------------------------------------------//
+//
+//
+//   C O N S T R U C T O R  /  D E S T R U C T O R
+//             M E T H O D S
+//
+//
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Constructor for AdVersion object
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Constructor for AdVersion object
+ *
+ * Constructor for AdVersion object
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 AdVersion::AdVersion(QObject *parent) : QObject(parent)
 {
     this->mesh = NULL;
     this->hashAlgorithm = QCryptographicHash::Sha1;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Destructor for AdVersion object
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Destrictor for AdVersion object
+ *
+ * Destructor for AdVersion object
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 AdVersion::~AdVersion()
 {
 
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+
+//-----------------------------------------------------------------------------------------//
+//
+//
+//   S T A T I C
+//             M E T H O D S
+//
+//
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Static method to retrieve the Git version form a repository
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Static method to return the Git version of the HEAD in a Git repository
+ *
+ * @param[in]  gitDirectory Location of the Git repository
+ * @param[out] version      Current revision of the Git repository
+ *
+ * Static method to return the Git version fo the HEAD in a Git repository.
+ * Equivalent to: git describe --always --tags
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::getGitVersion(QString gitDirectory, QString &version)
+{
+    int ierr;
+    QFile dir(gitDirectory+"/.git");
+    QByteArray tempData;
+    git_repository *repo;
+    git_describe_result *description;
+    git_describe_options options;
+    git_describe_format_options format;
+    git_object *headObject;
+    git_buf buffer = { 0 };
+
+    version = QString();
+
+    if(!dir.exists())
+        return -1;
+
+    tempData = gitDirectory.toLatin1();
+    const char *cgitDirectory = tempData.data();
+
+    git_libgit2_init();
+
+    ierr = git_repository_open(&repo,cgitDirectory);
+    if(ierr<0)
+    {
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_describe_init_options(&options,GIT_DESCRIBE_OPTIONS_VERSION);
+    options.show_commit_oid_as_fallback = 1;
+    if(ierr<0)
+    {
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_describe_init_format_options(&format,GIT_DESCRIBE_FORMAT_OPTIONS_VERSION);
+    if(ierr<0)
+    {
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_revparse_single(&headObject,repo,"HEAD");
+    if(ierr<0)
+    {
+        git_object_free(headObject);
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_describe_commit(&description,headObject,&options);
+    if(ierr<0)
+    {
+        git_object_free(headObject);
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    ierr = git_describe_format(&buffer,description,&format);
+    if(ierr<0)
+    {
+        git_object_free(headObject);
+        git_describe_result_free(description);
+        git_repository_free(repo);
+        git_libgit2_shutdown();
+        return ierr;
+    }
+
+    version.sprintf("%s",buffer.ptr);
+
+    git_object_free(headObject);
+    git_describe_result_free(description);
+    git_repository_free(repo);
+    git_libgit2_shutdown();
+
+    return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Static method to initialize an empty Git repository
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Static method to initialize an empty Git repository
+ *
+ * @param[in]  gitDirectory Location of the Git repository
+ *
+ * Static method to initialize an empty Git repository
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::gitInit(QString gitDirectory)
+{
+
+    int ierr;
+    git_repository *repository;
+    QByteArray tempData = gitDirectory.toLatin1();
+    const char *cgitDirectory = tempData.data();
+
+    git_libgit2_init();
+    ierr = git_repository_init(&repository,cgitDirectory,0);
+    git_repository_free(repository);
+    git_libgit2_shutdown();
+    return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to remove a directory
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to remove a directory
+ *
+ * Method to remove a directory
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+bool AdVersion::removeDirectory(const QString &dirName)
+{
+    bool result = true;
+    QDir dir(dirName);
+
+    if (dir.exists(dirName)) {
+        Q_FOREACH(QFileInfo info, dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst)) {
+            if (info.isDir()) {
+                result = removeDirectory(info.absoluteFilePath());
+            }
+            else {
+                result = QFile::remove(info.absoluteFilePath());
+            }
+
+            if (!result) {
+                return result;
+            }
+        }
+        result = dir.rmdir(dirName);
+    }
+    return result;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//
+//
+//   P U B L I C
+//             M E T H O D S
+//
+//
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to create the mesh partitions
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to create a partitioned mesh using METIS
+ *
+ * @param[in]  meshFile       ADCIRC formatted file to read
+ * @param[in]  outputFile     Directory to create for the partitioned mesh
+ * @param[in]  numPartitions  Number of partitions to divide the mesh into
+ *
+ * Method to create a partitioned mesh using METIS
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::createPartitions(QString meshFile, QString outputFile, int numPartitions)
 {
 
@@ -138,31 +487,40 @@ int AdVersion::createPartitions(QString meshFile, QString outputFile, int numPar
     if(ierr!=ERROR_NOERROR)
         return -1;
 
-    //...Build the polygons from the METIS partition
-    ierr = this->buildPolygons();
+    //...Build the rectangles from the METIS partition
+    ierr = this->buildRectangles();
     if(ierr!=ERROR_NOERROR)
         return -1;
 
-    //...Write the partitions to the polygon files
-    ierr = this->writePolygonPartitions();
+    //...Write the partitions to the file
+    ierr = this->writeRectanglePartitions();
     if(ierr!=ERROR_NOERROR)
         return -1;
 
     return ERROR_NOERROR;
 
 }
+//-----------------------------------------------------------------------------------------//
 
 
+
+//-----------------------------------------------------------------------------------------//
+//...Method to write the partitioned mesh
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to write the partitioned mesh to the output directory
+ *
+ * @param[in]  meshFile       ADCIRC formatted file to read
+ * @param[in]  outputFile     Directory to create for the partitioned mesh
+ *
+ * Method to write the partitioned mesh files. Code assumes that partitioning has already
+ * been completed and that the partition files can be found in the outputFile folder.
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
 {
-    int ierr,i,j;
-    int nLoops,nLoopsMax;
-    QString fileName,file,line,x,y,z,hash;
-    QFile thisFile;
-    QVector<adcirc_boundary*> openBCSort,landBCSort;
-
-    nLoops = 0;
-    nLoopsMax = 0;
+    int ierr;
 
     //...Initialize an empty git repository if necessary
     QFile mainDirectory(outputFile);
@@ -183,7 +541,7 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
             return -1;
     }
 
-    //...Compute the SHA1 hashes for the mesh
+    //...Compute the hashes for the mesh
     ierr = this->mesh->setHashAlgorithm(this->hashAlgorithm);
     ierr = this->mesh->hashMesh();
     if(ierr!=ERROR_NOERROR)
@@ -196,197 +554,35 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
     ierr = this->partitionMesh();
 
     //...Write the node files
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
-
-        std::sort(this->nodeList[i].begin(),this->nodeList[i].end(),nodeHashLessThan);
-
-        file.sprintf("partition_%4.4i.node",i);
-        fileName = this->nodeDir.path()+"/"+file;
-
-        thisFile.setFileName(fileName);
-
-        if(thisFile.exists())
-            thisFile.remove();
-        if(!thisFile.open(QIODevice::WriteOnly))
-            return -1;
-
-        line = QString("%1 \n").arg(this->nodeList[i].length());
-        thisFile.write(line.toUtf8());
-
-        for(j=0;j<this->nodeList[i].length();j++)
-        {
-            hash = this->nodeList[i].value(j)->positionHash;
-            x.sprintf("%+018.12e",this->nodeList[i].value(j)->position.x());
-            y.sprintf("%+018.12e",this->nodeList[i].value(j)->position.y());
-            z.sprintf("%+018.12e",this->nodeList[i].value(j)->position.z());
-            line = QString("%1 %2 %3 %4 \n").arg(hash).arg(x).arg(y).arg(z);
-            thisFile.write(line.toUtf8());
-
-            nLoops = nLoops + 1;
-        }
-
-        thisFile.close();
-
-    }
+    ierr = this->writeNodeFiles();
 
     //...Write the element files
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
+    ierr = this->writeElementFiles();
 
-        std::sort(this->elementList[i].begin(),this->elementList[i].end(),elementHashLessThan);
+    //...Write the boundary files
+    ierr = this->writeBoundaryFiles();
 
-        file.sprintf("partition_%4.4i.element",i);
-        fileName = this->elemDir.path()+"/"+file;
-        thisFile.setFileName(fileName);
-        if(thisFile.exists())
-            thisFile.remove();
-        if(!thisFile.open(QIODevice::WriteOnly))
-            return -1;
+    //...Write the system files
+    ierr = this->writeSystemFiles();
 
-        line = QString("%1 \n").arg(this->elementList[i].length());
-        thisFile.write(line.toUtf8());
-
-        for(j=0;j<this->elementList[i].length();j++)
-        {
-            line = QString("%1 %2 %3 %4 \n")
-                    .arg(this->elementList[i].value(j)->hash)
-                    .arg(this->elementList[i].value(j)->connections[0]->positionHash)
-                    .arg(this->elementList[i].value(j)->connections[1]->positionHash)
-                    .arg(this->elementList[i].value(j)->connections[2]->positionHash);
-            thisFile.write(line.toUtf8());
-        }
-        thisFile.close();
-
-        nLoops = nLoops + 1;
-    }
-
-    //...Create the open and land boundary lists for sorting
-    openBCSort.resize(this->mesh->numOpenBoundaries);
-    for(i=0;i<this->mesh->numOpenBoundaries;i++)
-        openBCSort[i] = this->mesh->openBC[i];
-
-    landBCSort.resize(this->mesh->numLandBoundaries);
-    for(i=0;i<this->mesh->numLandBoundaries;i++)
-        landBCSort[i] = this->mesh->landBC[i];
-
-    std::sort(openBCSort.begin(),openBCSort.end(),boundaryHashLessThan);
-    std::sort(landBCSort.begin(),landBCSort.end(),boundaryHashLessThan);
-
-    //...Write the files containing the list of boundaries
-    QFile fileOpenBC(this->openBoundDir.path()+"/open.boundary");
-    QFile fileLandBC(this->landBoundDir.path()+"/land.boundary");
-
-    //...Remove if it exists
-    if(fileOpenBC.exists())
-        fileOpenBC.remove();
-
-    if(fileLandBC.exists())
-        fileLandBC.remove();
-
-    //...Write the header (nBoundaries) and hash for each open boundary
-    if(!fileOpenBC.open(QIODevice::WriteOnly))
-        return -1;
-    fileOpenBC.write(QString(QString::number(this->mesh->numOpenBoundaries)+"\n").toUtf8());
-    for(i=0;i<this->mesh->numOpenBoundaries;i++)
-    {
-        line = QString("%1\n").arg(openBCSort[i]->hash);
-        fileOpenBC.write(line.toUtf8());
-    }
-    fileOpenBC.close();
-
-    //...Write the header (nBoundaries) and hash for each land boundary
-    if(!fileLandBC.open(QIODevice::WriteOnly))
-        return -1;
-    fileLandBC.write(QString(QString::number(this->mesh->numLandBoundaries)+"\n").toUtf8());
-    for(i=0;i<this->mesh->numLandBoundaries;i++)
-    {
-        line = QString("%1\n").arg(landBCSort[i]->hash);
-        fileLandBC.write(line.toUtf8());
-     }
-    fileLandBC.close();
-
-    //...Write the open boundary files
-    for(i=0;i<this->mesh->numOpenBoundaries;i++)
-    {
-        //...Create a new file using the hash as the name
-        fileName = this->openBoundDir.path()+"/"+this->mesh->openBC[i]->hash+".bnd";
-        thisFile.setFileName(fileName);
-        if(thisFile.exists())
-            thisFile.remove();
-
-        if(!thisFile.open(QIODevice::WriteOnly))
-            return -1;
-
-        //...Write the boundary
-        line = QString("%1 %2 \n").arg(this->mesh->openBC[i]->hash).arg(this->mesh->openBC[i]->numNodes);
-        thisFile.write(line.toUtf8());
-        for(j=0;j<this->mesh->openBC[i]->numNodes;j++)
-        {
-            line = this->formatBoundaryHashLine(this->mesh->openBC[i],j);
-            thisFile.write(line.toUtf8());
-        }
-        thisFile.close();
-    }
-
-
-    //...Write the land boundary files
-    for(i=0;i<this->mesh->numLandBoundaries;i++)
-    {
-        //...Create a new file using the hash as the name
-        fileName = this->landBoundDir.path()+"/"+this->mesh->landBC[i]->hash+".bnd";
-        thisFile.setFileName(fileName);
-        if(thisFile.exists())
-            thisFile.remove();
-
-        if(!thisFile.open(QIODevice::WriteOnly))
-            return -1;
-
-        //...Write the boundary
-        line = QString("%1 %2 %3 \n").arg(this->mesh->landBC[i]->hash)
-                                     .arg(this->mesh->landBC[i]->numNodes)
-                                     .arg(this->mesh->landBC[i]->code);
-        thisFile.write(line.toUtf8());
-        for(j=0;j<this->mesh->landBC[i]->numNodes;j++)
-        {
-            line = this->formatBoundaryHashLine(this->mesh->landBC[i],j);
-            thisFile.write(line.toUtf8());
-        }
-        thisFile.close();
-    }
-
-    //...Write the mesh header (title, nNodes, nElements)
-    thisFile.setFileName(this->systemDir.path()+"/mesh.header");
-    if(thisFile.exists())
-        thisFile.remove();
-    if(!thisFile.open(QIODevice::WriteOnly))
-        return -1;
-
-    thisFile.write(QString(this->mesh->title+"\n").toUtf8());
-    thisFile.write(QString(QString::number(this->mesh->numNodes)+"\n").toUtf8());
-    thisFile.write(QString(QString::number(this->mesh->numElements)+"\n").toUtf8());
-    thisFile.write(QString(QString::number(this->mesh->numOpenBoundaries)+"\n").toUtf8());
-    thisFile.write(QString(QString::number(this->mesh->numLandBoundaries)+"\n").toUtf8());
-    thisFile.close();
-
-    //...Write the type of hashing algorithm used
-    thisFile.setFileName(this->systemDir.path()+"/hash.type");
-    if(thisFile.exists())
-        thisFile.remove();
-    if(!thisFile.open(QIODevice::WriteOnly))
-        return -1;
-
-    if(this->hashAlgorithm==QCryptographicHash::Sha1)
-        thisFile.write("sha1");
-    else
-        thisFile.write("md5");
-    thisFile.close();
-
-    return ERROR_NOERROR;
+        return ERROR_NOERROR;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Method to generate the directory names used in the directory tree
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to generate the directory names used in the directory tree
+ *
+ * @param[in]  directory   Directory to create for the partitioned mesh
+ *
+ * Method to generate the directory names used in the directory tree
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::generateDirectoryNames(QString directory)
 {
     this->myDir.setPath(directory);
@@ -398,9 +594,22 @@ int AdVersion::generateDirectoryNames(QString directory)
     this->systemDir.setPath(directory+"/system");
     return ERROR_NOERROR;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Method to generate the directory tree
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to generate the directory tree
+ *
+ * @param[in]  directory   Directory to create for the partitioned mesh
+ *
+ * Method to generate the directory tree
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::buildDirectoryTree(QString directory)
 {
     int ierr;
@@ -489,9 +698,24 @@ int AdVersion::buildDirectoryTree(QString directory)
 
     return ERROR_NOERROR;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Method to generate a line for the boundary file depending on boundary condition
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to generate a line for the boundary file depending on boundary condition
+ *
+ * @param[in]  boundary   boundary condition to write the line in the output file for
+ * @param[in]  index      position along the boudnary to write the line in the output file for
+ * @return                single line in the output file for one node along a boundary condition
+ *
+ * Method to generate a line for the boundary file depending on boundary condition
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
 {
 
@@ -539,9 +763,23 @@ QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
 
     return line;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Method to read a hashed boundary condition line from a file
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Function to read a hashed boundary condition line from a file
+ *
+ * @param[in]  boundary   boundary condition to write the line in the output file for
+ * @param[in]  index      position along the boudnary to write the line in the output file for
+ *
+ * Method to generate a line for the boundary file depending on boundary condition
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QMap<QString,adcirc_node*> &map)
 {
     qreal   crest,super,sub,pipeht,pipediam,pipecoef;
@@ -611,9 +849,22 @@ int AdVersion::readBoundaryHashLine(QString &line, adcirc_boundary *boundary, in
     return 0;
 
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Method to use METIS to partition the mesh
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to use METIS to partition the mesh into subdomains
+ *
+ * Method to use METIS to partition the mesh into subdomains. The METIS partitions
+ * are taken and converted into rectangles so that searches are much easier to conduct
+ * later on
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::metisPartition()
 {
     QVector<int> qptr,qind;
@@ -720,10 +971,23 @@ int AdVersion::metisPartition()
     return ERROR_NOERROR;
 
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
-int AdVersion::buildPolygons()
+//-----------------------------------------------------------------------------------------//
+//...Method to build rectangles from the METIS partitions
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to use the METIS partition result to construct rectangles
+ *
+ * Method to use the METIS partition result to construct rectangles. Rectangles
+ * are sorted in reverse area size order so that large rectangles do not dominate
+ * the selection of points
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::buildRectangles()
 {
     int i,partition;
     qreal x,y;
@@ -767,17 +1031,28 @@ int AdVersion::buildPolygons()
     return ERROR_NOERROR;
 
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
-int AdVersion::writePolygonPartitions()
+//-----------------------------------------------------------------------------------------//
+//...Method to write the rectangles that have been generated for partitioning
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to write the rectangles that have been generated for partitioning
+ *
+ * Method to write the rectangles that have been generated for partitioning
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::writeRectanglePartitions()
 {
     int i;
     qreal x1,x2,y1,y2;
     QString line;
     QFile partitionFile;
 
-    //...Write control file for polygons
+    //...Write control file for rectangles
     partitionFile.setFileName(this->systemDir.path()+"/partition.control");
     if(partitionFile.exists())
         partitionFile.remove();
@@ -785,7 +1060,7 @@ int AdVersion::writePolygonPartitions()
         return -1;
     partitionFile.write(QString(QString::number(this->partitionRectangles.length())+"\n").toUtf8());
 
-    //...Write polygon files for partition boundaries
+    //...Write rectangles files for partition boundaries
     for(i=0;i<this->partitionRectangles.length();i++)
     {
         //...Write the rectangle bounding box to the main file
@@ -799,35 +1074,21 @@ int AdVersion::writePolygonPartitions()
     partitionFile.close();
     return ERROR_NOERROR;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
-bool AdVersion::removeDirectory(const QString &dirName)
-{
-    bool result = true;
-    QDir dir(dirName);
-
-    if (dir.exists(dirName)) {
-        Q_FOREACH(QFileInfo info, dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst)) {
-            if (info.isDir()) {
-                result = removeDirectory(info.absoluteFilePath());
-            }
-            else {
-                result = QFile::remove(info.absoluteFilePath());
-            }
-
-            if (!result) {
-                return result;
-            }
-        }
-        result = dir.rmdir(dirName);
-    }
-    return result;
-}
-
-
-
-int AdVersion::readPolygons()
+//-----------------------------------------------------------------------------------------//
+//...Method to read the rectangles
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to read the rectangles that have been constructed for partitioning
+ *
+ * Method to read the rectangles that have been constructed for partitioning
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::readRectangles()
 {
     int i;
     QString line,x1s,x2s,y1s,y2s;
@@ -863,9 +1124,19 @@ int AdVersion::readPolygons()
 
     return ERROR_NOERROR;
 }
+//-----------------------------------------------------------------------------------------//
 
 
-
+//-----------------------------------------------------------------------------------------//
+//...Method that will partition an input mesh based upont he previously constructed rectangles
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method that will partition an input mesh based upont he previously constructed rectangles
+ *
+ * Method that will partition an input mesh based upont he previously constructed rectangles
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::partitionMesh()
 {
     int i,j,ierr,nNodeFound,nElementFound;
@@ -875,7 +1146,7 @@ int AdVersion::partitionMesh()
 
     //...Read the partitioning
     if(this->partitionRectangles.isEmpty())
-        ierr = this->readPolygons();
+        ierr = this->readRectangles();
 
     //...Create element center locations
     elementCenters.resize(this->mesh->numElements);
@@ -912,7 +1183,7 @@ int AdVersion::partitionMesh()
         this->nodeList.resize(this->nMeshPartitions);
         this->elementList.resize(this->nMeshPartitions);
 
-        //...Start organizing the nodes into polygons
+        //...Start organizing the nodes into rectangles
         for(i=0;i<this->mesh->numNodes;i++)
         {
             for(j=0;j<this->nMeshPartitions;j++)
@@ -937,7 +1208,7 @@ int AdVersion::partitionMesh()
             continue;
         }
 
-        //...Organize the elements into polygons
+        //...Organize the elements into rectangles
         for(i=0;i<this->mesh->numElements;i++)
         {
             for(j=0;j<this->nMeshPartitions;j++)
@@ -969,123 +1240,43 @@ int AdVersion::partitionMesh()
     //...If we needed to expand the partitions,
     //   save them so we don't need to do it again
     if(expanded)
-        this->writePolygonPartitions();
+        this->writeRectanglePartitions();
 
     return ERROR_NOERROR;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Method to set the type of hashing algorithm to be used
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to set the type of hashing algorithm to be used
+ *
+ * Method to set the type of hashing algorithm to be used
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::setHashAlgorithm(QCryptographicHash::Algorithm algorithm)
 {
     this->hashAlgorithm = algorithm;
     return ERROR_NOERROR;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
-int AdVersion::getGitVersion(QString gitDirectory, QString &version)
-{
-    int ierr;
-    QFile dir(gitDirectory+"/.git");
-    QByteArray tempData;
-    git_repository *repo;
-    git_describe_result *description;
-    git_describe_options options;
-    git_describe_format_options format;
-    git_object *headObject;
-    git_buf buffer = { 0 };
-
-    version = QString();
-
-    if(!dir.exists())
-        return -1;
-
-    tempData = gitDirectory.toLatin1();
-    const char *cgitDirectory = tempData.data();
-
-    git_libgit2_init();
-
-    ierr = git_repository_open(&repo,cgitDirectory);
-    if(ierr<0)
-    {
-        git_repository_free(repo);
-        git_libgit2_shutdown();
-        return ierr;
-    }
-
-    ierr = git_describe_init_options(&options,GIT_DESCRIBE_OPTIONS_VERSION);
-    options.show_commit_oid_as_fallback = 1;
-    if(ierr<0)
-    {
-        git_repository_free(repo);
-        git_libgit2_shutdown();
-        return ierr;
-    }
-
-    ierr = git_describe_init_format_options(&format,GIT_DESCRIBE_FORMAT_OPTIONS_VERSION);
-    if(ierr<0)
-    {
-        git_repository_free(repo);
-        git_libgit2_shutdown();
-        return ierr;
-    }
-
-    ierr = git_revparse_single(&headObject,repo,"HEAD");
-    if(ierr<0)
-    {
-        git_object_free(headObject);
-        git_repository_free(repo);
-        git_libgit2_shutdown();
-        return ierr;
-    }
-
-    ierr = git_describe_commit(&description,headObject,&options);
-    if(ierr<0)
-    {
-        git_object_free(headObject);
-        git_repository_free(repo);
-        git_libgit2_shutdown();
-        return ierr;
-    }
-
-    ierr = git_describe_format(&buffer,description,&format);
-    if(ierr<0)
-    {
-        git_object_free(headObject);
-        git_describe_result_free(description);
-        git_repository_free(repo);
-        git_libgit2_shutdown();
-        return ierr;
-    }
-
-    version.sprintf("%s",buffer.ptr);
-
-    git_object_free(headObject);
-    git_describe_result_free(description);
-    git_repository_free(repo);
-    git_libgit2_shutdown();
-
-    return ERROR_NOERROR;
-}
-
-
-int AdVersion::gitInit(QString gitDirectory)
-{
-
-    int ierr;
-    git_repository *repository;
-    QByteArray tempData = gitDirectory.toLatin1();
-    const char *cgitDirectory = tempData.data();
-
-    git_libgit2_init();
-    ierr = git_repository_init(&repository,cgitDirectory,0);
-    git_repository_free(repository);
-    git_libgit2_shutdown();
-    return ERROR_NOERROR;
-}
-
-
+//-----------------------------------------------------------------------------------------//
+//...Method to read the mesh that has been partitioned into the repository
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to read the mesh that has been partitioned into the repository
+ *
+ * Method to read the mesh that has been partitioned into the repository
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::readPartitionedMesh(QString meshFolder)
 {
     int i,j,nNodes,nNodesInMesh,nElements,nElementsInMesh;
@@ -1383,16 +1574,45 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
 
     return 0;
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Method to call the routine to write a mesh in QADCModuless
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to call the routine to write a mesh in QADCModules
+ *
+ * @param[in] outputFile  Name of the file to write
+ *
+ * Method to call the routine to write a mesh in QADCModules
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::writeMesh(QString outputFile)
 {
     return this->mesh->write(outputFile);
 }
+//-----------------------------------------------------------------------------------------//
 
 
 
+//-----------------------------------------------------------------------------------------//
+//...Method to renumber the ADCIRC mesh in a semi-logical way
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to renumber the ADCIRC mesh in a semi-logical way
+ *
+ * Method to renumber the mesh in a semi-logical way. The METIS NodeND method is used
+ * to generate numbering for the nodes. Then, to roughly orient the elemnts in the same way
+ * the elements are ordered based upon the sum of the nodes that make them up. See, I told
+ * you it was only semi-logical. Boundary conditions are ordered east-->west. This satisfies
+ * that the boundary conditions (open/river) will remain in the same order (unless a condition
+ * is added) so that the fort.15 is not jumbled by being put through this code.
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
 int AdVersion::renumber()
 {
 
@@ -1465,3 +1685,273 @@ int AdVersion::renumber()
 
     return 0;
 }
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to write the partitioned elements to the repository
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to write the partitioned nodes to the repository
+ *
+ * Method to write the partitioned nodes to the repository
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::writeNodeFiles()
+{
+    int i,j;
+    QString file,fileName,hash;
+    QString x, y, z, line;
+    QFile thisFile;
+
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+
+        std::sort(this->nodeList[i].begin(),this->nodeList[i].end(),nodeHashLessThan);
+
+        file.sprintf("partition_%4.4i.node",i);
+        fileName = this->nodeDir.path()+"/"+file;
+
+        thisFile.setFileName(fileName);
+
+        if(thisFile.exists())
+            thisFile.remove();
+        if(!thisFile.open(QIODevice::WriteOnly))
+            return -1;
+
+        line = QString("%1 \n").arg(this->nodeList[i].length());
+        thisFile.write(line.toUtf8());
+
+        for(j=0;j<this->nodeList[i].length();j++)
+        {
+            hash = this->nodeList[i].value(j)->positionHash;
+            x.sprintf("%+018.12e",this->nodeList[i].value(j)->position.x());
+            y.sprintf("%+018.12e",this->nodeList[i].value(j)->position.y());
+            z.sprintf("%+018.12e",this->nodeList[i].value(j)->position.z());
+            line = QString("%1 %2 %3 %4 \n").arg(hash).arg(x).arg(y).arg(z);
+            thisFile.write(line.toUtf8());
+        }
+
+        thisFile.close();
+
+    }
+
+    return ERROR_NOERROR;
+
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to write the partitioned elements to the repository
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to write the partitioned elements to the repository
+ *
+ * Method to write the partitioned elements to the repository
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::writeElementFiles()
+{
+    int i,j;
+    QString file,fileName,line;
+    QFile thisFile;
+
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+
+        std::sort(this->elementList[i].begin(),this->elementList[i].end(),elementHashLessThan);
+
+        file.sprintf("partition_%4.4i.element",i);
+        fileName = this->elemDir.path()+"/"+file;
+        thisFile.setFileName(fileName);
+        if(thisFile.exists())
+            thisFile.remove();
+        if(!thisFile.open(QIODevice::WriteOnly))
+            return -1;
+
+        line = QString("%1 \n").arg(this->elementList[i].length());
+        thisFile.write(line.toUtf8());
+
+        for(j=0;j<this->elementList[i].length();j++)
+        {
+            line = QString("%1 %2 %3 %4 \n")
+                    .arg(this->elementList[i].value(j)->hash)
+                    .arg(this->elementList[i].value(j)->connections[0]->positionHash)
+                    .arg(this->elementList[i].value(j)->connections[1]->positionHash)
+                    .arg(this->elementList[i].value(j)->connections[2]->positionHash);
+            thisFile.write(line.toUtf8());
+        }
+        thisFile.close();
+    }
+
+    return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to write the boundary conditions to the repository
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to write boundary conditions to the repository
+ *
+ * Method to write the boundary conditions to the repository
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::writeBoundaryFiles()
+{
+    int i,j;
+    QString fileName,line;
+    QFile thisFile;
+    QVector<adcirc_boundary*> openBCSort,landBCSort;
+
+    //...Create the open and land boundary lists for sorting
+    openBCSort.resize(this->mesh->numOpenBoundaries);
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+        openBCSort[i] = this->mesh->openBC[i];
+
+    landBCSort.resize(this->mesh->numLandBoundaries);
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+        landBCSort[i] = this->mesh->landBC[i];
+
+    std::sort(openBCSort.begin(),openBCSort.end(),boundaryHashLessThan);
+    std::sort(landBCSort.begin(),landBCSort.end(),boundaryHashLessThan);
+
+    //...Write the files containing the list of boundaries
+    QFile fileOpenBC(this->openBoundDir.path()+"/open.boundary");
+    QFile fileLandBC(this->landBoundDir.path()+"/land.boundary");
+
+    //...Remove if it exists
+    if(fileOpenBC.exists())
+        fileOpenBC.remove();
+
+    if(fileLandBC.exists())
+        fileLandBC.remove();
+
+    //...Write the header (nBoundaries) and hash for each open boundary
+    if(!fileOpenBC.open(QIODevice::WriteOnly))
+        return -1;
+    fileOpenBC.write(QString(QString::number(this->mesh->numOpenBoundaries)+"\n").toUtf8());
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+    {
+        line = QString("%1\n").arg(openBCSort[i]->hash);
+        fileOpenBC.write(line.toUtf8());
+    }
+    fileOpenBC.close();
+
+    //...Write the header (nBoundaries) and hash for each land boundary
+    if(!fileLandBC.open(QIODevice::WriteOnly))
+        return -1;
+    fileLandBC.write(QString(QString::number(this->mesh->numLandBoundaries)+"\n").toUtf8());
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+    {
+        line = QString("%1\n").arg(landBCSort[i]->hash);
+        fileLandBC.write(line.toUtf8());
+     }
+    fileLandBC.close();
+
+    //...Write the open boundary files
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+    {
+        //...Create a new file using the hash as the name
+        fileName = this->openBoundDir.path()+"/"+this->mesh->openBC[i]->hash+".bnd";
+        thisFile.setFileName(fileName);
+        if(thisFile.exists())
+            thisFile.remove();
+
+        if(!thisFile.open(QIODevice::WriteOnly))
+            return -1;
+
+        //...Write the boundary
+        line = QString("%1 %2 \n").arg(this->mesh->openBC[i]->hash).arg(this->mesh->openBC[i]->numNodes);
+        thisFile.write(line.toUtf8());
+        for(j=0;j<this->mesh->openBC[i]->numNodes;j++)
+        {
+            line = this->formatBoundaryHashLine(this->mesh->openBC[i],j);
+            thisFile.write(line.toUtf8());
+        }
+        thisFile.close();
+    }
+
+
+    //...Write the land boundary files
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+    {
+        //...Create a new file using the hash as the name
+        fileName = this->landBoundDir.path()+"/"+this->mesh->landBC[i]->hash+".bnd";
+        thisFile.setFileName(fileName);
+        if(thisFile.exists())
+            thisFile.remove();
+
+        if(!thisFile.open(QIODevice::WriteOnly))
+            return -1;
+
+        //...Write the boundary
+        line = QString("%1 %2 %3 \n").arg(this->mesh->landBC[i]->hash)
+                                     .arg(this->mesh->landBC[i]->numNodes)
+                                     .arg(this->mesh->landBC[i]->code);
+        thisFile.write(line.toUtf8());
+        for(j=0;j<this->mesh->landBC[i]->numNodes;j++)
+        {
+            line = this->formatBoundaryHashLine(this->mesh->landBC[i],j);
+            thisFile.write(line.toUtf8());
+        }
+        thisFile.close();
+    }
+
+    return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to write the system files to the repository
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to write the system files to the repository
+ *
+ * Method to write the system files to the repository
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::writeSystemFiles()
+{
+
+    QFile thisFile;
+
+    //...Write the mesh header (title, nNodes, nElements)
+    thisFile.setFileName(this->systemDir.path()+"/mesh.header");
+    if(thisFile.exists())
+        thisFile.remove();
+    if(!thisFile.open(QIODevice::WriteOnly))
+        return -1;
+
+    thisFile.write(QString(this->mesh->title+"\n").toUtf8());
+    thisFile.write(QString(QString::number(this->mesh->numNodes)+"\n").toUtf8());
+    thisFile.write(QString(QString::number(this->mesh->numElements)+"\n").toUtf8());
+    thisFile.write(QString(QString::number(this->mesh->numOpenBoundaries)+"\n").toUtf8());
+    thisFile.write(QString(QString::number(this->mesh->numLandBoundaries)+"\n").toUtf8());
+    thisFile.close();
+
+    //...Write the type of hashing algorithm used
+    thisFile.setFileName(this->systemDir.path()+"/hash.type");
+    if(thisFile.exists())
+        thisFile.remove();
+    if(!thisFile.open(QIODevice::WriteOnly))
+        return -1;
+
+    if(this->hashAlgorithm==QCryptographicHash::Sha1)
+        thisFile.write("sha1");
+    else
+        thisFile.write("md5");
+    thisFile.close();
+}
+//-----------------------------------------------------------------------------------------//

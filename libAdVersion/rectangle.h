@@ -1,6 +1,6 @@
 //-----GPL----------------------------------------------------------------------
 //
-// This file is part of libAdVersion
+// This file is part of AdVersion
 // Copyright (C) 2015  Zach Cobell
 //
 //
@@ -22,6 +22,18 @@
 //  File: rectangle.h
 //
 //------------------------------------------------------------------------------
+/**
+ * \class Rectangle
+ *
+ * \brief Class that describes a rectangle, subclass of QRectF
+ *
+ * \author Zach Cobell
+ *
+ * The Rectangle class adds extra functions on top of QRectF
+ *
+ * Contact: zcobell@gmail.com
+ *
+ */
 #ifndef RECTANGLE_H
 #define RECTANGLE_H
 
@@ -33,11 +45,15 @@ class Rectangle : public QRectF
 public:
     Rectangle(QObject *parent = 0);
 
+    ///Calculated area for this rectangle
     qreal area;
 
     qreal computeArea();
+
     int    extend(QPointF &point);
+
     int    expand(qreal percent);
+
     bool   containsPoint(const QPointF &p);
 };
 

@@ -1,6 +1,6 @@
 //-----GPL----------------------------------------------------------------------
 //
-// This file is part of libAdVersion
+// This file is part of AdVersion
 // Copyright (C) 2015  Zach Cobell
 //
 //
