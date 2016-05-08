@@ -67,16 +67,16 @@ int displayHelp()
 {
     qStdOut() << "AdVersion Command Line Interface \n";
     qStdOut() << "\n";
-    qStdOut() << "Usage: ./adversion [OPTIONS]";
+    qStdOut() << "Usage: ./adversion [OPTIONS]\n";
     qStdOut() << "\n";
     qStdOut() << "OPTIONS:\n";
-    qStdOut() << "   -n    #             Partition into # subdomains\n";
-    qStdOut() << "   -adv                Process input arguments into the\n";
-    qStdOut() << "                       .adv structure.\n";
-    qStdOut() << "   -grd                Process input arguments into the\n";
-    qStdOut() << "                       standard ADCIRC format\n";
-    qStdOut() << "   -I    [FILE]        Input file (.grd or .adv)\n";
-    qStdOut() << "   -O    [DIRECTORY]   Output file (.grd or .adv)\n";
+    qStdOut() << "   -n    #         Partition into # subdomains\n";
+    qStdOut() << "   -adv            Process input arguments into the\n";
+    qStdOut() << "                    .adv structure.\n";
+    qStdOut() << "   -grd            Process input arguments into the\n";
+    qStdOut() << "                     standard ADCIRC format\n";
+    qStdOut() << "   -I    [FILE]    Input file (.grd or .adv)\n";
+    qStdOut() << "   -O    [FILE]    Output file (.grd or .adv)\n\n";
     qStdOut() << "Please report bugs to https://github.com/zcobell/AdVersion\n";
     return 0;
 }
@@ -91,9 +91,12 @@ int parseCommandLineOptions(int argc, char *argv[], QString input, QString outpu
         ierr = displayHelp();
         return -1;
     }
-    for(i=1;i<argc;i++)
+
+    i = 0;
+    while(i<argc)
     {
-        qDebug() << argv[i];
+
+        i++;
     }
 
 
