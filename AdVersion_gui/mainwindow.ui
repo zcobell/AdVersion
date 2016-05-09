@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>795</width>
+    <width>797</width>
     <height>374</height>
    </rect>
   </property>
@@ -628,8 +628,10 @@
          <widget class="QGroupBox" name="groupBox_meshInfo">
           <property name="font">
            <font>
-            <family>Sans</family>
+            <family>MS Shell Dlg 2</family>
             <pointsize>10</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
            </font>
           </property>
           <property name="title">
@@ -688,6 +690,8 @@
                <property name="font">
                 <font>
                  <pointsize>9</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="text">
@@ -742,6 +746,8 @@
                <property name="font">
                 <font>
                  <pointsize>9</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="text">
@@ -813,6 +819,8 @@
                <property name="font">
                 <font>
                  <pointsize>9</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="text">
@@ -867,6 +875,8 @@
                <property name="font">
                 <font>
                  <pointsize>9</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="text">
@@ -938,6 +948,8 @@
                <property name="font">
                 <font>
                  <pointsize>9</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="text">
@@ -992,6 +1004,8 @@
                <property name="font">
                 <font>
                  <pointsize>9</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
                 </font>
                </property>
                <property name="text">
@@ -1048,8 +1062,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>795</width>
-     <height>23</height>
+     <width>797</width>
+     <height>21</height>
     </rect>
    </property>
   </widget>
