@@ -24,76 +24,92 @@
 //------------------------------------------------------------------------------
 #include <QCoreApplication>
 #include <stdio.h>
-#include <QDebug>
+#include <QFileInfo>
 #include "AdVersion.h"
 
 using namespace std;
 
+//...Function prototypes
 int displayHelp();
-int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions);
-int partitioning();
-int writePartitionedMesh();
-int retrieveMesh();
+int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions, bool &overrideNaming);
+int writeAdv(QString input, QString output, int nPart);
+int writeMesh(QString input, QString output, bool naming);
 
-QTextStream& qStdOut()
-{
-    static QTextStream ts( stdout );
-    return ts;
-}
-
-QTextStream& qStdErr()
-{
-    static QTextStream ts( stderr );
-    return ts;
-}
 
 int main(int argc, char *argv[])
 {
     int ierr,mode,npart;
+    bool naming;
     QString input,output;
 
     QCoreApplication a(argc, argv);
 
+    QTextStream out(stdout,QIODevice::WriteOnly);
 
-    ierr = parseCommandLineOptions(argc,argv,input,output,mode,npart);
+    //...Parse the command line arguments
+    ierr = parseCommandLineOptions(argc,argv,input,output,mode,npart,naming);
 
     if(ierr != 0)
         return ierr;
 
+    //...Enter the appropriate routine
+    if(mode==1)
+        ierr = writeAdv(input,output,npart);
+    else if(mode==2)
+        ierr = writeMesh(input,output,naming);
+    else
+    {
+        out << "ERROR: Invalid mode.\n";
+        out.flush();
+        return -1;
+    }
 
     return 0;
 }
+
 
 
 int displayHelp()
 {
-    qStdOut() << "AdVersion Command Line Interface \n";
-    qStdOut() << "\n";
-    qStdOut() << "Usage: ./adversion [OPTIONS]\n";
-    qStdOut() << "\n";
-    qStdOut() << "OPTIONS:\n";
-    qStdOut() << "   -n    #         Partition into # subdomains\n";
-    qStdOut() << "   -adv            Process input arguments into the\n";
-    qStdOut() << "                    .adv structure.\n";
-    qStdOut() << "   -grd            Process input arguments into the\n";
-    qStdOut() << "                     standard ADCIRC format\n";
-    qStdOut() << "   -I    [FILE]    Input file (.grd or .adv)\n";
-    qStdOut() << "   -O    [FILE]    Output file (.grd or .adv)\n\n";
-    qStdOut() << "Please report bugs to https://github.com/zcobell/AdVersion\n";
+    QTextStream out(stdout,QIODevice::WriteOnly);
+
+    out << "AdVersion Command Line Interface \n";
+    out << "\n";
+    out << "Usage: ./adversion [OPTIONS]\n";
+    out << "\n";
+    out << "OPTIONS:\n";
+    out << "   -n    #         Partition into # subdomains\n";
+    out << "   -adv            Process input arguments into the\n";
+    out << "                    .adv structure.\n";
+    out << "   -grd            Process input arguments into the\n";
+    out << "                     standard ADCIRC format\n";
+    out << "   -I    [FILE]    Input file (.grd or .adv)\n";
+    out << "   -O    [FILE]    Output file (.grd or .adv)\n";
+    out << "   -V              Do not automatically name output file with\n";
+    out << "                   version obtained from repository\n";
+    out << "\n";
+    out << "Please report bugs to https://github.com/zcobell/AdVersion\n";
+    out.flush();
     return 0;
 }
 
-int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions)
+
+
+int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions, bool &overrideNaming)
 {
-    int i,ierr;
+    QTextStream out(stdout,QIODevice::WriteOnly);
+
+    int i;
     bool foundMode = false;
     QString argument;
+
     nPartitions = -1;
+    overrideNaming = false;
 
     if(argc<6)
     {
-        qStdOut() << "ERROR: Need to specify command line arguments\n\n";
-        ierr = displayHelp();
+        out << "ERROR: Need to specify command line arguments\n\n";
+        displayHelp();
         return -1;
     }
 
@@ -125,8 +141,8 @@ int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &out
             }
             else
             {
-                qStdOut() << "ERROR: Cannot specify multiple operation modes.\n\n";
-                ierr = displayHelp();
+                out << "ERROR: Cannot specify multiple operation modes.\n\n";
+                displayHelp();
                 return -1;
             }
         }
@@ -139,13 +155,116 @@ int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &out
             }
             else
             {
-                qStdOut() << "ERROR: Cannot specify multiple operation modes.\n\n";
-                ierr = displayHelp();
+                out << "ERROR: Cannot specify multiple operation modes.\n\n";
+                displayHelp();
                 return -1;
             }
+        }
+        else if(argument=="-V")
+        {
+            overrideNaming = true;
         }
         i++;
     }
 
     return 0;
 }
+
+
+
+int writeAdv(QString input, QString output, int nPart)
+{
+    QTextStream out(stdout,QIODevice::WriteOnly);
+    int ierr;
+    AdVersion versioning;
+
+    //...First, check if the output folder exists
+    QFile partition(output+"/system/partition.control");
+    if(!partition.exists() && nPart == -1)
+    {
+        out << "ERROR: You must specify a number of partitions during the first pass.\n";
+        return -1;
+    }
+
+    //...Check the output extension for ".adv" and insert if necessary
+    QFileInfo outputFileInfo(output);
+    if(outputFileInfo.suffix()!="adv")
+        output = output+".adv";
+
+    if(nPart != -1)
+    {
+        out << "Creating the mesh partitions...";
+        out.flush();
+        ierr = versioning.createPartitions(input,output,nPart);
+
+        if(ierr!=ERROR_NOERROR)
+        {
+            out << "ERROR!\n";
+            return ierr;
+        }
+        else
+        {
+            out << "done!\n";
+        }
+        out.flush();
+    }
+
+    ierr = versioning.writePartitionedMesh(input,output);
+    if(ierr!=0)
+        return ierr;
+
+    return 0;
+}
+
+
+
+int writeMesh(QString input, QString output, bool naming)
+{
+    QTextStream out(stdout,QIODevice::WriteOnly);
+    int ierr;
+    QString version;
+    QFileInfo fileInfo(output);
+    AdVersion versioning;
+
+    //...Check if the ADV exists
+    QFile inputAdv(input);
+    if(!inputAdv.exists())
+    {
+        out << "ERROR: The specified ADV does not exist.\n";
+        return -1;
+    }
+
+    //...Get the Git version
+    AdVersion::getGitVersion(input,version);
+
+    //...Check the suffix
+    if(fileInfo.suffix()!="grd" || fileInfo.suffix()!="14")
+        fileInfo.setFile(output+".grd");
+
+    //...Create the output filename with the git version included
+    if(version != "" && !naming)
+        output = fileInfo.absoluteDir().path()+"/"+fileInfo.baseName()+"-"+version+"."+fileInfo.suffix();
+    else
+        output = fileInfo.absoluteDir().path()+"/"+fileInfo.baseName()+"."+fileInfo.suffix();
+
+    //...Read the partitioned mesh
+    out << "Reading the partitioned mesh...";
+    ierr = versioning.readPartitionedMesh(input);
+    if(ierr!=ERROR_NOERROR)
+        out << "ERROR!\n";
+    else
+        out << "done!\n";
+    out.flush();
+
+    //...Write the mesh in standard format
+    out << "Writing the mesh...";
+    ierr = versioning.writeMesh(output);
+    if(ierr!=ERROR_NOERROR)
+        out << "ERROR!\n";
+    else
+        out << "done!\n";
+    out.flush();
+
+    return 0;
+}
+
