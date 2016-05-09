@@ -30,7 +30,7 @@
 using namespace std;
 
 int displayHelp();
-int parseCommandLineOptions(int argc, char *argv[], QString input, QString output, int mode, int nPartitions);
+int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions);
 int partitioning();
 int writePartitionedMesh();
 int retrieveMesh();
@@ -57,6 +57,8 @@ int main(int argc, char *argv[])
 
     ierr = parseCommandLineOptions(argc,argv,input,output,mode,npart);
 
+    if(ierr != 0)
+        return ierr;
 
 
     return 0;
@@ -81,24 +83,69 @@ int displayHelp()
     return 0;
 }
 
-int parseCommandLineOptions(int argc, char *argv[], QString input, QString output, int mode, int nPartitions)
+int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions)
 {
     int i,ierr;
+    bool foundMode = false;
+    QString argument;
+    nPartitions = -1;
 
-    if(argc<4)
+    if(argc<6)
     {
         qStdOut() << "ERROR: Need to specify command line arguments\n\n";
         ierr = displayHelp();
         return -1;
     }
 
-    i = 0;
+    i = 1;
     while(i<argc)
     {
-
+        argument = QString(argv[i]);
+        if(argument=="-I")
+        {
+            i = i + 1;
+            input = QString(argv[i]);
+        }
+        else if(argument=="-O")
+        {
+            i = i + 1;
+            output = QString(argv[i]);
+        }
+        else if(argument=="-n")
+        {
+            i = i + 1;
+            nPartitions = QString(argv[i]).toInt();
+        }
+        else if(argument=="-adv")
+        {
+            if(foundMode==false)
+            {
+                mode = 1;
+                foundMode = true;
+            }
+            else
+            {
+                qStdOut() << "ERROR: Cannot specify multiple operation modes.\n\n";
+                ierr = displayHelp();
+                return -1;
+            }
+        }
+        else if(argument=="-grd")
+        {
+            if(foundMode==false)
+            {
+                mode = 2;
+                foundMode = true;
+            }
+            else
+            {
+                qStdOut() << "ERROR: Cannot specify multiple operation modes.\n\n";
+                ierr = displayHelp();
+                return -1;
+            }
+        }
         i++;
     }
-
 
     return 0;
 }
