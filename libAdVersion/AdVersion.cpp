@@ -30,7 +30,6 @@
 #include <QStringList>
 #include <stdlib.h>
 
-
 //-----------------------------------------------------------------------------------------//
 //
 //
@@ -397,42 +396,6 @@ int AdVersion::gitInit(QString gitDirectory)
 
 
 //-----------------------------------------------------------------------------------------//
-//...Method to remove a directory
-//-----------------------------------------------------------------------------------------//
-/**
- * \brief Method to remove a directory
- *
- * Method to remove a directory
- *
- **/
-//-----------------------------------------------------------------------------------------//
-bool AdVersion::removeDirectory(const QString &dirName)
-{
-    bool result = true;
-    QDir dir(dirName);
-
-    if (dir.exists(dirName)) {
-        Q_FOREACH(QFileInfo info, dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst)) {
-            if (info.isDir()) {
-                result = removeDirectory(info.absoluteFilePath());
-            }
-            else {
-                result = QFile::remove(info.absoluteFilePath());
-            }
-
-            if (!result) {
-                return result;
-            }
-        }
-        result = dir.rmdir(dirName);
-    }
-    return result;
-}
-//-----------------------------------------------------------------------------------------//
-
-
-
-//-----------------------------------------------------------------------------------------//
 //
 //
 //   P U B L I C
@@ -480,22 +443,22 @@ int AdVersion::createPartitions(QString meshFile, QString outputFile, int numPar
 
     ierr = this->buildDirectoryTree(outputFile);
     if(ierr!=ERROR_NOERROR)
-        return -1;
+        return -2;
 
     //...Use METIS to partition the mesh
     ierr = this->metisPartition();
     if(ierr!=ERROR_NOERROR)
-        return -1;
+        return -3;
 
     //...Build the rectangles from the METIS partition
     ierr = this->buildRectangles();
     if(ierr!=ERROR_NOERROR)
-        return -1;
+        return -4;
 
     //...Write the partitions to the file
     ierr = this->writeRectanglePartitions();
     if(ierr!=ERROR_NOERROR)
-        return -1;
+        return -5;
 
     return ERROR_NOERROR;
 
@@ -565,8 +528,357 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString outputFile)
     //...Write the system files
     ierr = this->writeSystemFiles();
 
-        return ERROR_NOERROR;
+    return ERROR_NOERROR;
 }
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to read the mesh that has been partitioned into the repository
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to read the mesh that has been partitioned into the repository
+ *
+ * Method to read the mesh that has been partitioned into the repository
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::readPartitionedMesh(QString meshFolder)
+{
+    int i,j,nNodes,nNodesInMesh,nElements,nElementsInMesh;
+    int nodeIndex,elementIndex,code,ierr;
+    qreal x,y,z;
+    QString tempLine,filename,file,tempString,boundaryHash;
+    QString tempX,tempY,tempZ,codeString,nNodesString;
+    QString nodeHash,elementHash,nodeHash1,nodeHash2,nodeHash3;
+    QStringList tempList,tempList2;
+    QByteArray fileData;
+    QFile thisFile,openBoundFile,landBoundFile;
+    QVector<QString> openBoundaryHashFilenames;
+    QVector<QString> landBoundaryHashFilenames;
+    QMap<QString,adcirc_node*> nodeMap;
+    adcirc_node *tempNode;
+    adcirc_element *tempElement;
+    adcirc_boundary *tempBoundary;
+
+    //...Check if folder exists
+    QFile folder(meshFolder);
+    if(!folder.exists())
+        return -1;
+
+    //...Generate the directory names
+    this->generateDirectoryNames(meshFolder);
+
+    //...Check that all the system files we need exist
+    QFile meshHeaderFile(this->systemDir.path()+"/mesh.header");
+    QFile partitionFile(this->systemDir.path()+"/partition.control");
+    QFile hashFile(this->systemDir.path()+"/hash.type");
+
+    if(!meshHeaderFile.exists())
+        return -1;
+
+    if(!partitionFile.exists())
+        return -1;
+
+    if(!hashFile.exists())
+        return -1;
+
+    //...Start up a new mesh
+    this->mesh = new adcirc_mesh(this);
+
+    //...Read the system files
+    if(!meshHeaderFile.open(QIODevice::ReadOnly))
+        return -1;
+
+    if(!partitionFile.open(QIODevice::ReadOnly))
+        return -1;
+
+    tempLine = meshHeaderFile.readLine().simplified();
+    this->mesh->title = tempLine;
+    meshHeaderFile.close();
+
+    tempLine = partitionFile.readLine().simplified();
+    this->nMeshPartitions = tempLine.toInt();
+
+    //...Check if all the node files exist
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        file.sprintf("partition_%4.4i.node",i);
+        filename = this->nodeDir.path()+"/"+file;
+        thisFile.setFileName(filename);
+        if(!thisFile.exists())
+            return -1;
+    }
+
+    //...Check if all the element files exist
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        file.sprintf("partition_%4.4i.element",i);
+        filename = this->elemDir.path()+"/"+file;
+        thisFile.setFileName(filename);
+        if(!thisFile.exists())
+            return -1;
+    }
+
+    //...Check if all the boundary files exists
+    openBoundFile.setFileName(this->openBoundDir.path()+"/open.boundary");
+    if(!openBoundFile.open(QIODevice::ReadOnly))
+        return -1;
+
+    tempLine = openBoundFile.readLine().simplified();
+    this->mesh->numOpenBoundaries = tempLine.toInt();
+    openBoundaryHashFilenames.resize(this->mesh->numOpenBoundaries);
+
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+    {
+        openBoundaryHashFilenames[i] = this->openBoundDir.path()+"/"+openBoundFile.readLine().simplified()+".bnd";
+        thisFile.setFileName(openBoundaryHashFilenames[i]);
+        if(!thisFile.exists())
+            return -1;
+    }
+    openBoundFile.close();
+
+    landBoundFile.setFileName(this->landBoundDir.path()+"/land.boundary");
+    if(!landBoundFile.open(QIODevice::ReadOnly))
+        return -1;
+
+    tempLine = landBoundFile.readLine().simplified();
+    this->mesh->numLandBoundaries = tempLine.toInt();
+    landBoundaryHashFilenames.resize(this->mesh->numLandBoundaries);
+
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+    {
+        landBoundaryHashFilenames[i] = this->landBoundDir.path()+"/"+landBoundFile.readLine().simplified()+".bnd";
+        thisFile.setFileName(landBoundaryHashFilenames[i]);
+        if(!thisFile.exists())
+            return -1;
+    }
+    landBoundFile.close();
+
+    //...Start reading the node files
+    this->nodeList.resize(this->nMeshPartitions);
+    nNodesInMesh = 0;
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        file.sprintf("partition_%4.4i.node",i);
+        filename = this->nodeDir.path()+"/"+file;
+        thisFile.setFileName(filename);
+        if(!thisFile.open(QIODevice::ReadOnly))
+            return -1;
+
+        fileData = thisFile.readAll();
+        tempList = QString(fileData).split("\n");
+        thisFile.close();
+
+        tempLine = tempList.value(0);
+        nNodes   = tempLine.toInt();
+
+        for(j=0;j<nNodes;j++)
+        {
+            tempString = tempList.value(j+1);
+            tempList2  = tempString.simplified().split(" ");
+            nodeHash   = tempList2.value(0);
+            tempX      = tempList2.value(1);
+            tempY      = tempList2.value(2);
+            tempZ      = tempList2.value(3);
+            x          = tempX.toDouble();
+            y          = tempY.toDouble();
+            z          = tempZ.toDouble();
+            tempNode   = new adcirc_node(this);
+            tempNode->position.setX(x);
+            tempNode->position.setY(y);
+            tempNode->position.setZ(z);
+            tempNode->positionHash = nodeHash;
+            this->nodeList[i].append(tempNode);
+            nNodesInMesh = nNodesInMesh + 1;
+        }
+    }
+    this->mesh->numNodes = nNodesInMesh;
+
+    //...Rectify the nodes to the mesh object
+    nodeIndex = 0;
+    this->mesh->nodes.resize(nNodesInMesh);
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        for(j=0;j<this->nodeList[i].length();j++)
+        {
+            this->mesh->nodes[nodeIndex] = nodeList[i].at(j);
+            this->mesh->nodes[nodeIndex]->id = nodeIndex+1;
+            nodeMap[this->mesh->nodes[nodeIndex]->positionHash] = this->mesh->nodes[nodeIndex];
+            nodeIndex = nodeIndex + 1;
+        }
+    }
+
+    //...Read the element files
+    this->elementList.resize(this->nMeshPartitions);
+    nElementsInMesh = 0;
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        file.sprintf("partition_%4.4i.element",i);
+        filename = this->elemDir.path()+"/"+file;
+        thisFile.setFileName(filename);
+        if(!thisFile.open(QIODevice::ReadOnly))
+            return -1;
+
+        fileData = thisFile.readAll();
+        tempList = QString(fileData).split("\n");
+        thisFile.close();
+
+        tempLine  = tempList.value(0);
+        nElements = tempLine.toInt();
+
+        for(j=0;j<nElements;j++)
+        {
+            tempString  = tempList.value(j+1);
+            tempList2   = tempString.simplified().split(" ");
+            elementHash = tempList2.value(0);
+            nodeHash1   = tempList2.value(1);
+            nodeHash2   = tempList2.value(2);
+            nodeHash3   = tempList2.value(3);
+            tempElement = new adcirc_element(this);
+
+            tempElement->hash = elementHash;
+            tempElement->connections[0] = nodeMap[nodeHash1];
+            tempElement->connections[1] = nodeMap[nodeHash2];
+            tempElement->connections[2] = nodeMap[nodeHash3];
+            nElementsInMesh = nElementsInMesh + 1;
+
+            this->elementList[i].append(tempElement);
+
+        }
+    }
+    this->mesh->numElements = nElementsInMesh;
+
+
+    //...Rectify the elements to the mesh object
+    elementIndex = 0;
+    this->mesh->elements.resize(nElementsInMesh);
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        for(j=0;j<this->elementList[i].length();j++)
+        {
+            this->mesh->elements[elementIndex] = elementList[i].at(j);
+            this->mesh->elements[elementIndex]->id = elementIndex+1;
+            elementIndex = elementIndex + 1;
+        }
+    }
+
+    //...Read the open boundaries
+    this->mesh->openBC.resize(this->mesh->numOpenBoundaries);
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+    {
+        thisFile.setFileName(openBoundaryHashFilenames[i]);
+        if(!thisFile.open(QIODevice::ReadOnly))
+                return -1;
+
+        tempLine     = thisFile.readLine().simplified();
+        tempList     = tempLine.split(" ");
+        boundaryHash = tempList.value(0);
+        nNodesString = tempList.value(1);
+        nNodes       = nNodesString.toInt();
+        codeString   = tempList.value(2);
+        code         = codeString.toInt();
+
+        tempBoundary = new adcirc_boundary(this);
+        tempBoundary->setupBoundary(code,nNodes);
+
+        for(j=0;j<tempBoundary->numNodes;j++)
+        {
+            tempLine = thisFile.readLine().simplified();
+            ierr     = this->readBoundaryHashLine(tempLine,tempBoundary,j,nodeMap);
+        }
+
+        thisFile.close();
+
+        this->mesh->openBC[i] = tempBoundary;
+
+    }
+
+
+    //...Read the land boundaries
+    this->mesh->landBC.resize(this->mesh->numLandBoundaries);
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+    {
+        thisFile.setFileName(landBoundaryHashFilenames[i]);
+        if(!thisFile.open(QIODevice::ReadOnly))
+                return -1;
+
+        tempLine     = thisFile.readLine().simplified();
+        tempList     = tempLine.split(" ");
+        boundaryHash = tempList.value(0);
+        nNodesString = tempList.value(1);
+        nNodes       = nNodesString.toInt();
+        codeString   = tempList.value(2);
+        code         = codeString.toInt();
+
+        tempBoundary = new adcirc_boundary(this);
+        tempBoundary->setupBoundary(code,nNodes);
+
+        for(j=0;j<tempBoundary->numNodes;j++)
+        {
+            tempLine = thisFile.readLine().simplified();
+            ierr     = this->readBoundaryHashLine(tempLine,tempBoundary,j,nodeMap);
+        }
+
+        thisFile.close();
+
+        this->mesh->landBC[i] = tempBoundary;
+
+    }
+
+    //...Sort the boundaries from east-->west
+    for(i=0;i<this->mesh->numOpenBoundaries;i++)
+        this->mesh->openBC[i]->calculateAverageLongitude();
+
+    for(i=0;i<this->mesh->numLandBoundaries;i++)
+        this->mesh->landBC[i]->calculateAverageLongitude();
+
+    std::sort(this->mesh->openBC.begin(),this->mesh->openBC.end(),boundaryPositionLessThan);
+    std::sort(this->mesh->landBC.begin(),this->mesh->landBC.end(),boundaryPositionLessThan);
+
+    this->renumber();
+
+    return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to call the routine to write a mesh in QADCModuless
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to call the routine to write a mesh in QADCModules
+ *
+ * @param[in] outputFile  Name of the file to write
+ *
+ * Method to call the routine to write a mesh in QADCModules
+ *
+ **/
+//-----------------------------------------------------------------------------------------//
+int AdVersion::writeMesh(QString outputFile)
+{
+
+    QFile thisFile(outputFile);
+    if(thisFile.exists())
+        thisFile.remove();
+
+    int ierr;
+    ierr = this->mesh->write(outputFile);
+    return ierr;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//
+//
+//   P R I V A T E
+//             M E T H O D S
+//
+//
 //-----------------------------------------------------------------------------------------//
 
 
@@ -634,7 +946,7 @@ int AdVersion::buildDirectoryTree(QString directory)
     }
     else
     {
-        this->removeDirectory(this->nodeDir.path());
+        this->nodeDir.removeRecursively();
         err = QDir().mkdir(nodeDir.path());
         if(!err)
             return -1;
@@ -648,7 +960,7 @@ int AdVersion::buildDirectoryTree(QString directory)
     }
     else
     {
-        this->removeDirectory(this->elemDir.path());
+        this->elemDir.removeRecursively();
         err = QDir().mkdir(elemDir.path());
         if(!err)
             return -1;
@@ -661,6 +973,7 @@ int AdVersion::buildDirectoryTree(QString directory)
             return -1;
     }
 
+
     if(!openBoundDir.exists())
     {
         err = QDir().mkdir(openBoundDir.path());
@@ -669,7 +982,7 @@ int AdVersion::buildDirectoryTree(QString directory)
     }
     else
     {
-        this->removeDirectory(this->openBoundDir.path());
+        this->openBoundDir.removeRecursively();
         err = QDir().mkdir(openBoundDir.path());
         if(!err)
             return -1;
@@ -683,11 +996,12 @@ int AdVersion::buildDirectoryTree(QString directory)
     }
     else
     {
-        this->removeDirectory(this->landBoundDir.path());
+        this->landBoundDir.removeRecursively();
         err = QDir().mkdir(landBoundDir.path());
         if(!err)
             return -1;
     }
+
 
     if(!systemDir.exists())
     {
@@ -1262,344 +1576,6 @@ int AdVersion::setHashAlgorithm(QCryptographicHash::Algorithm algorithm)
 {
     this->hashAlgorithm = algorithm;
     return ERROR_NOERROR;
-}
-//-----------------------------------------------------------------------------------------//
-
-
-
-//-----------------------------------------------------------------------------------------//
-//...Method to read the mesh that has been partitioned into the repository
-//-----------------------------------------------------------------------------------------//
-/**
- * \brief Method to read the mesh that has been partitioned into the repository
- *
- * Method to read the mesh that has been partitioned into the repository
- *
- **/
-//-----------------------------------------------------------------------------------------//
-int AdVersion::readPartitionedMesh(QString meshFolder)
-{
-    int i,j,nNodes,nNodesInMesh,nElements,nElementsInMesh;
-    int nodeIndex,elementIndex,code,ierr;
-    qreal x,y,z;
-    QString tempLine,filename,file,tempString,boundaryHash;
-    QString tempX,tempY,tempZ,codeString,nNodesString;
-    QString nodeHash,elementHash,nodeHash1,nodeHash2,nodeHash3;
-    QStringList tempList,tempList2;
-    QByteArray fileData;
-    QFile thisFile,openBoundFile,landBoundFile;
-    QVector<QString> openBoundaryHashFilenames;
-    QVector<QString> landBoundaryHashFilenames;
-    QMap<QString,adcirc_node*> nodeMap;
-    adcirc_node *tempNode;
-    adcirc_element *tempElement;
-    adcirc_boundary *tempBoundary;
-
-    //...Check if folder exists
-    QFile folder(meshFolder);
-    if(!folder.exists())
-        return -1;
-
-    //...Generate the directory names
-    this->generateDirectoryNames(meshFolder);
-
-    //...Check that all the system files we need exist
-    QFile meshHeaderFile(this->systemDir.path()+"/mesh.header");
-    QFile partitionFile(this->systemDir.path()+"/partition.control");
-    QFile hashFile(this->systemDir.path()+"/hash.type");
-
-    if(!meshHeaderFile.exists())
-        return -1;
-
-    if(!partitionFile.exists())
-        return -1;
-
-    if(!hashFile.exists())
-        return -1;
-
-    //...Start up a new mesh
-    this->mesh = new adcirc_mesh(this);
-
-    //...Read the system files
-    if(!meshHeaderFile.open(QIODevice::ReadOnly))
-        return -1;
-
-    if(!partitionFile.open(QIODevice::ReadOnly))
-        return -1;
-
-    tempLine = meshHeaderFile.readLine().simplified();
-    this->mesh->title = tempLine;
-    meshHeaderFile.close();
-
-    tempLine = partitionFile.readLine().simplified();
-    this->nMeshPartitions = tempLine.toInt();
-
-    //...Check if all the node files exist
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
-        file.sprintf("partition_%4.4i.node",i);
-        filename = this->nodeDir.path()+"/"+file;
-        thisFile.setFileName(filename);
-        if(!thisFile.exists())
-            return -1;
-    }
-
-    //...Check if all the element files exist
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
-        file.sprintf("partition_%4.4i.element",i);
-        filename = this->elemDir.path()+"/"+file;
-        thisFile.setFileName(filename);
-        if(!thisFile.exists())
-            return -1;
-    }
-
-    //...Check if all the boundary files exists
-    openBoundFile.setFileName(this->openBoundDir.path()+"/open.boundary");
-    if(!openBoundFile.open(QIODevice::ReadOnly))
-        return -1;
-
-    tempLine = openBoundFile.readLine().simplified();
-    this->mesh->numOpenBoundaries = tempLine.toInt();
-    openBoundaryHashFilenames.resize(this->mesh->numOpenBoundaries);
-
-    for(i=0;i<this->mesh->numOpenBoundaries;i++)
-    {
-        openBoundaryHashFilenames[i] = this->openBoundDir.path()+"/"+openBoundFile.readLine().simplified()+".bnd";
-        thisFile.setFileName(openBoundaryHashFilenames[i]);
-        if(!thisFile.exists())
-            return -1;
-    }
-    openBoundFile.close();
-
-    landBoundFile.setFileName(this->landBoundDir.path()+"/land.boundary");
-    if(!landBoundFile.open(QIODevice::ReadOnly))
-        return -1;
-
-    tempLine = landBoundFile.readLine().simplified();
-    this->mesh->numLandBoundaries = tempLine.toInt();
-    landBoundaryHashFilenames.resize(this->mesh->numLandBoundaries);
-
-    for(i=0;i<this->mesh->numLandBoundaries;i++)
-    {
-        landBoundaryHashFilenames[i] = this->landBoundDir.path()+"/"+landBoundFile.readLine().simplified()+".bnd";
-        thisFile.setFileName(landBoundaryHashFilenames[i]);
-        if(!thisFile.exists())
-            return -1;
-    }
-    landBoundFile.close();
-
-    //...Start reading the node files
-    this->nodeList.resize(this->nMeshPartitions);
-    nNodesInMesh = 0;
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
-        file.sprintf("partition_%4.4i.node",i);
-        filename = this->nodeDir.path()+"/"+file;
-        thisFile.setFileName(filename);
-        if(!thisFile.open(QIODevice::ReadOnly))
-            return -1;
-
-        fileData = thisFile.readAll();
-        tempList = QString(fileData).split("\n");
-        thisFile.close();
-
-        tempLine = tempList.value(0);
-        nNodes   = tempLine.toInt();
-
-        for(j=0;j<nNodes;j++)
-        {
-            tempString = tempList.value(j+1);
-            tempList2  = tempString.simplified().split(" ");
-            nodeHash   = tempList2.value(0);
-            tempX      = tempList2.value(1);
-            tempY      = tempList2.value(2);
-            tempZ      = tempList2.value(3);
-            x          = tempX.toDouble();
-            y          = tempY.toDouble();
-            z          = tempZ.toDouble();
-            tempNode   = new adcirc_node(this);
-            tempNode->position.setX(x);
-            tempNode->position.setY(y);
-            tempNode->position.setZ(z);
-            tempNode->positionHash = nodeHash;
-            this->nodeList[i].append(tempNode);
-            nNodesInMesh = nNodesInMesh + 1;
-        }
-    }
-    this->mesh->numNodes = nNodesInMesh;
-
-    //...Rectify the nodes to the mesh object
-    nodeIndex = 0;
-    this->mesh->nodes.resize(nNodesInMesh);
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
-        for(j=0;j<this->nodeList[i].length();j++)
-        {
-            this->mesh->nodes[nodeIndex] = nodeList[i].at(j);
-            this->mesh->nodes[nodeIndex]->id = nodeIndex+1;
-            nodeMap[this->mesh->nodes[nodeIndex]->positionHash] = this->mesh->nodes[nodeIndex];
-            nodeIndex = nodeIndex + 1;
-        }
-    }
-
-    //...Read the element files
-    this->elementList.resize(this->nMeshPartitions);
-    nElementsInMesh = 0;
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
-        file.sprintf("partition_%4.4i.element",i);
-        filename = this->elemDir.path()+"/"+file;
-        thisFile.setFileName(filename);
-        if(!thisFile.open(QIODevice::ReadOnly))
-            return -1;
-
-        fileData = thisFile.readAll();
-        tempList = QString(fileData).split("\n");
-        thisFile.close();
-
-        tempLine  = tempList.value(0);
-        nElements = tempLine.toInt();
-
-        for(j=0;j<nElements;j++)
-        {
-            tempString  = tempList.value(j+1);
-            tempList2   = tempString.simplified().split(" ");
-            elementHash = tempList2.value(0);
-            nodeHash1   = tempList2.value(1);
-            nodeHash2   = tempList2.value(2);
-            nodeHash3   = tempList2.value(3);
-            tempElement = new adcirc_element(this);
-
-            tempElement->hash = elementHash;
-            tempElement->connections[0] = nodeMap[nodeHash1];
-            tempElement->connections[1] = nodeMap[nodeHash2];
-            tempElement->connections[2] = nodeMap[nodeHash3];
-            nElementsInMesh = nElementsInMesh + 1;
-
-            this->elementList[i].append(tempElement);
-
-        }
-    }
-    this->mesh->numElements = nElementsInMesh;
-
-
-    //...Rectify the elements to the mesh object
-    elementIndex = 0;
-    this->mesh->elements.resize(nElementsInMesh);
-    for(i=0;i<this->nMeshPartitions;i++)
-    {
-        for(j=0;j<this->elementList[i].length();j++)
-        {
-            this->mesh->elements[elementIndex] = elementList[i].at(j);
-            this->mesh->elements[elementIndex]->id = elementIndex+1;
-            elementIndex = elementIndex + 1;
-        }
-    }
-
-    //...Read the open boundaries
-    this->mesh->openBC.resize(this->mesh->numOpenBoundaries);
-    for(i=0;i<this->mesh->numOpenBoundaries;i++)
-    {
-        thisFile.setFileName(openBoundaryHashFilenames[i]);
-        if(!thisFile.open(QIODevice::ReadOnly))
-                return -1;
-
-        tempLine     = thisFile.readLine().simplified();
-        tempList     = tempLine.split(" ");
-        boundaryHash = tempList.value(0);
-        nNodesString = tempList.value(1);
-        nNodes       = nNodesString.toInt();
-        codeString   = tempList.value(2);
-        code         = codeString.toInt();
-
-        tempBoundary = new adcirc_boundary(this);
-        tempBoundary->setupBoundary(code,nNodes);
-
-        for(j=0;j<tempBoundary->numNodes;j++)
-        {
-            tempLine = thisFile.readLine().simplified();
-            ierr     = this->readBoundaryHashLine(tempLine,tempBoundary,j,nodeMap);
-        }
-
-        thisFile.close();
-
-        this->mesh->openBC[i] = tempBoundary;
-
-    }
-
-
-    //...Read the land boundaries
-    this->mesh->landBC.resize(this->mesh->numLandBoundaries);
-    for(i=0;i<this->mesh->numLandBoundaries;i++)
-    {
-        thisFile.setFileName(landBoundaryHashFilenames[i]);
-        if(!thisFile.open(QIODevice::ReadOnly))
-                return -1;
-
-        tempLine     = thisFile.readLine().simplified();
-        tempList     = tempLine.split(" ");
-        boundaryHash = tempList.value(0);
-        nNodesString = tempList.value(1);
-        nNodes       = nNodesString.toInt();
-        codeString   = tempList.value(2);
-        code         = codeString.toInt();
-
-        tempBoundary = new adcirc_boundary(this);
-        tempBoundary->setupBoundary(code,nNodes);
-
-        for(j=0;j<tempBoundary->numNodes;j++)
-        {
-            tempLine = thisFile.readLine().simplified();
-            ierr     = this->readBoundaryHashLine(tempLine,tempBoundary,j,nodeMap);
-        }
-
-        thisFile.close();
-
-        this->mesh->landBC[i] = tempBoundary;
-
-    }
-
-    //...Sort the boundaries from east-->west
-    for(i=0;i<this->mesh->numOpenBoundaries;i++)
-        this->mesh->openBC[i]->calculateAverageLongitude();
-
-    for(i=0;i<this->mesh->numLandBoundaries;i++)
-        this->mesh->landBC[i]->calculateAverageLongitude();
-
-    std::sort(this->mesh->openBC.begin(),this->mesh->openBC.end(),boundaryPositionLessThan);
-    std::sort(this->mesh->landBC.begin(),this->mesh->landBC.end(),boundaryPositionLessThan);
-
-    this->renumber();
-
-    return 0;
-}
-//-----------------------------------------------------------------------------------------//
-
-
-
-//-----------------------------------------------------------------------------------------//
-//...Method to call the routine to write a mesh in QADCModuless
-//-----------------------------------------------------------------------------------------//
-/**
- * \brief Method to call the routine to write a mesh in QADCModules
- *
- * @param[in] outputFile  Name of the file to write
- *
- * Method to call the routine to write a mesh in QADCModules
- *
- **/
-//-----------------------------------------------------------------------------------------//
-int AdVersion::writeMesh(QString outputFile)
-{
-
-    QFile thisFile(outputFile);
-    if(thisFile.exists())
-        thisFile.remove();
-
-    int ierr;
-    ierr = this->mesh->write(outputFile);
-    return ierr;
 }
 //-----------------------------------------------------------------------------------------//
 

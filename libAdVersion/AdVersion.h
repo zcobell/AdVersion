@@ -68,8 +68,6 @@ public:
 
     static int gitInit(QString gitDirectory);
 
-    static bool removeDirectory(const QString &dirName);
-
 private:
 
     int hashAdcircMesh(QString inputFile);
