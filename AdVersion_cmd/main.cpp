@@ -75,8 +75,7 @@ int main(int argc, char *argv[])
 int displayHelp()
 {
     QTextStream out(stdout,QIODevice::WriteOnly);
-
-    out << "AdVersion Command Line Interface \n";
+    out << "\nAdVersion Command Line Interface \n";
     out << "\n";
     out << "Usage: ./adversion [OPTIONS]\n";
     out << "\n";
@@ -105,7 +104,7 @@ int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &out
     QTextStream out(stdout,QIODevice::WriteOnly);
 
     int i;
-    bool foundMode = false;
+    bool foundMode = false,foundInput = false,foundOutput = false;
     QString argument;
 
     nPartitions = -1;
@@ -115,6 +114,7 @@ int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &out
     if(argc<6)
     {
         out << "ERROR: Need to specify command line arguments\n\n";
+        out.flush();
         displayHelp();
         return -1;
     }
@@ -127,11 +127,13 @@ int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &out
         {
             i = i + 1;
             input = QString(argv[i]);
+            foundInput = true;
         }
         else if(argument=="-O")
         {
             i = i + 1;
             output = QString(argv[i]);
+            foundOutput = true;
         }
         else if(argument=="-n")
         {
@@ -181,6 +183,27 @@ int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &out
         i++;
     }
 
+    if(foundOutput==false)
+    {
+        out << "ERROR: Did not find output file argument.\n\n";
+        out.flush();
+        return -1;
+    }
+    
+    if(foundInput==false)
+    {
+        out << "ERROR: Did not find input file argument.\n\n";
+        out.flush();
+        return -1;
+    }
+ 
+    if(foundMode==false)
+    {
+        out << "ERROR: Did not find operation mode argument.\n\n";
+        out.flush();
+        return -1;
+    }
+
     return 0;
 }
 
@@ -224,6 +247,18 @@ int writeAdv(QString input, QString output, int nPart, QCryptographicHash::Algor
             out << "done!\n";
         }
         out.flush();
+    }
+    else
+    {
+        //...If we aren't going to partition, ensure mesh was previously
+        //   partitioned
+        QFile partFile(output+"/system/partition.control");
+        if(!partFile.exists())
+        {
+            out << "ERROR: The mesh does not appear to have been previously partitioned.\n\n";
+            out.flush();
+            return -1;
+        }
     }
 
     out << "Writing the partitioned mesh...";
