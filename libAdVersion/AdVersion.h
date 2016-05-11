@@ -119,10 +119,10 @@ private:
     adcirc_mesh                     *mesh;
 
     ///List of nodes that will be found in a particular partition
-    QVector<QList<adcirc_node*>>     nodeList;
+    QVector<QList<adcirc_node*> >    nodeList;
 
     ///List of elements that will be found in a particular partition
-    QVector<QList<adcirc_element*>>  elementList;
+    QVector<QList<adcirc_element*> > elementList;
 
     ///Partition number for each node in the mesh
     QVector<int>                     nodePartitionList;

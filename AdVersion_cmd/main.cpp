@@ -178,6 +178,9 @@ int writeAdv(QString input, QString output, int nPart)
     int ierr;
     AdVersion versioning;
 
+    //...Set the hash to md5
+    versioning.setHashAlgorithm(QCryptographicHash::Md5);
+
     //...First, check if the output folder exists
     QFile partition(output+"/system/partition.control");
     if(!partition.exists() && nPart == -1)
@@ -209,9 +212,16 @@ int writeAdv(QString input, QString output, int nPart)
         out.flush();
     }
 
+    out << "Writing the partitioned mesh...";
+    out.flush();
     ierr = versioning.writePartitionedMesh(input,output);
-    if(ierr!=0)
+    if(ierr!=ERROR_NOERROR)
+    {
+        out << "ERROR!\n";
         return ierr;
+    }
+    out << "done!\n";
+    out.flush();
 
     return 0;
 }
