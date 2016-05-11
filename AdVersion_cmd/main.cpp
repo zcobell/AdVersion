@@ -31,8 +31,10 @@ using namespace std;
 
 //...Function prototypes
 int displayHelp();
-int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions, bool &overrideNaming);
-int writeAdv(QString input, QString output, int nPart);
+int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output,
+                            int &mode, int &nPartitions, bool &overrideNaming,
+                            QCryptographicHash::Algorithm &hashType);
+int writeAdv(QString input, QString output, int nPart, QCryptographicHash::Algorithm hashType);
 int writeMesh(QString input, QString output, bool naming);
 
 
@@ -41,20 +43,21 @@ int main(int argc, char *argv[])
     int ierr,mode,npart;
     bool naming;
     QString input,output;
+    QCryptographicHash::Algorithm hashType;
 
     QCoreApplication a(argc, argv);
 
     QTextStream out(stdout,QIODevice::WriteOnly);
 
     //...Parse the command line arguments
-    ierr = parseCommandLineOptions(argc,argv,input,output,mode,npart,naming);
+    ierr = parseCommandLineOptions(argc,argv,input,output,mode,npart,naming,hashType);
 
     if(ierr != 0)
         return ierr;
 
     //...Enter the appropriate routine
     if(mode==1)
-        ierr = writeAdv(input,output,npart);
+        ierr = writeAdv(input,output,npart,hashType);
     else if(mode==2)
         ierr = writeMesh(input,output,naming);
     else
@@ -87,6 +90,8 @@ int displayHelp()
     out << "   -O    [FILE]    Output file (.grd or .adv)\n";
     out << "   -V              Do not automatically name output file with\n";
     out << "                   version obtained from repository\n";
+    out << "   -md5            Use MD5 hashes (default)\n";
+    out << "   -sha1           Use SHA1 hashes\n";
     out << "\n";
     out << "Please report bugs to https://github.com/zcobell/AdVersion\n";
     out.flush();
@@ -95,7 +100,7 @@ int displayHelp()
 
 
 
-int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions, bool &overrideNaming)
+int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions, bool &overrideNaming, QCryptographicHash::Algorithm &hashType)
 {
     QTextStream out(stdout,QIODevice::WriteOnly);
 
@@ -105,6 +110,7 @@ int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &out
 
     nPartitions = -1;
     overrideNaming = false;
+    hashType = QCryptographicHash::Md5;
 
     if(argc<6)
     {
@@ -164,6 +170,14 @@ int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &out
         {
             overrideNaming = true;
         }
+        else if(argument=="-md5")
+        {
+            hashType = QCryptographicHash::Md5;
+        }
+        else if(argument=="-sha1")
+        {
+            hashType = QCryptographicHash::Sha1;
+        }
         i++;
     }
 
@@ -172,14 +186,14 @@ int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &out
 
 
 
-int writeAdv(QString input, QString output, int nPart)
+int writeAdv(QString input, QString output, int nPart, QCryptographicHash::Algorithm hashType)
 {
     QTextStream out(stdout,QIODevice::WriteOnly);
     int ierr;
     AdVersion versioning;
 
-    //...Set the hash to md5
-    versioning.setHashAlgorithm(QCryptographicHash::Md5);
+    //...Set the hash type
+    versioning.setHashAlgorithm(hashType);
 
     //...First, check if the output folder exists
     QFile partition(output+"/system/partition.control");
