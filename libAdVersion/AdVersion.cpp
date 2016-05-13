@@ -1936,5 +1936,7 @@ int AdVersion::writeSystemFiles()
     else
         thisFile.write("md5");
     thisFile.close();
+
+    return ERROR_NOERROR;
 }
 //-----------------------------------------------------------------------------------------//
