@@ -13,7 +13,7 @@ before_install:
 - sudo apt-cache search qt57
 - sudo apt-get install -qq qt57base qt57charts-no-lgpl qt57webengine qt57imageformats qt57connectivity qt57graphicaleffects qt57script qt57sensors qt57webchannel qt57svg qt57xmlpatterns qt57location 
 - export PATH=/opt/qt57/bin:$PATH
-- export LD_LIBRARY_PATH=/opt/AdVersion:/opt/QADCModules:$LD_LIBRARY_PATH
+- export LD_LIBRARY_PATH=/opt/AdVersion:/opt/QADCModules:/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
 - git clone --depth=50 https://github.com/zcobell/QADCModules.git ../QADCModules
 - cd ../QADCModules
 - . /opt/qt57/bin/qt57-env.sh

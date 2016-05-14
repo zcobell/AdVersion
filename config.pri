@@ -4,5 +4,5 @@ win32{
 }
 unix{
     QADCMODULES_PATH = /opt/QADCModules
-    LIBGIT2_PATH     = /usr/local
+    LIBGIT2_PATH     = /usr
 }
