@@ -20,6 +20,10 @@ before_install:
 - make
 - sudo make install
 - cd ../AdVersion
+- rm config.pri
+- echo "QADCMODULES_PATH = /opt/QADCModules" > config.pri
+- echo "LIBGIT2_PATH     = /usr" >> config.pri
+- echo "QMAKE_CXXFLAGS   = -I./../thirdparty/libgit2/include" >> config.pri
 
 script:
 - uname -a
@@ -28,4 +32,4 @@ script:
 - g++ --version
 - . /opt/qt57/bin/qt57-env.sh
 - qmake PREFIX=/opt/AdVersion
-- make sub-libAdVersion
+- make
