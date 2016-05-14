@@ -24,6 +24,7 @@ before_install:
 - echo "QADCMODULES_PATH = /opt/QADCModules" > config.pri
 - echo "LIBGIT2_PATH     = /usr" >> config.pri
 - echo "QMAKE_CXXFLAGS   = -I./../thirdparty/libgit2/include -L/usr/lib/x86_64-linux-gnu" >> config.pri
+- echo "QMAKE_LFLAGS     = -L/usr/lib/x86_64-linux-gnu" >> config.pri
 
 script:
 - uname -a
