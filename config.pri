@@ -12,5 +12,5 @@ unix{
 #   necessary for most users, but in the case it is,
 #   modifiy this, otherwise comment it out
 
-    QMAKE_CXXFLAGS   = -I$$top_srcdir/thirdparty/libgit2/include -L/usr/lib/x86_64-linux-gnu
+    QMAKE_CXXFLAGS   = -I./../thirdparty/libgit2/include
 }
