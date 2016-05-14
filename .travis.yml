@@ -28,6 +28,5 @@ script:
 - gcc --version
 - g++ --version
 - . /opt/qt57/bin/qt57-env.sh
-- cd libAdVersion 
 - qmake PREFIX=/opt/AdVersion
-- make
+- make sub-libAdVersion
