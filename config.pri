@@ -5,5 +5,4 @@ win32{
 unix{
     QADCMODULES_PATH = /opt/QADCModules
     LIBGIT2_PATH     = /usr
-    QMAKE_CXXFLAGS   = -I$$LIBGIT2_PATH/include
 }
