@@ -21,7 +21,7 @@ before_install:
 - make
 - sudo make install
 - cd ../AdVersion
-
+- ls /usr/include | grep git
 script:
 - uname -a
 - which qmake
