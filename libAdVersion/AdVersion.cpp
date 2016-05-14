@@ -24,19 +24,11 @@
 //------------------------------------------------------------------------------
 #include "AdVersion.h"
 #include "metis.h"
+#include "git2.h"
 #include <float.h>
 #include <QtMath>
 #include <QStringList>
 #include <stdlib.h>
-
-//...Annoying, but makes it work
-//   basically, under some configs
-//   qmake uses -isystem which makes
-//   includes in quotes not found
-#include "git2.h"
-#ifndef INCLUDE_git_git_h__
-    #include <git2.h>
-#endif
 
 //-----------------------------------------------------------------------------------------//
 //
@@ -1944,7 +1936,5 @@ int AdVersion::writeSystemFiles()
     else
         thisFile.write("md5");
     thisFile.close();
-
-    return ERROR_NOERROR;
 }
 //-----------------------------------------------------------------------------------------//
