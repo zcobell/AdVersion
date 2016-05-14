@@ -1,0 +1,37 @@
+sudo: required
+
+dist: trusty
+
+language: cpp
+
+compiler: gcc
+
+before_install:
+- sudo add-apt-repository --yes ppa:beineri/opt-qt57-beta-trusty
+- sudo apt-get update  -qq
+- sudo apt-get install -qq libsqlite3-dev libnetcdf-dev libmetis-dev metis
+- sudo apt-get install -qq qt57base qt57imageformats qt57script qt57svg qt57xmlpatterns 
+- export PATH=/opt/qt57/bin:$PATH
+- export LD_LIBRARY_PATH=/opt/AdVersion:/opt/QADCModules:/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+- git clone --depth=50 https://github.com/zcobell/QADCModules.git ../QADCModules
+- cd ../QADCModules
+- . /opt/qt57/bin/qt57-env.sh
+- qmake QADCModules.pro PREFIX=/opt/QADCModules
+- make
+- sudo make install
+- cd ../AdVersion
+- rm config.pri
+- echo "QADCMODULES_PATH = /opt/QADCModules"  > config.pri
+- echo "LIBGIT2_PATH     = /opt/libgit2"     >> config.pri
+- cd thirdparty/libgit2-0.24.1
+- ./build_libgit.sh
+- cd ../..
+
+script:
+- uname -a
+- which qmake
+- gcc --version
+- g++ --version
+- . /opt/qt57/bin/qt57-env.sh
+- qmake PREFIX=/opt/AdVersion
+- make
