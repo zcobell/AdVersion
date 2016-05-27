@@ -44,6 +44,8 @@ public:
 
     QString getCurrentDirectory();
 
+    int setModelPath(QString directory);
+
     QString selectedFile;
 
 private slots:
@@ -58,6 +60,10 @@ private slots:
 
     void on_button_upDirectory_clicked();
 
+    void on_combo_driveSelect_currentIndexChanged(const QString &arg1);
+
+    void on_text_newFile_returnPressed();
+
 private:
     Ui::AdvFolderChooser    *ui;
     AdvQFileSystemModel     *dirModel;
@@ -65,6 +71,8 @@ private:
     QString                  startDirectory;
     QString                  currentDirectory;
     bool                     create;
+    bool                     returnPressed;
+    bool                     shown;
 
 };
 

@@ -32,10 +32,9 @@ AdvFolderChooser::AdvFolderChooser(QWidget *parent) :
     ui(new Ui::AdvFolderChooser)
 {
     ui->setupUi(this);
-
+    this->shown = false;
+    this->returnPressed = false;
 }
-
-
 
 AdvFolderChooser::~AdvFolderChooser()
 {
@@ -68,6 +67,16 @@ int AdvFolderChooser::initialize(QString directory, bool allowCreate)
         ui->buttonBox->button(QDialogButtonBox::Ok)->setText("Select File");
 
     this->currentDirectory = directory;
+
+    //...For windows, we need to let the user select the drive. Linux doesn't need this
+    //   since getting back to root (/) will do this for us
+#ifdef _WIN32
+    for(int i=0;i<QDir::drives().length();i++)
+        ui->combo_driveSelect->addItem(QDir::drives().value(i).absoluteDir().path());
+#else
+    ui->combo_driveSelect->hide();
+    ui->label_drive->hide();
+#endif
 
     return 0;
 }
@@ -107,7 +116,17 @@ void AdvFolderChooser::on_buttonBox_rejected()
 void AdvFolderChooser::on_buttonBox_accepted()
 {
 
+    if(this->returnPressed)
+    {
+        this->returnPressed = false;
+        return;
+    }
+
     QString newFileText = ui->text_newFile->text();
+    if(newFileText.contains("/"))
+    {
+
+    }
 
     if(newFileText.isEmpty())
     {
@@ -115,12 +134,41 @@ void AdvFolderChooser::on_buttonBox_accepted()
         return;
     }
 
+    QFileInfo fileInfo(newFileText);
+    if(qApp->applicationDirPath()!=fileInfo.absoluteDir().absolutePath())
+        this->currentDirectory = fileInfo.absoluteDir().absolutePath();
+
     if(this->create)
     {
-        if(!newFileText.contains(".adv"))
-            newFileText = newFileText+".adv";
 
-        this->selectedFile = this->currentDirectory+"/"+newFileText;
+        if(newFileText.contains("/"))
+        {
+            QFileInfo file(newFileText);
+            if(file.isDir())
+            {
+                this->setModelPath(newFileText);
+                return;
+            }
+            else if(!QFileInfo(file.absoluteDir().absolutePath()).isDir())
+            {
+                QMessageBox::critical(this,"ERROR","Invalid file path");
+                return;
+            }
+            else
+            {
+                if(!newFileText.contains(".adv"))
+                    newFileText = newFileText + ".adv";
+                this->selectedFile = newFileText;
+                this->currentDirectory = QFileInfo(newFileText).absoluteDir().absolutePath();
+            }
+        }
+        else
+        {
+            if(!newFileText.contains(".adv"))
+                newFileText = newFileText+".adv";
+
+            this->selectedFile = this->currentDirectory+"/"+newFileText;
+        }
 
         this->accept();
     }
@@ -177,4 +225,40 @@ void AdvFolderChooser::on_button_upDirectory_clicked()
 QString AdvFolderChooser::getCurrentDirectory()
 {
     return this->currentDirectory;
+}
+
+
+void AdvFolderChooser::on_combo_driveSelect_currentIndexChanged(const QString &arg1)
+{
+    if(this->shown==false)
+    {
+        this->shown = true;
+        return;
+    }
+    else
+        this->setModelPath(arg1);
+    return;
+}
+
+
+int AdvFolderChooser::setModelPath(QString directory)
+{
+    ui->listview_advfile->setRootIndex(this->fileModel->setRootPath(directory));
+    ui->text_currentPath->setText(directory);
+    this->currentDirectory = directory;
+    return 0;
+}
+
+
+void AdvFolderChooser::on_text_newFile_returnPressed()
+{
+    QFileInfo directory(ui->text_newFile->text());
+    if(directory.isDir())
+    {
+        this->setModelPath(ui->text_newFile->text());
+        ui->text_newFile->clear();
+        this->returnPressed = true;
+    }
+
+    return;
 }
