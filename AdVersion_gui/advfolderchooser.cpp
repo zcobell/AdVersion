@@ -123,10 +123,6 @@ void AdvFolderChooser::on_buttonBox_accepted()
     }
 
     QString newFileText = ui->text_newFile->text();
-    if(newFileText.contains("/"))
-    {
-
-    }
 
     if(newFileText.isEmpty())
     {
