@@ -57,7 +57,7 @@ public:
 
     int createPartitions(QString meshFile, QString outputFile, int numPartitions);
 
-    int writePartitionedFort13(QString fort13File, QString outputFile);
+    int writePartitionedFort13();
 
     int setHashAlgorithm(QCryptographicHash::Algorithm algorithm);
 
@@ -111,6 +111,8 @@ private:
     int generateFort13DirectoryNames();
 
     QString formatBoundaryHashLine(adcirc_boundary *boundary, int index);
+
+    QString formatNodalAttLine(adcirc_nodalattribute *nodalAtt);
 
     int readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QMap<QString, adcirc_node *> &map);
 

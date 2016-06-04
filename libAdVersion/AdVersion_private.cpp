@@ -1170,7 +1170,7 @@ int AdVersion::writeAdvMesh(QString meshFile, QString fort13File, QString output
 
     //...Write the fort13 files
     if(doFort13)
-        ierr = this->writePartitionedFort13(fort13File,outputFile);
+        ierr = this->writePartitionedFort13();
 
     return ERROR_NOERROR;
 }
@@ -1184,16 +1184,48 @@ int AdVersion::writeAdvMesh(QString meshFile, QString fort13File, QString output
 /**
  * \brief Method to write the partitioned mesh to the output directory
  *
- * @param[in]  fort13File     ADCIRC formatted fort13 file to read
- * @param[in]  outputFile     Directory to create for the partitioned mesh
- *
  * Method to write the partitioned fort13 file
  *
  **/
 //-----------------------------------------------------------------------------------------//
-int AdVersion::writePartitionedFort13(QString fort13File, QString outputFile)
+int AdVersion::writePartitionedFort13()
 {
+    int i,j,k,ierr;
+    QString file,fileName,hash;
+    QString line, nodAttLine;
+    QFile thisFile;
 
+    ierr = this->buildFort13DirectoryTree();
+
+    for(i=0;i<this->nMeshPartitions;i++)
+    {
+        for(j=0;j<this->fort13->numParameters;j++)
+        {
+
+            file.sprintf("partition_%4.4i.nodalAtt",i);
+            fileName = this->nodalAttributeDirectories[j].path()+"/"+file;
+
+            thisFile.setFileName(fileName);
+
+            if(thisFile.exists())
+                thisFile.remove();
+            if(!thisFile.open(QIODevice::WriteOnly))
+                return -1;
+
+            line = QString("%1 \n").arg(this->nodeList[i].length());
+            thisFile.write(line.toUtf8());
+
+            for(k=0;k<this->nodeList[i].length();k++)
+            {
+                hash = this->nodeList[i].value(k)->positionHash;
+                nodAttLine = this->formatNodalAttLine(this->nodeList[i].value(k)->nodalData[j]);
+                line = QString("%1 %2 \n").arg(hash).arg(nodAttLine);
+                thisFile.write(line.toUtf8());
+            }
+
+            thisFile.close();
+        }
+    }
 
     return ERROR_NOERROR;
 }
@@ -1247,5 +1279,33 @@ int AdVersion::generateFort13DirectoryNames()
         this->nodalAttributeDirectories[i].setPath(this->fort13Directory.absolutePath()+"/"+this->fort13->nodalParameters[i]->name);
 
     return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to format a nodal attribute hash line
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to format a nodal attribute hash line
+ *
+ * Method to format a nodal attribute hash line
+ *
+ */
+//-----------------------------------------------------------------------------------------//
+QString AdVersion::formatNodalAttLine(adcirc_nodalattribute *nodalAtt)
+{
+    QString line,temp;
+
+    line = QString();
+
+    for(int i=0;i<nodalAtt->values.length();i++)
+    {
+        temp.sprintf("%+018.12e",nodalAtt->values[i]);
+        line = line+" "+temp;
+    }
+
+    return line;
 }
 //-----------------------------------------------------------------------------------------//
