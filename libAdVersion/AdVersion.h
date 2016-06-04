@@ -114,8 +114,13 @@ private:
 
     QString formatNodalAttLine(adcirc_nodalattribute *nodalAtt);
 
+    QStringList buildNonDefaultNodeList(int partition, int index);
+
     int readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QMap<QString, adcirc_node *> &map);
 
+    bool isNodalAttributeDefaultValue(QVector<qreal> nodeData, QVector<qreal> defaultValue);
+
+    int writeNodalAttributeDefaultValues();
 
     ///Number of partitions to create (or were found) for this mesh
     int                              nMeshPartitions;

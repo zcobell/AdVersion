@@ -1191,11 +1191,14 @@ int AdVersion::writeAdvMesh(QString meshFile, QString fort13File, QString output
 int AdVersion::writePartitionedFort13()
 {
     int i,j,k,ierr;
-    QString file,fileName,hash;
-    QString line, nodAttLine;
+    QString file,fileName;
+    QString line;
+    QStringList tempNodeList;
     QFile thisFile;
 
     ierr = this->buildFort13DirectoryTree();
+
+    ierr = this->writeNodalAttributeDefaultValues();
 
     for(i=0;i<this->nMeshPartitions;i++)
     {
@@ -1212,17 +1215,16 @@ int AdVersion::writePartitionedFort13()
             if(!thisFile.open(QIODevice::WriteOnly))
                 return -1;
 
-            line = QString("%1 \n").arg(this->nodeList[i].length());
+            tempNodeList = this->buildNonDefaultNodeList(i,j);
+
+            line = QString("%1 \n").arg(tempNodeList.length());
             thisFile.write(line.toUtf8());
 
             for(k=0;k<this->nodeList[i].length();k++)
             {
-                hash = this->nodeList[i].value(k)->positionHash;
-                nodAttLine = this->formatNodalAttLine(this->nodeList[i].value(k)->nodalData[j]);
-                line = QString("%1 %2 \n").arg(hash).arg(nodAttLine);
+                line = tempNodeList.value(k)+"\n";
                 thisFile.write(line.toUtf8());
             }
-
             thisFile.close();
         }
     }
@@ -1276,8 +1278,8 @@ int AdVersion::generateFort13DirectoryNames()
 
     this->nodalAttributeDirectories.resize(this->fort13->numParameters);
     for(i=0;i,this->fort13->numParameters;i++)
-        this->nodalAttributeDirectories[i].setPath(this->fort13Directory.absolutePath()+"/"+this->fort13->nodalParameters[i]->name);
-
+        this->nodalAttributeDirectories[i].setPath(this->fort13Directory.absolutePath()+
+                                                   "/"+this->fort13->nodalParameters[i]->name);
     return ERROR_NOERROR;
 }
 //-----------------------------------------------------------------------------------------//
@@ -1307,5 +1309,101 @@ QString AdVersion::formatNodalAttLine(adcirc_nodalattribute *nodalAtt)
     }
 
     return line;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to build a list of non-default nodal attribute lines
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to build a list of non-default nodal attribute lines
+ *
+ * @param[in] nodes Vector of adcirc_node objects
+ * @param[in] index Nodal attribute index to generate the string list for
+ *
+ * Method to build a list of non-default nodal attribute lines
+ *
+ */
+//-----------------------------------------------------------------------------------------//
+QStringList AdVersion::buildNonDefaultNodeList(int partition, int index)
+{
+    QStringList list;
+
+    for(int i=0;i<this->nodeList[partition].length();i++)
+    {
+        if(!this->isNodalAttributeDefaultValue(this->nodeList[partition].value(i)->nodalData[index]->values,
+                                               this->fort13->nodalParameters[index]->defaultValue))
+        {
+            list.append(this->nodeList[partition].value(i)->positionHash+" "+
+                        this->formatNodalAttLine(this->nodeList[partition].value(i)->nodalData[index]));
+        }
+    }
+    return list;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to check if a node is a default value or not
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to check if a node is a default value or not
+ *
+ * @param[in] nodeData     QVector containing values for the nodal attribute
+ * @param[in] defaultValue QVector containing the default values for the nodal attribute
+ *
+ * Method to check if a node is a default value or not
+ *
+ */
+//-----------------------------------------------------------------------------------------//
+bool AdVersion::isNodalAttributeDefaultValue(QVector<qreal> nodeData, QVector<qreal> defaultValue)
+{
+    for(int i=0;i<nodeData.length();i++)
+        if(nodeData[i]!=defaultValue[i])
+            return false;
+    return true;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to write the default values for nodal attributes
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to write the default values for nodal attributes
+ *
+ * Method to write the default values for nodal attributes
+ *
+ */
+//-----------------------------------------------------------------------------------------//
+int AdVersion::writeNodalAttributeDefaultValues()
+{
+    int i,j;
+    QFile thisFile;
+    QString line,value;
+
+    for(i=0;i<this->fort13->numParameters;i++)
+    {
+        thisFile.setFileName(this->nodalAttributeDirectories[i].path()+"/default.value");
+
+        if(!thisFile.open(QIODevice::WriteOnly))
+            return -1;
+
+        line = QString();
+        for(j=0;j<this->fort13->nodalParameters[i]->nValues;j++)
+        {
+            value.sprintf("%+018.12e",this->fort13->nodalParameters[i]->defaultValue[j]);
+            line = line+" "+value;
+        }
+
+        thisFile.write(line.toUtf8());
+
+        thisFile.close();
+    }
+    return ERROR_NOERROR;
 }
 //-----------------------------------------------------------------------------------------//
