@@ -60,7 +60,10 @@ LIBS += -L$$QADCMODULES_PATH/lib -lQADCModules -lmetis -L$$LIBGIT2_PATH/lib -lgi
 #...Source files
 SOURCES += \
     rectangle.cpp \
-    AdVersion.cpp
+    AdVersion.cpp \
+    AdVersion_static.cpp \
+    AdVersion_private.cpp \
+    AdVersion_comparison.cpp
 
 #...Install location
 win32{
