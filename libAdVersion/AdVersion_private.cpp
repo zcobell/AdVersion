@@ -433,8 +433,8 @@ int AdVersion::metisPartition()
     free(eind);
     free(npart);
     free(epart);
-    free(xadj);
-    free(adj);
+    ierr = METIS_Free(xadj);
+    ierr = METIS_Free(adj);
 
     return ERROR_NOERROR;
 
