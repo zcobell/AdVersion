@@ -38,7 +38,23 @@ int generateCommandLineParse(QCommandLineParser *p);
 int writeAdv(QString inputMesh, QString inputFort13, QString outputAdv, int nPart, QCryptographicHash::Algorithm hashType);
 int writeMesh(QString input, QString output, bool naming);
 
+#ifdef EBUG
+int main(int argc, char *argv[])
+{
+    QCoreApplication a(argc, argv);
+    int ierr;
 
+    QString inputMesh = "";
+    QString inputFort13 = "";
+    QString outputAdv = "";
+    int nPartitions = 24;
+    QCryptographicHash::Algorithm hashType = QCryptographicHash::Md5;
+
+    ierr = writeAdv(inputMesh,inputFort13,outputAdv,nPartitions,hashType);
+
+    return 0;
+}
+#else
 int main(int argc, char *argv[])
 {
 
@@ -174,7 +190,6 @@ int main(int argc, char *argv[])
         {
             nPartitionsString = parser.value(nPartitionOption);
             nPartitions       = nPartitionsString.toInt();
-            qDebug() << nPartitionsString << nPartitions;
         }
         else
             nPartitions = -1;
@@ -226,7 +241,7 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
+#endif
 
 int writeAdv(QString inputMesh, QString inputFort13, QString outputAdv, int nPart, QCryptographicHash::Algorithm hashType)
 {
@@ -254,7 +269,7 @@ int writeAdv(QString inputMesh, QString inputFort13, QString outputAdv, int nPar
     {
         out << "Creating the mesh partitions...";
         out.flush();
-        qDebug() << nPart;
+
         ierr = versioning.createPartitions(inputMesh,outputAdv,nPart);
 
         if(ierr!=ERROR_NOERROR)
@@ -283,7 +298,11 @@ int writeAdv(QString inputMesh, QString inputFort13, QString outputAdv, int nPar
 
     out << "Writing the partitioned mesh...";
     out.flush();
-    ierr = versioning.writePartitionedMesh(inputMesh,outputAdv);
+    if(inputFort13!=QString())
+        ierr = versioning.writePartitionedMesh(inputMesh,inputFort13,outputAdv);
+    else
+        ierr = versioning.writePartitionedMesh(inputMesh,outputAdv);
+
     if(ierr!=ERROR_NOERROR)
     {
         out << "ERROR!\n";

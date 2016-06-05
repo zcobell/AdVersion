@@ -13,3 +13,5 @@ unix{
 GIT_VERSION = $$system(git --git-dir $$PWD/.git --work-tree $$PWD describe --always --tags)
 #GIT_VERSION = unknown
 DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
+
+DEFINES += EBUG
