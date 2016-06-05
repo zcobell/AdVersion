@@ -26,6 +26,9 @@
 #...User should set paths in this file
 include(../config.pri)
 
+#...Global include
+include(../global.pri)
+
 QT       += gui
 
 TARGET   = AdVersion

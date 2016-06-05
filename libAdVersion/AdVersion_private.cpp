@@ -28,7 +28,6 @@
 #include <QtMath>
 #include <QStringList>
 #include <stdlib.h>
-#include <QDebug>
 
 
 //-----------------------------------------------------------------------------------------//

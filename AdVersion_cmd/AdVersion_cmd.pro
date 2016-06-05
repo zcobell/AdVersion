@@ -26,6 +26,8 @@
 #...User should set paths in this file
 include(../config.pri)
 
+#...Global include
+include(../global.pri)
 
 #...Base Qt Configuration
 QT       += core gui
