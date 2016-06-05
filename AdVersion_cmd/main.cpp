@@ -44,9 +44,9 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
     int ierr;
 
-    QString inputMesh = "";
-    QString inputFort13 = "";
-    QString outputAdv = "";
+    QString inputMesh = "C:/Users/zcobell/Documents/Codes/QADCModules/tests/test_files/ms-riv.grd";
+    QString inputFort13 = "C:/Users/zcobell/Documents/Codes/QADCModules/tests/test_files/ms-riv.13";
+    QString outputAdv = "C:/Users/zcobell/Desktop/test.adv";
     int nPartitions = 24;
     QCryptographicHash::Algorithm hashType = QCryptographicHash::Md5;
 

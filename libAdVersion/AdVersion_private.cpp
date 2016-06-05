@@ -28,7 +28,7 @@
 #include <QtMath>
 #include <QStringList>
 #include <stdlib.h>
-
+#include <QDebug>
 
 
 //-----------------------------------------------------------------------------------------//
@@ -1140,8 +1140,11 @@ int AdVersion::writeAdvMesh(QString meshFile, QString fort13File, QString output
     if(fort13File!=NULL)
     {
         doFort13 = true;
+        this->fort13File = fort13File;
         this->fort13 = new adcirc_fort13(this->mesh,this);
-        this->fort13->read(this->fort13File);
+        ierr = this->fort13->read(this->fort13File);
+        if(ierr!=ERROR_NOERROR)
+            return -1;
     }
     else
         doFort13 = false;
@@ -1217,12 +1220,13 @@ int AdVersion::writePartitionedFort13()
             if(!thisFile.open(QIODevice::WriteOnly))
                 return -1;
 
+            tempNodeList.clear();
             tempNodeList = this->buildNonDefaultNodeList(i,j);
 
             line = QString("%1 \n").arg(tempNodeList.length());
             thisFile.write(line.toUtf8());
 
-            for(k=0;k<this->nodeList[i].length();k++)
+            for(k=0;k<tempNodeList.length();k++)
             {
                 line = tempNodeList.value(k)+"\n";
                 thisFile.write(line.toUtf8());
@@ -1279,9 +1283,11 @@ int AdVersion::generateFort13DirectoryNames()
     int i;
 
     this->nodalAttributeDirectories.resize(this->fort13->numParameters);
-    for(i=0;i,this->fort13->numParameters;i++)
-        this->nodalAttributeDirectories[i].setPath(this->fort13Directory.absolutePath()+
+    for(i=0;i<this->fort13->numParameters;i++)
+    {
+        this->nodalAttributeDirectories[i].setPath(this->fort13Directory.path()+
                                                    "/"+this->fort13->nodalParameters[i]->name);
+    }
     return ERROR_NOERROR;
 }
 //-----------------------------------------------------------------------------------------//
