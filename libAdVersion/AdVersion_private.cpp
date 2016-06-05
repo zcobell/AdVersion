@@ -1399,6 +1399,7 @@ int AdVersion::writeNodalAttributeDefaultValues()
             value.sprintf("%+018.12e",this->fort13->nodalParameters[i]->defaultValue[j]);
             line = line+" "+value;
         }
+        line = line + "\n";
 
         thisFile.write(line.toUtf8());
 

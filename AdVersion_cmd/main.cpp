@@ -23,193 +23,212 @@
 //
 //------------------------------------------------------------------------------
 #include <QCoreApplication>
+#include <QCommandLineParser>
+#include <QCommandLineOption>
 #include <stdio.h>
 #include <QFileInfo>
+#include <QDebug>
 #include "AdVersion.h"
 
 using namespace std;
 
 //...Function prototypes
-int displayHelp();
-int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output,
-                            int &mode, int &nPartitions, bool &overrideNaming,
-                            QCryptographicHash::Algorithm &hashType);
-int writeAdv(QString input, QString output, int nPart, QCryptographicHash::Algorithm hashType);
+int generateCommandLineParse(QCommandLineParser *p);
+
+int writeAdv(QString inputMesh, QString inputFort13, QString outputAdv, int nPart, QCryptographicHash::Algorithm hashType);
 int writeMesh(QString input, QString output, bool naming);
 
 
 int main(int argc, char *argv[])
 {
-    int ierr,mode,npart;
-    bool naming;
-    QString input,output;
+
+    bool isMd5Set,isSha1Set;
+    bool isInputMeshSet,isInputAdvSet;
+    bool isModeSet,isInputFort13Set;
+    bool isOutputMeshSet,isOutputAdvSet;
+    bool isOutputFort13Set,isDisableAutonameSet;
+    bool isNumPartitionsSet;
+
+    QString modeString,inputMesh,outputMesh,inputAdv,outputAdv;
+    QString inputFort13,outputFort13,nPartitionsString;
+
+    int ierr,mode,nPartitions;
+
     QCryptographicHash::Algorithm hashType;
 
     QCoreApplication a(argc, argv);
+    QCoreApplication::setApplicationName("AdVersion");
+    QCoreApplication::setApplicationVersion(GIT_VERSION);
+    QCommandLineParser parser;
 
     QTextStream out(stdout,QIODevice::WriteOnly);
 
-    //...Parse the command line arguments
-    ierr = parseCommandLineOptions(argc,argv,input,output,mode,npart,naming,hashType);
+    //...Set up the command line parser
+    parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
+    parser.setApplicationDescription("Efficient versioning for ADCIRC models\n\nPlease report bugs to:\nhttps://github.com/zcobell/AdVersion");
+    parser.addHelpOption();
+    parser.addVersionOption();
 
-    if(ierr != 0)
-        return ierr;
+    QCommandLineOption modeOption(QStringList() << "mode",QCoreApplication::translate("main","Operation mode. [required]"),QCoreApplication::translate("main","adv,grd"));
+    parser.addOption(modeOption);
+
+    QCommandLineOption inputMeshOption("input-mesh",
+                                   QCoreApplication::translate("main","Input ADCIRC mesh."),
+                                   QCoreApplication::translate("main","mesh"));
+    parser.addOption(inputMeshOption);
+
+    QCommandLineOption inputAdvOption("input-adv",
+                                      QCoreApplication::translate("main","Input AdVersion folder."),
+                                      QCoreApplication::translate("main","adv"));
+    parser.addOption(inputAdvOption);
+
+    QCommandLineOption inputFort13Option("input-13",
+                                         QCoreApplication::translate("main","Input ADCIRC nodal attributes file."),
+                                         QCoreApplication::translate("main","fort13"));
+    parser.addOption(inputFort13Option);
+
+    QCommandLineOption outputMeshOption("output-mesh",
+                                       QCoreApplication::translate("main","Output ADCIRC mesh."),
+                                       QCoreApplication::translate("main","mesh"));
+    parser.addOption(outputMeshOption);
+
+    QCommandLineOption outputAdvOption("output-adv",
+                                       QCoreApplication::translate("main","Output AdVersion folder."),
+                                       QCoreApplication::translate("main","adv"));
+    parser.addOption(outputAdvOption);
+
+    QCommandLineOption outputFort13Option("output-13",
+                                      QCoreApplication::translate("main","Output ADCIRC nodal attributes file."),
+                                      QCoreApplication::translate("main","fort13"));
+    parser.addOption(outputFort13Option);
+
+    QCommandLineOption md5HashOption("md5",QCoreApplication::translate("main","Use MD5 cryptographic hashes. [default]"));
+    parser.addOption(md5HashOption);
+
+    QCommandLineOption sha1HashOption("sha1",QCoreApplication::translate("main","Use SHA1 cryptographic hashes."));
+    parser.addOption(sha1HashOption);
+
+    QCommandLineOption nPartitionOption("np",QCoreApplication::translate("main","Number of partitions to create."),QCoreApplication::translate("main","#"));
+    parser.addOption(nPartitionOption);
+
+    QCommandLineOption overrideNamingOption("disable-autoname",QCoreApplication::translate("main","Do not attempt to name output ADCIRC files based upon Git repository revision"));
+    parser.addOption(overrideNamingOption);
+
+    //...Process the command line options
+    parser.process(a);
+
+    //...Check for no command line arguments. Exit here.
+    if(argc==1)
+    {
+        out << "ERROR: No arguments detected!\n\n";
+        out.flush();
+        parser.showHelp(1);
+    }
+
+
+    //...Check which command line arguments have been set
+    isModeSet            = parser.isSet(modeOption);
+    isInputAdvSet        = parser.isSet(inputAdvOption);
+    isInputMeshSet       = parser.isSet(inputMeshOption);
+    isInputFort13Set     = parser.isSet(inputFort13Option);
+    isOutputAdvSet       = parser.isSet(outputAdvOption);
+    isOutputMeshSet      = parser.isSet(outputMeshOption);
+    isOutputFort13Set    = parser.isSet(outputFort13Option);
+    isNumPartitionsSet   = parser.isSet(nPartitionOption);
+    isDisableAutonameSet = parser.isSet(overrideNamingOption);
+    isMd5Set             = parser.isSet(md5HashOption);
+    isSha1Set            = parser.isSet(sha1HashOption);
+
+    //...Check for an operation mode
+    if(isModeSet==false)
+    {
+        out << "You must select an operation mode using --mode <adv,grd>\n";
+        out.flush();
+        return 1;
+    }
+    modeString = parser.value(modeOption);
+
+    //...Get variables based upon the mode selected
+    if(modeString=="adv")
+    {
+        if(!isInputMeshSet)
+        {
+            out << "You must set an input ADCIRC mesh using --input-mesh.\n";
+            out.flush();
+            return 1;
+        }
+
+        if(!isOutputAdvSet)
+        {
+            out << "You must set an output ADV folder using --output-adv.\n";
+            out.flush();
+            return 1;
+        }
+
+        mode = 1;
+        inputMesh = parser.value(inputMeshOption);
+        outputAdv = parser.value(outputAdvOption);
+        if(isInputFort13Set)
+            inputFort13 = parser.value(inputFort13Option);
+        if(isNumPartitionsSet)
+        {
+            nPartitionsString = parser.value(nPartitionOption);
+            nPartitions       = nPartitionsString.toInt();
+            qDebug() << nPartitionsString << nPartitions;
+        }
+        else
+            nPartitions = -1;
+
+        if(isMd5Set)
+            hashType = QCryptographicHash::Md5;
+        else if(isSha1Set)
+            hashType = QCryptographicHash::Sha1;
+        else
+            hashType = QCryptographicHash::Md5;
+
+    }
+    else if(modeString=="grd")
+    {
+        if(!isInputAdvSet)
+        {
+            out << "You must set an input ADV folder using --input-adv.\n";
+            out.flush();
+            return 1;
+        }
+
+        if(!isOutputMeshSet)
+        {
+            out << "You must set an output ADCIRC mesh using --output-mesh.\n";
+            out.flush();
+            return 1;
+        }
+
+        mode = 2;
+        inputAdv = parser.value(inputAdvOption);
+        outputMesh = parser.value(outputMeshOption);
+        if(isOutputFort13Set)
+            outputFort13 = parser.value(outputFort13Option);
+
+    }
+    else
+    {
+        out << "Invalid operation mode. Must be either 'adv' or 'grd'.\n";
+        out.flush();
+        return 1;
+    }
+
 
     //...Enter the appropriate routine
     if(mode==1)
-        ierr = writeAdv(input,output,npart,hashType);
+        ierr = writeAdv(inputMesh,inputFort13,outputAdv,nPartitions,hashType);
     else if(mode==2)
-        ierr = writeMesh(input,output,naming);
-    else
-    {
-        out << "ERROR: Invalid mode.\n";
-        out.flush();
-        return -1;
-    }
+        ierr = writeMesh(inputAdv,outputMesh,isDisableAutonameSet);
 
     return 0;
 }
 
 
-
-int displayHelp()
-{
-    QTextStream out(stdout,QIODevice::WriteOnly);
-    out << "\nAdVersion Command Line Interface \n";
-    out << "\n";
-    out << "Usage: ./adversion [OPTIONS]\n";
-    out << "\n";
-    out << "OPTIONS:\n";
-    out << "   -n    #         Partition into # subdomains\n";
-    out << "   -adv            Process input arguments into the\n";
-    out << "                    .adv structure.\n";
-    out << "   -grd            Process input arguments into the\n";
-    out << "                     standard ADCIRC format\n";
-    out << "   -I    [FILE]    Input file (.grd or .adv)\n";
-    out << "   -O    [FILE]    Output file (.grd or .adv)\n";
-    out << "   -V              Do not automatically name output file with\n";
-    out << "                   version obtained from repository\n";
-    out << "   -md5            Use MD5 hashes (default)\n";
-    out << "   -sha1           Use SHA1 hashes\n";
-    out << "\n";
-    out << "Please report bugs to https://github.com/zcobell/AdVersion\n";
-    out.flush();
-    return 0;
-}
-
-
-
-int parseCommandLineOptions(int argc, char *argv[], QString &input, QString &output, int &mode, int &nPartitions, bool &overrideNaming, QCryptographicHash::Algorithm &hashType)
-{
-    QTextStream out(stdout,QIODevice::WriteOnly);
-
-    int i;
-    bool foundMode = false,foundInput = false,foundOutput = false;
-    QString argument;
-
-    nPartitions = -1;
-    overrideNaming = false;
-    hashType = QCryptographicHash::Md5;
-
-    if(argc<6)
-    {
-        out << "ERROR: Need to specify command line arguments\n\n";
-        out.flush();
-        displayHelp();
-        return -1;
-    }
-
-    i = 1;
-    while(i<argc)
-    {
-        argument = QString(argv[i]);
-        if(argument=="-I")
-        {
-            i = i + 1;
-            input = QString(argv[i]);
-            foundInput = true;
-        }
-        else if(argument=="-O")
-        {
-            i = i + 1;
-            output = QString(argv[i]);
-            foundOutput = true;
-        }
-        else if(argument=="-n")
-        {
-            i = i + 1;
-            nPartitions = QString(argv[i]).toInt();
-        }
-        else if(argument=="-adv")
-        {
-            if(foundMode==false)
-            {
-                mode = 1;
-                foundMode = true;
-            }
-            else
-            {
-                out << "ERROR: Cannot specify multiple operation modes.\n\n";
-                displayHelp();
-                return -1;
-            }
-        }
-        else if(argument=="-grd")
-        {
-            if(foundMode==false)
-            {
-                mode = 2;
-                foundMode = true;
-            }
-            else
-            {
-                out << "ERROR: Cannot specify multiple operation modes.\n\n";
-                displayHelp();
-                return -1;
-            }
-        }
-        else if(argument=="-V")
-        {
-            overrideNaming = true;
-        }
-        else if(argument=="-md5")
-        {
-            hashType = QCryptographicHash::Md5;
-        }
-        else if(argument=="-sha1")
-        {
-            hashType = QCryptographicHash::Sha1;
-        }
-        i++;
-    }
-
-    if(foundOutput==false)
-    {
-        out << "ERROR: Did not find output file argument.\n\n";
-        out.flush();
-        return -1;
-    }
-    
-    if(foundInput==false)
-    {
-        out << "ERROR: Did not find input file argument.\n\n";
-        out.flush();
-        return -1;
-    }
- 
-    if(foundMode==false)
-    {
-        out << "ERROR: Did not find operation mode argument.\n\n";
-        out.flush();
-        return -1;
-    }
-
-    return 0;
-}
-
-
-
-int writeAdv(QString input, QString output, int nPart, QCryptographicHash::Algorithm hashType)
+int writeAdv(QString inputMesh, QString inputFort13, QString outputAdv, int nPart, QCryptographicHash::Algorithm hashType)
 {
     QTextStream out(stdout,QIODevice::WriteOnly);
     int ierr;
@@ -219,7 +238,7 @@ int writeAdv(QString input, QString output, int nPart, QCryptographicHash::Algor
     versioning.setHashAlgorithm(hashType);
 
     //...First, check if the output folder exists
-    QFile partition(output+"/system/partition.control");
+    QFile partition(outputAdv+"/system/partition.control");
     if(!partition.exists() && nPart == -1)
     {
         out << "ERROR: You must specify a number of partitions during the first pass.\n";
@@ -227,15 +246,16 @@ int writeAdv(QString input, QString output, int nPart, QCryptographicHash::Algor
     }
 
     //...Check the output extension for ".adv" and insert if necessary
-    QFileInfo outputFileInfo(output);
+    QFileInfo outputFileInfo(outputAdv);
     if(outputFileInfo.suffix()!="adv")
-        output = output+".adv";
+        outputAdv = outputAdv+".adv";
 
     if(nPart != -1)
     {
         out << "Creating the mesh partitions...";
         out.flush();
-        ierr = versioning.createPartitions(input,output,nPart);
+        qDebug() << nPart;
+        ierr = versioning.createPartitions(inputMesh,outputAdv,nPart);
 
         if(ierr!=ERROR_NOERROR)
         {
@@ -252,7 +272,7 @@ int writeAdv(QString input, QString output, int nPart, QCryptographicHash::Algor
     {
         //...If we aren't going to partition, ensure mesh was previously
         //   partitioned
-        QFile partFile(output+"/system/partition.control");
+        QFile partFile(outputAdv+"/system/partition.control");
         if(!partFile.exists())
         {
             out << "ERROR: The mesh does not appear to have been previously partitioned.\n\n";
@@ -263,7 +283,7 @@ int writeAdv(QString input, QString output, int nPart, QCryptographicHash::Algor
 
     out << "Writing the partitioned mesh...";
     out.flush();
-    ierr = versioning.writePartitionedMesh(input,output);
+    ierr = versioning.writePartitionedMesh(inputMesh,outputAdv);
     if(ierr!=ERROR_NOERROR)
     {
         out << "ERROR!\n";
