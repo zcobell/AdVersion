@@ -1151,6 +1151,7 @@ int AdVersion::writeAdvMesh(QString meshFile, QString fort13File, QString output
     //...Compute the hashes for the mesh
     ierr = this->mesh->setHashAlgorithm(this->hashAlgorithm);
     ierr = this->mesh->hashMesh();
+
     if(ierr!=ERROR_NOERROR)
         return -1;
 
@@ -1393,12 +1394,23 @@ int AdVersion::writeNodalAttributeDefaultValues()
     QFile thisFile;
     QString line,value;
 
+    //...Write the file with the names of the nodal attributes to the system folder
+    QFile nameFile(this->systemDir.path()+"/nodalAttributes.control");
+    if(!nameFile.open(QIODevice::WriteOnly))
+        return -1;
+
+    nameFile.write(QString(QString::number(this->fort13->numParameters)+"\n").toUtf8());
+
     for(i=0;i<this->fort13->numParameters;i++)
     {
         thisFile.setFileName(this->nodalAttributeDirectories[i].path()+"/default.value");
 
+        nameFile.write(QString(this->fort13->nodalParameters[i]->name+"\n").toUtf8());
+
         if(!thisFile.open(QIODevice::WriteOnly))
             return -1;
+
+        thisFile.write(QString(QString::number(this->fort13->nodalParameters[i]->nValues)+"\n").toUtf8());
 
         line = QString();
         for(j=0;j<this->fort13->nodalParameters[i]->nValues;j++)
@@ -1412,6 +1424,9 @@ int AdVersion::writeNodalAttributeDefaultValues()
 
         thisFile.close();
     }
+
+    nameFile.close();
+
     return ERROR_NOERROR;
 }
 //-----------------------------------------------------------------------------------------//

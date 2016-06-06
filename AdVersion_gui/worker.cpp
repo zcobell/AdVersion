@@ -15,9 +15,11 @@ int Worker::setRetrieveMeshData(QString partitionedMeshFolder, QString outputFil
 }
 
 
-int Worker::setPartitionMeshData(QString inputFile, int nPartitions, QString outputFile,  QCryptographicHash::Algorithm hashType)
+int Worker::setPartitionMeshData(QString inputFile, QString nodalAttFile, int nPartitions, QString outputFile,  bool doNodalAttributes, QCryptographicHash::Algorithm hashType)
 {
     this->inputFile = inputFile;
+    this->nodalAttFile = nodalAttFile;
+    this->doNodalAttributes = doNodalAttributes;
     this->nPartitions = nPartitions;
     this->outputFile = outputFile;
     this->hashType = hashType;
@@ -58,7 +60,10 @@ void Worker::writePartitionMesh()
         ierr = versioning.createPartitions(this->inputFile,this->outputFile,this->nPartitions);
     }
     emit processingStep("Writing partitioned mesh...");
-    ierr = versioning.writePartitionedMesh(this->inputFile,this->outputFile);
+    if(this->doNodalAttributes)
+        ierr = versioning.writePartitionedMesh(this->inputFile,this->nodalAttFile,this->outputFile);
+    else
+        ierr = versioning.writePartitionedMesh(this->inputFile,this->outputFile);
 
     emit finished();
 

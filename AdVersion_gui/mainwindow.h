@@ -69,6 +69,10 @@ private slots:
 
     void closeProgressBar();
 
+    void on_check_inputNodalAtt_clicked(bool checked);
+
+    void on_button_browseNodalAtt_clicked();
+
 private:
     Ui::MainWindow *ui;
     QString previousDirectory;

@@ -93,10 +93,35 @@ void MainWindow::on_radio_hashMd5_toggled(bool checked)
 
 void MainWindow::on_button_processData_clicked()
 {
-    bool doPartition;
+    bool doPartition,doNodalAttributes;
     int ierr,nPartitions;
     QString meshFilename      = ui->text_inputMeshFile->text();
+    QString nodalAttFile      = ui->text_inputNodalAttFile->text();
     QString meshFoldername    = ui->text_outputMeshFolder->text();
+
+    if(meshFilename.isEmpty())
+    {
+        QMessageBox::critical(this,"ERROR","No input mesh specified");
+        return;
+    }
+
+    if(meshFoldername.isEmpty())
+    {
+        QMessageBox::critical(this,"ERROR","No output file specified");
+        return;
+    }
+
+    if(ui->check_inputNodalAtt->isChecked())
+    {
+        if(ui->text_inputNodalAttFile->text().isEmpty())
+        {
+            QMessageBox::critical(this,"ERROR","Select a nodal attributes (fort.13) file or deselect the option");
+            return;
+        }
+        doNodalAttributes = true;
+    }
+    else
+        doNodalAttributes = false;
 
     nPartitions = 0;
 
@@ -131,10 +156,11 @@ void MainWindow::on_button_processData_clicked()
     this->workThread = new QThread(this);
     this->thisWorker = new Worker();
     this->thisWorker->setOperation(this->workThread,doPartition,true,false);
-    this->thisWorker->setPartitionMeshData(meshFilename,nPartitions,meshFoldername,this->hashAlgorithm);
+    this->thisWorker->setPartitionMeshData(meshFilename,nodalAttFile,nPartitions,meshFoldername,doNodalAttributes,this->hashAlgorithm);
 
     connect(this->thisWorker,SIGNAL(processingStep(QString)),this,SLOT(updateProgressText(QString)));
     connect(this->thisWorker,SIGNAL(finished()),this,SLOT(closeProgressBar()));
+    connect(this->thisWorker,SIGNAL(finished()),this->thisWorker,SLOT(deleteLater()));
 
     this->thisWorker->moveToThread(this->workThread);
     this->workThread->start();
@@ -339,6 +365,7 @@ void MainWindow::on_button_retrieveMesh_clicked()
 
     connect(this->thisWorker,SIGNAL(processingStep(QString)),this,SLOT(updateProgressText(QString)));
     connect(this->thisWorker,SIGNAL(finished()),this,SLOT(closeProgressBar()));
+    connect(this->thisWorker,SIGNAL(finished()),this->thisWorker,SLOT(deleteLater()));
 
     this->thisWorker->moveToThread(this->workThread);
     this->workThread->start();
@@ -352,6 +379,7 @@ void MainWindow::on_button_retrieveMesh_clicked()
 void MainWindow::updateProgressBar(int pct)
 {
     this->progress->setValue(pct);
+    return;
 }
 
 
@@ -368,5 +396,26 @@ void MainWindow::closeProgressBar()
 {
     QApplication::restoreOverrideCursor();
     this->progress->close();
+    return;
 }
 
+
+void MainWindow::on_check_inputNodalAtt_clicked(bool checked)
+{
+    ui->label_nodalAttFile->setEnabled(checked);
+    ui->text_inputNodalAttFile->setEnabled(checked);
+    ui->button_browseNodalAtt->setEnabled(checked);
+    return;
+}
+
+void MainWindow::on_button_browseNodalAtt_clicked()
+{
+    QString file = QFileDialog::getOpenFileName(this,tr("Select Nodal Attributes File"),this->previousDirectory,tr("ADCIRC Nodal Attributes File (*.13)"));
+
+    if(file.isNull())
+        return;
+
+    this->previousDirectory = QFileInfo(file).absoluteDir().path();
+    ui->text_inputNodalAttFile->setText(file);
+    return;
+}
