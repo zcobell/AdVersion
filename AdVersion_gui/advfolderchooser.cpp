@@ -163,7 +163,7 @@ void AdvFolderChooser::on_buttonBox_accepted()
             if(!newFileText.contains(".adv"))
                 newFileText = newFileText+".adv";
 
-            this->selectedFile = this->currentDirectory+"/"+newFileText;
+            this->selectedFile = this->fileModel->rootPath()+"/"+newFileText;
         }
 
         this->accept();
