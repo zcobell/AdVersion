@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>798</width>
-    <height>355</height>
+    <width>810</width>
+    <height>374</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -35,13 +35,13 @@
            <widget class="QLabel" name="label_meshfile">
             <property name="minimumSize">
              <size>
-              <width>165</width>
+              <width>200</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>165</width>
+              <width>200</width>
               <height>16777215</height>
              </size>
             </property>
@@ -142,13 +142,13 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>139</width>
+              <width>175</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>139</width>
+              <width>175</width>
               <height>16777215</height>
              </size>
             </property>
@@ -230,13 +230,13 @@
            <widget class="QLabel" name="label_outputFolder">
             <property name="minimumSize">
              <size>
-              <width>165</width>
+              <width>200</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>165</width>
+              <width>200</width>
               <height>16777215</height>
              </size>
             </property>
@@ -1175,8 +1175,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>798</width>
-     <height>21</height>
+     <width>810</width>
+     <height>23</height>
     </rect>
    </property>
   </widget>

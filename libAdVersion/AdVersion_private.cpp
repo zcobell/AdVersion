@@ -611,6 +611,8 @@ int AdVersion::partitionMesh()
     QVector<QPointF> elementCenters;
     bool partitioned,expanded;
 
+    expanded = false;
+
     //...Read the partitioning
     if(this->partitionRectangles.isEmpty())
         ierr = this->readRectangles();
@@ -1122,7 +1124,11 @@ int AdVersion::writeAdvMesh(QString meshFile, QString fort13File, QString output
         QDir().mkdir(outputFile);
     QFile gitDirectory(outputFile+"/.git");
     if(!gitDirectory.exists())
+    {
         ierr = AdVersion::gitInit(outputFile);
+        if(ierr!=ERROR_NOERROR)
+            return -1;
+    }
 
     //...Create a new adcirc_mesh if needed
     if(this->mesh==NULL)

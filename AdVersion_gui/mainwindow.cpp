@@ -52,6 +52,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_showNumPartitions->setText("");
 
     this->hashAlgorithm = QCryptographicHash::Md5;
+    this->thisWorker = NULL;
+    this->workThread = NULL;
+    this->progress = NULL;
 
 }
 

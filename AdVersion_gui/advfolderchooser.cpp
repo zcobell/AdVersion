@@ -34,6 +34,10 @@ AdvFolderChooser::AdvFolderChooser(QWidget *parent) :
     ui->setupUi(this);
     this->shown = false;
     this->returnPressed = false;
+    this->dirModel = NULL;
+    this->fileModel = NULL;
+    this->create = false;
+
 }
 
 AdvFolderChooser::~AdvFolderChooser()

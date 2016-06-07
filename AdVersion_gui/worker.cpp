@@ -3,7 +3,12 @@
 
 Worker::Worker(QObject *parent) : QObject(parent)
 {
-
+    this->hashType = QCryptographicHash::Md5;
+    this->nPartitions = -1;
+    this->doPartition = false;
+    this->doWrite = false;
+    this->doRetrieve = false;
+    this->doNodalAttributes = false;
 }
 
 

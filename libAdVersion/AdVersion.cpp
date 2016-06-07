@@ -54,7 +54,9 @@
 AdVersion::AdVersion(QObject *parent) : QObject(parent)
 {
     this->mesh = NULL;
+    this->fort13 = NULL;
     this->hashAlgorithm = QCryptographicHash::Sha1;
+    this->nMeshPartitions = -1;
 }
 //-----------------------------------------------------------------------------------------//
 
