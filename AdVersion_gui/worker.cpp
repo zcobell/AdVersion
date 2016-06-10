@@ -81,9 +81,15 @@ void Worker::retrievePartitionMesh()
 
     AdVersion versioning;
     int ierr;
+    bool doFort13;
+
+    if(this->output13File.isNull())
+       doFort13 = false;
+    else
+       doFort13 = true;
 
     emit processingStep("Reading partitioned mesh...");
-    ierr = versioning.readPartitionedMesh(this->partitionedMeshFolder);
+    ierr = versioning.readPartitionedMesh(this->partitionedMeshFolder,doFort13);
 
     emit processingStep("Writing ADCIRC formatted mesh...");
     ierr = versioning.writeMesh(this->outputFile,this->output13File);
