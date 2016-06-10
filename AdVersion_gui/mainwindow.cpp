@@ -303,6 +303,21 @@ void MainWindow::on_button_browseInputAdv_clicked()
 
         metaFile.close();
 
+        QFile nodalAttFile(directory+"/system/nodalAttributes.control");
+        if(!nodalAttFile.exists())
+        {
+            ui->label_outputFort13File->setEnabled(false);
+            ui->text_outputFort13File->setEnabled(false);
+            ui->text_outputFort13File->clear();
+        }
+        else
+        {
+            ui->label_outputFort13File->setEnabled(true);
+            ui->text_outputFort13File->setEnabled(true);
+            if(meshVersion!="Not Versioned")
+                ui->text_outputFort13File->setText("myMesh-"+meshVersion+".13");
+        }
+
     }
     return;
 }
@@ -326,7 +341,7 @@ void MainWindow::on_button_browseOutputMesh_clicked()
 
 void MainWindow::on_button_retrieveMesh_clicked()
 {
-    QString inputFolder, outputFile, outputFolder;
+    QString inputFolder, outputFile, outputFolder, outputFort13;
 
     if(ui->text_inputMeshFolder->text().isEmpty())
     {
@@ -349,6 +364,7 @@ void MainWindow::on_button_retrieveMesh_clicked()
     inputFolder  = ui->text_inputMeshFolder->text();
     outputFolder = ui->text_outputMeshDirectory->text();
     outputFile   = ui->text_outputMeshFile->text();
+    outputFort13 = ui->text_outputFort13File->text();
 
     outputFile = outputFolder + "/" + outputFile;
 
@@ -364,7 +380,7 @@ void MainWindow::on_button_retrieveMesh_clicked()
     this->workThread = new QThread(this);
     this->thisWorker = new Worker();
     this->thisWorker->setOperation(this->workThread,false,false,true);
-    this->thisWorker->setRetrieveMeshData(inputFolder,outputFile);
+    this->thisWorker->setRetrieveMeshData(inputFolder,outputFile,outputFort13);
 
     connect(this->thisWorker,SIGNAL(processingStep(QString)),this,SLOT(updateProgressText(QString)));
     connect(this->thisWorker,SIGNAL(finished()),this,SLOT(closeProgressBar()));

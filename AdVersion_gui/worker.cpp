@@ -11,10 +11,11 @@ Worker::Worker(QObject *parent) : QObject(parent)
 }
 
 
-int Worker::setRetrieveMeshData(QString partitionedMeshFolder, QString outputFile)
+int Worker::setRetrieveMeshData(QString partitionedMeshFolder, QString outputFile, QString outputFort13)
 {
     this->partitionedMeshFolder = partitionedMeshFolder;
     this->outputFile            = outputFile;
+    this->output13File          = outputFort13;
     return 0;
 }
 

@@ -12,7 +12,7 @@ class Worker : public QObject
 public:
     explicit Worker(QObject *parent = 0);
 
-    int setRetrieveMeshData(QString partitionedMeshFolder, QString outputFile);
+    int setRetrieveMeshData(QString partitionedMeshFolder, QString outputFile, QString outputFort13);
 
     int setPartitionMeshData(QString inputFile, QString nodalAttFile, int nPartitions, QString outputFile,  bool doNodalAttributes, QCryptographicHash::Algorithm hashType);
 
