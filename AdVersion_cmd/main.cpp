@@ -44,11 +44,19 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
     int ierr;
 
+#ifdef _WIN32
     QString inputMesh = "C:/Users/zcobell/Desktop/ms-riv.grd";
     QString inputFort13 = "C:/Users/zcobell/Desktop/ms-riv.13";
     QString outputMesh = "C:/Users/zcobell/Desktop/test_fort.14";
     QString output13 = "C:/Users/zcobell/Desktop/test_fort.13";
     QString outputAdv = "C:/Users/zcobell/Desktop/test.adv";
+#else
+    QString inputMesh = "/home/zcobell/Development/QADCModules/tests/test_files/ms-riv.grd";
+    QString inputFort13 = "/home/zcobell/Development/QADCModules/tests/test_files/ms-riv.13";
+    QString outputMesh = "/home/zcobell/Development/QADCModules/tests/test_files/test_fort.14";
+    QString output13 = "/home/zcobell/Development/QADCModules/tests/test_files/test_fort.13";
+    QString outputAdv = "/home/zcobell/Development/QADCModules/tests/test_files/test.adv";
+#endif
     int nPartitions = 2;
     QCryptographicHash::Algorithm hashType = QCryptographicHash::Md5;
 
