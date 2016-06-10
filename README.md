@@ -14,10 +14,10 @@ AdVersion serves as a proxy for versioning ADCIRC model meshes using Git. The co
 | Package | Source |
 |---------|--------|
 |QADCModules | [https://github.com/zcobell/QADCModules.git]([https://github.com/zcobell/QADCModules.git)|
-|METIS*|[http://glaros.dtc.umn.edu/gkhome/metis/metis/overview](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview)|
+|Metis|[http://glaros.dtc.umn.edu/gkhome/metis/metis/overview](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview)|
 |libGit2|[https://libgit2.github.com/](https://libgit2.github.com/)|
 |Qt|[http://qt.io](http://qt.io)|
-*Note: Metis is automatically incorporated for Windows, and it is generally available via package managers on Unix
+
 
 ##Methodology
 
