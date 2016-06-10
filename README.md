@@ -1,5 +1,6 @@
 # AdVersion
 [![Build Status](https://travis-ci.org/zcobell/AdVersion.svg?branch=master)](https://travis-ci.org/zcobell/AdVersion)
+[![Coverity Status](https://scan.coverity.com/projects/9082/badge.svg)](https://scan.coverity.com/projects/zcobell-adversion)
 
 ##Introduction
 AdVersion serves as a proxy for versioning ADCIRC model meshes using Git. The code seeks to create a mesh format other than the standard ADCIRC mesh format that:

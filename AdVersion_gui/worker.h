@@ -12,9 +12,9 @@ class Worker : public QObject
 public:
     explicit Worker(QObject *parent = 0);
 
-    int setRetrieveMeshData(QString partitionedMeshFolder, QString outputFile);
+    int setRetrieveMeshData(QString partitionedMeshFolder, QString outputFile, QString outputFort13);
 
-    int setPartitionMeshData(QString inputFile, int nPartitions, QString outputFile, QCryptographicHash::Algorithm hashType);
+    int setPartitionMeshData(QString inputFile, QString nodalAttFile, int nPartitions, QString outputFile,  bool doNodalAttributes, QCryptographicHash::Algorithm hashType);
 
     int setOperation(QThread *thread, bool doPartition, bool doWrite, bool doRetrieve);
 
@@ -38,13 +38,17 @@ private:
 
     QString outputFile;
 
+    QString output13File;
+
     QString inputFile;
+
+    QString nodalAttFile;
 
     QCryptographicHash::Algorithm hashType;
 
     int nPartitions;
 
-    bool doPartition,doWrite,doRetrieve;
+    bool doPartition,doWrite,doRetrieve,doNodalAttributes;
 
 };
 

@@ -1,23 +1,30 @@
 #include "worker.h"
-#include <QDebug>
 
 Worker::Worker(QObject *parent) : QObject(parent)
 {
-
+    this->hashType = QCryptographicHash::Md5;
+    this->nPartitions = -1;
+    this->doPartition = false;
+    this->doWrite = false;
+    this->doRetrieve = false;
+    this->doNodalAttributes = false;
 }
 
 
-int Worker::setRetrieveMeshData(QString partitionedMeshFolder, QString outputFile)
+int Worker::setRetrieveMeshData(QString partitionedMeshFolder, QString outputFile, QString outputFort13)
 {
     this->partitionedMeshFolder = partitionedMeshFolder;
     this->outputFile            = outputFile;
+    this->output13File          = outputFort13;
     return 0;
 }
 
 
-int Worker::setPartitionMeshData(QString inputFile, int nPartitions, QString outputFile,  QCryptographicHash::Algorithm hashType)
+int Worker::setPartitionMeshData(QString inputFile, QString nodalAttFile, int nPartitions, QString outputFile,  bool doNodalAttributes, QCryptographicHash::Algorithm hashType)
 {
     this->inputFile = inputFile;
+    this->nodalAttFile = nodalAttFile;
+    this->doNodalAttributes = doNodalAttributes;
     this->nPartitions = nPartitions;
     this->outputFile = outputFile;
     this->hashType = hashType;
@@ -58,7 +65,10 @@ void Worker::writePartitionMesh()
         ierr = versioning.createPartitions(this->inputFile,this->outputFile,this->nPartitions);
     }
     emit processingStep("Writing partitioned mesh...");
-    ierr = versioning.writePartitionedMesh(this->inputFile,this->outputFile);
+    if(this->doNodalAttributes)
+        ierr = versioning.writePartitionedMesh(this->inputFile,this->nodalAttFile,this->outputFile);
+    else
+        ierr = versioning.writePartitionedMesh(this->inputFile,this->outputFile);
 
     emit finished();
 
@@ -71,12 +81,18 @@ void Worker::retrievePartitionMesh()
 
     AdVersion versioning;
     int ierr;
+    bool doFort13;
+
+    if(this->output13File.isNull())
+       doFort13 = false;
+    else
+       doFort13 = true;
 
     emit processingStep("Reading partitioned mesh...");
-    ierr = versioning.readPartitionedMesh(this->partitionedMeshFolder);
+    ierr = versioning.readPartitionedMesh(this->partitionedMeshFolder,doFort13);
 
     emit processingStep("Writing ADCIRC formatted mesh...");
-    ierr = versioning.writeMesh(this->outputFile);
+    ierr = versioning.writeMesh(this->outputFile,this->output13File);
 
     emit finished();
 

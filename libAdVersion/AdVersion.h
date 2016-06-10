@@ -56,13 +56,16 @@ public:
 
     int createPartitions(QString meshFile, QString outputFile, int numPartitions);
 
-    int writePartitionedMesh(QString meshFile,QString outputFile);
+    int writePartitionedFort13();
 
     int setHashAlgorithm(QCryptographicHash::Algorithm algorithm);
 
-    int readPartitionedMesh(QString meshFolder);
+    int readPartitionedMesh(QString meshFolder, bool readNodalAttributes = false);
 
-    int writeMesh(QString outputFile);
+    int writeMesh(QString outputFile, QString output13);
+
+    int writePartitionedMesh(QString meshFile, QString outputFile);
+    int writePartitionedMesh(QString meshFile, QString fort13File, QString outputFile);
 
     static int getGitVersion(QString gitDirectory, QString &version);
 
@@ -96,15 +99,35 @@ private:
 
     int writeSystemFiles();
 
+    int writeAdvMesh(QString meshFile, QString fort13File, QString outputFile);
+
     int buildDirectoryTree(QString directory);
+
+    int buildFort13DirectoryTree();
 
     int generateDirectoryNames(QString directory);
 
+    int generateFort13DirectoryNames();
+
     QString formatBoundaryHashLine(adcirc_boundary *boundary, int index);
+
+    QString formatNodalAttLine(adcirc_nodalattribute *nodalAtt);
+
+    QStringList buildNonDefaultNodeList(int partition, int index);
 
     int readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QMap<QString, adcirc_node *> &map);
 
+    bool isNodalAttributeDefaultValue(QVector<qreal> nodeData, QVector<qreal> defaultValue);
 
+    int writeNodalAttributeDefaultValues();
+
+    int readPartitionedNodalAttributes();
+
+    int readPartitionedNodalAttributesMetadata();
+
+    int readNodalAttributesPartitions();
+
+    int readNodalAttributeData(int index, QStringList &data);
 
     ///Number of partitions to create (or were found) for this mesh
     int                              nMeshPartitions;
@@ -112,11 +135,17 @@ private:
     ///Name of the mesh file to use
     QString                          meshFile;
 
+    ///Name of fort13 file to use
+    QString                          fort13File;
+
     ///Name of the output file to create
     QString                          outputFile;
 
     ///Mesh object (from QADCModules)
     adcirc_mesh                     *mesh;
+
+    ///Fort13 object (from QADCModules)
+    adcirc_fort13                   *fort13;
 
     ///List of nodes that will be found in a particular partition
     QVector<QList<adcirc_node*> >    nodeList;
@@ -157,10 +186,36 @@ private:
     ///Directory to place the system files
     QDir                             systemDir;
 
+    ///Directory for nodal attribute files
+    QDir                             fort13Directory;
+
+    ///Vector that holds directories for each of the nodal attributes
+    QVector<QDir>                    nodalAttributeDirectories;
+
     ///Hash algorithm to use (MD5 or SHA1)
     QCryptographicHash::Algorithm    hashAlgorithm;
 
+    ///Mapping between an adcirc_node and its hash
+    QMap<QString,adcirc_node*> nodeMap;
+
+
+    //...Comparison Methods
+    static bool nodeHashLessThan(const adcirc_node *node1, const adcirc_node *node2);
+
+    static bool elementHashLessThan(const adcirc_element *element1, const adcirc_element *element2);
+
+    static bool boundaryHashLessThan(const adcirc_boundary *boundary1, const adcirc_boundary *boundary2);
+
+    static bool rectangeleAreaLessThan(const Rectangle rectangle1, const Rectangle rectangle2);
+
+    static bool nodeNumberLessThan(const adcirc_node *node1, const adcirc_node *node2);
+
+    static bool elementSumLessThan(const adcirc_element *element1, const adcirc_element *element2);
+
+    static bool boundaryPositionLessThan(const adcirc_boundary *boundary1,const adcirc_boundary *boundary2);
+
 };
+
 
 
 

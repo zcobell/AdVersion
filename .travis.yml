@@ -23,9 +23,10 @@ before_install:
 - rm config.pri
 - echo "QADCMODULES_PATH = /opt/QADCModules"  > config.pri
 - echo "LIBGIT2_PATH     = /opt/libgit2"     >> config.pri
-- cd thirdparty/libgit2-0.24.1
+- echo "METIS_PATH       = /usr"             >> config.pri
+- cd thirdparty
 - ./build_libgit.sh
-- cd ../..
+- cd ../
 
 script:
 - uname -a

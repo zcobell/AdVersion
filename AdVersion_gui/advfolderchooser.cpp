@@ -34,6 +34,10 @@ AdvFolderChooser::AdvFolderChooser(QWidget *parent) :
     ui->setupUi(this);
     this->shown = false;
     this->returnPressed = false;
+    this->dirModel = NULL;
+    this->fileModel = NULL;
+    this->create = false;
+
 }
 
 AdvFolderChooser::~AdvFolderChooser()
@@ -53,6 +57,7 @@ int AdvFolderChooser::initialize(QString directory, bool allowCreate)
 
     this->create = allowCreate;
     this->startDirectory = directory;
+    this->currentDirectory = directory;
     this->fileModel = new AdvQFileSystemModel(this);
     this->fileModel->setFilter(QDir::NoDotAndDotDot | QDir::AllDirs);
     ui->listview_advfile->setModel(this->fileModel);
@@ -131,8 +136,8 @@ void AdvFolderChooser::on_buttonBox_accepted()
     }
 
     QFileInfo fileInfo(newFileText);
-    if(qApp->applicationDirPath()!=fileInfo.absoluteDir().absolutePath())
-        this->currentDirectory = fileInfo.absoluteDir().absolutePath();
+//    if(qApp->applicationDirPath()!=fileInfo.absoluteDir().absolutePath())
+//        this->currentDirectory = fileInfo.absoluteDir().absolutePath();
 
     if(this->create)
     {
@@ -163,7 +168,7 @@ void AdvFolderChooser::on_buttonBox_accepted()
             if(!newFileText.contains(".adv"))
                 newFileText = newFileText+".adv";
 
-            this->selectedFile = this->currentDirectory+"/"+newFileText;
+            this->selectedFile = this->fileModel->rootPath()+"/"+newFileText;
         }
 
         this->accept();
@@ -177,7 +182,7 @@ void AdvFolderChooser::on_buttonBox_accepted()
             this->accept();
         }
         else
-            QMessageBox::information(this,"ERROR","File does not exist");
+            QMessageBox::information(this,"ERROR","File "+file.fileName()+" does not exist");
     }
 }
 

@@ -26,6 +26,8 @@
 #...User should set paths in this file
 include(../config.pri)
 
+#...Global include
+include(../global.pri)
 
 #...Base Qt Configuration
 QT       += core gui
@@ -37,22 +39,6 @@ CONFIG += c++11
 TARGET = adversion
 CONFIG += console
 CONFIG -= app_bundle
-
-#...Grab the external libraries
-
-#...QADCModules
-INCLUDEPATH += $$QADCMODULES_PATH/include
-
-#...LibGit2
-INCLUDEPATH += $$LIBGIT2_PATH/include
-
-#...Add the libraries
-win32{
-LIBS += -L$$QADCMODULES_PATH/bin -L$$LIBGIT2_PATH/bin -lQADCModules -lgit2
-}
-unix{
-LIBS += -L$$QADCMODULES_PATH/lib -L$$LIBGIT2_PATH/lib -lQADCModules -lgit2 -lmetis
-}
 
 #...Including libAdVersion. Note that METIS is built directly for win32 while
 #   Unix assumes it is installed

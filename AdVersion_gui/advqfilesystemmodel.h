@@ -25,7 +25,6 @@
 #ifndef ADVQFILESYSTEMMODEL_H
 #define ADVQFILESYSTEMMODEL_H
 
-#include <QDebug>
 #include <QObject>
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>
