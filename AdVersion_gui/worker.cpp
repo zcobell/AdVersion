@@ -86,7 +86,7 @@ void Worker::retrievePartitionMesh()
     ierr = versioning.readPartitionedMesh(this->partitionedMeshFolder);
 
     emit processingStep("Writing ADCIRC formatted mesh...");
-    ierr = versioning.writeMesh(this->outputFile);
+    ierr = versioning.writeMesh(this->outputFile,this->output13File);
 
     emit finished();
 

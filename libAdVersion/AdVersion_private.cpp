@@ -816,8 +816,8 @@ int AdVersion::renumber()
     free(eind);
     free(npart);
     free(epart);
-    free(xadj);
-    free(adj);
+    METIS_Free(xadj);
+    METIS_Free(adj);
     free(perm);
     free(iperm);
 
@@ -1451,6 +1451,7 @@ int AdVersion::readPartitionedNodalAttributes()
     //...Create a new fort13 object
     this->fort13 = new adcirc_fort13(this->mesh,this);
     this->fort13->numNodes = this->mesh->numNodes;
+    this->fort13->title = this->mesh->title;
 
     //...Read the list of nodal parameters and initialize the fort13
     ierr = this->readPartitionedNodalAttributesMetadata();
@@ -1513,22 +1514,34 @@ int AdVersion::readPartitionedNodalAttributesMetadata()
     for(i=0;i<this->fort13->numParameters;i++)
     {
         idx = idx + 1;
+
         name = nodalMetadataList.value(idx);
+        name = name.simplified();
+
         idx = idx + 1;
+
         units = nodalMetadataList.value(idx);
+        units = units.simplified();
+
         idx = idx + 1;
+
         nvalueString = nodalMetadataList.value(idx);
+        nvalueString = nvalueString.simplified();
         nvalues = nvalueString.toInt();
+
         idx = idx + 1;
+
         defaultValueString = nodalMetadataList.value(idx);
-        defaultValueList = defaultValueString.simplified().split(" ");
+        defaultValueString = defaultValueString.simplified();
+        defaultValueList = defaultValueString.split(" ");
 
         defaultValues.clear();
         defaultValues.resize(nvalues);
+
         for(j=0;j<nvalues;j++)
         {
             temp = defaultValueList.value(j);
-            defaultValues[i] = temp.toDouble();
+            defaultValues[j] = temp.toDouble();
         }
 
         //...Generate the nodal parameter objects
@@ -1566,14 +1579,15 @@ int AdVersion::readNodalAttributesPartitions()
     QByteArray filedata;
     QStringList filedataList;
 
+
     for(i=0;i<this->fort13->numParameters;i++)
     {
-        qDebug() << this->fort13->nodalParameters[i]->name;
+        qDebug() << this->fort13->nodalParameters[i]->name << i << this->fort13->nodalParameters[i]->nValues;
         for(j=0;j<this->nMeshPartitions;j++)
         {
 
-            file.sprintf("partition_%4.4i.nodalAtt",i);
-            fileName = this->nodalAttributeDirectories[j].path()+"/"+file;
+            file.sprintf("partition_%4.4i.nodalAtt",j);
+            fileName = this->nodalAttributeDirectories[i].path()+"/"+file;
 
             thisFile.setFileName(fileName);
 
@@ -1583,6 +1597,8 @@ int AdVersion::readNodalAttributesPartitions()
             filedata = thisFile.readAll();
             filedataList = QString(filedata).split("\n");
             filedata.clear();
+
+            thisFile.close();
 
             ierr = this->readNodalAttributeData(i,filedataList);
             filedataList.clear();
@@ -1626,19 +1642,16 @@ int AdVersion::readNodalAttributeData(int index, QStringList &data)
     {
         line = data.value(i);
 
-        splitLine = line.split(" ");
+        splitLine = line.simplified().split(" ");
 
-        nodeHash = splitLine.value(0);
-        nodeIndex = this->nodeMap[nodeHash]->id;
+        nodeHash  = splitLine.value(0);
+        nodeIndex = this->nodeMap[nodeHash]->id-1;
 
         for(j=0;j<this->fort13->nodalParameters[index]->nValues;j++)
         {
             temp = splitLine.value(j+1);
-            values[j] = temp.toDouble();
+            this->fort13->nodalData[index][nodeIndex]->values[j] = temp.simplified().toDouble();
         }
-
-        this->fort13->nodalData[index][nodeIndex]->values = values;
-
     }
 
     return ERROR_NOERROR;

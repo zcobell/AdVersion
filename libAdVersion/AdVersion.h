@@ -44,7 +44,6 @@
 #include <QPolygonF>
 #include "libAdVersion_global.h"
 #include "QADCModules.h"
-#include "adcirc_boundary.h"
 #include "rectangle.h"
 
 class LIBADVERSIONSHARED_EXPORT AdVersion : public QObject
@@ -63,7 +62,7 @@ public:
 
     int readPartitionedMesh(QString meshFolder, bool readNodalAttributes = false);
 
-    int writeMesh(QString outputFile);
+    int writeMesh(QString outputFile, QString output13);
 
     int writePartitionedMesh(QString meshFile, QString outputFile);
     int writePartitionedMesh(QString meshFile, QString fort13File, QString outputFile);

@@ -526,16 +526,34 @@ int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
  *
  **/
 //-----------------------------------------------------------------------------------------//
-int AdVersion::writeMesh(QString outputFile)
+#include <QDebug>
+int AdVersion::writeMesh(QString outputFile, QString output13)
 {
 
-    QFile thisFile(outputFile);
-    if(thisFile.exists())
-        thisFile.remove();
+    QFile meshFile(outputFile);
+    if(meshFile.exists())
+        meshFile.remove();
 
     int ierr;
     ierr = this->mesh->write(outputFile);
-    return ierr;
+
+    if(ierr!=ERROR_NOERROR)
+        return ierr;
+
+    qDebug() << output13;
+
+    if(!output13.isNull())
+    {
+        QFile fort13File(output13);
+        if(fort13File.exists())
+            fort13File.remove();
+
+        ierr = this->fort13->write(output13);
+        if(ierr!=ERROR_NOERROR)
+            return ierr;
+    }
+
+    return ERROR_NOERROR;
 }
 //-----------------------------------------------------------------------------------------//
 

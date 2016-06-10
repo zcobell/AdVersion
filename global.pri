@@ -22,4 +22,4 @@ GIT_VERSION = $$system(git --git-dir $$PWD/.git --work-tree $$PWD describe --alw
 #GIT_VERSION = unknown
 DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
 
-#DEFINES += EBUG
+DEFINES += EBUG

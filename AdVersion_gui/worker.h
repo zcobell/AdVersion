@@ -38,6 +38,8 @@ private:
 
     QString outputFile;
 
+    QString output13File;
+
     QString inputFile;
 
     QString nodalAttFile;

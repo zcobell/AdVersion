@@ -44,13 +44,17 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
     int ierr;
 
-    QString inputMesh = "C:/Users/zcobell/Documents/Codes/QADCModules/tests/test_files/ms-riv.grd";
-    QString inputFort13 = "C:/Users/zcobell/Documents/Codes/QADCModules/tests/test_files/ms-riv.13";
+    QString inputMesh = "C:/Users/zcobell/Desktop/ms-riv.grd";
+    QString inputFort13 = "C:/Users/zcobell/Desktop/ms-riv.13";
+    QString outputMesh = "C:/Users/zcobell/Desktop/test_fort.14";
+    QString output13 = "C:/Users/zcobell/Desktop/test_fort.13";
     QString outputAdv = "C:/Users/zcobell/Desktop/test.adv";
-    int nPartitions = 24;
+    int nPartitions = 2;
     QCryptographicHash::Algorithm hashType = QCryptographicHash::Md5;
 
     ierr = writeAdv(inputMesh,inputFort13,outputAdv,nPartitions,hashType);
+
+    ierr = writeMesh(outputAdv,outputMesh,output13,false);
 
     return 0;
 }
@@ -365,7 +369,7 @@ int writeMesh(QString input, QString output, QString output13, bool naming)
     {
         output = fileInfo.absoluteDir().path()+"/"+fileInfo.baseName()+"."+fileInfo.suffix();
         if(do13)
-            output13 = fileInfo.absoluteDir().path()+"/"+fileInfo.baseName()+"."+fileInfo.suffix();
+            output13 = fileInfo.absoluteDir().path()+"/"+fort13fileInfo.baseName()+"."+fort13fileInfo.suffix();
     }
 
     //...Read the partitioned mesh
@@ -379,7 +383,7 @@ int writeMesh(QString input, QString output, QString output13, bool naming)
 
     //...Write the mesh in standard format
     out << "Writing the mesh...";
-    ierr = versioning.writeMesh(output);
+    ierr = versioning.writeMesh(output,output13);
     if(ierr!=ERROR_NOERROR)
         out << "ERROR!\n";
     else
