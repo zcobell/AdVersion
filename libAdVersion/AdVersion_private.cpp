@@ -1397,7 +1397,6 @@ bool AdVersion::isNodalAttributeDefaultValue(QVector<qreal> nodeData, QVector<qr
 int AdVersion::writeNodalAttributeDefaultValues()
 {
     int i,j;
-    QFile thisFile;
     QString line,value;
 
     //...Write the file with the names of the nodal attributes to the system folder
@@ -1409,14 +1408,11 @@ int AdVersion::writeNodalAttributeDefaultValues()
 
     for(i=0;i<this->fort13->numParameters;i++)
     {
-        thisFile.setFileName(this->nodalAttributeDirectories[i].path()+"/default.value");
-
         nameFile.write(QString(this->fort13->nodalParameters[i]->name+"\n").toUtf8());
 
-        if(!thisFile.open(QIODevice::WriteOnly))
-            return -1;
+        nameFile.write(QString(this->fort13->nodalParameters[i]->units+"\n").toUtf8());
 
-        thisFile.write(QString(QString::number(this->fort13->nodalParameters[i]->nValues)+"\n").toUtf8());
+        nameFile.write(QString(QString::number(this->fort13->nodalParameters[i]->nValues)+"\n").toUtf8());
 
         line = QString();
         for(j=0;j<this->fort13->nodalParameters[i]->nValues;j++)
@@ -1426,12 +1422,224 @@ int AdVersion::writeNodalAttributeDefaultValues()
         }
         line = line + "\n";
 
-        thisFile.write(line.toUtf8());
-
-        thisFile.close();
+        nameFile.write(line.toUtf8());
     }
 
     nameFile.close();
+
+    return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to read the partitioned nodal attribute files
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to read the partitioned nodal attribute files
+ *
+ * Method to read the partitioned nodal attribute files
+ *
+ */
+//-----------------------------------------------------------------------------------------//
+#include <QDebug>
+int AdVersion::readPartitionedNodalAttributes()
+{
+    int ierr;
+
+    //...Create a new fort13 object
+    this->fort13 = new adcirc_fort13(this->mesh,this);
+    this->fort13->numNodes = this->mesh->numNodes;
+
+    //...Read the list of nodal parameters and initialize the fort13
+    ierr = this->readPartitionedNodalAttributesMetadata();
+    if(ierr!=ERROR_NOERROR)
+        return ierr;
+
+    //...Build the list of directories we will look at
+    ierr = this->generateFort13DirectoryNames();
+    if(ierr!=ERROR_NOERROR)
+        return ierr;
+
+    //...Read the data from the nodal attributes partition files
+    ierr = this->readNodalAttributesPartitions();
+    if(ierr!=ERROR_NOERROR)
+        return ierr;
+
+    //...Map the nodal attributes to the mesh object
+    //this->fort13->mapNodalAttributesToMesh();
+
+    return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to read the nodal attributes headers from the partitioned data
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to read the nodal attributes headers from the partitioned data
+ *
+ * Method to read the nodal attributes headers from the partitioned data
+ *
+ */
+//-----------------------------------------------------------------------------------------//
+int AdVersion::readPartitionedNodalAttributesMetadata()
+{
+    int i,j,idx,nvalues;
+    QString temp,name,units,nvalueString,defaultValueString;
+    QStringList nodalMetadataList,defaultValueList;
+    QVector<qreal> defaultValues;
+
+    QFile nodalAttributesListFile(this->systemDir.path()+"/nodalAttributes.control");
+    if(!nodalAttributesListFile.open(QIODevice::ReadOnly))
+        return -1;
+
+    QByteArray nodalMetadata = nodalAttributesListFile.readAll();
+    nodalAttributesListFile.close();
+
+    nodalMetadataList = QString(nodalMetadata).split("\n");
+
+    temp = nodalMetadataList.value(0);
+    this->fort13->numParameters = temp.toInt();
+
+    this->fort13->nodalParameters.resize(this->fort13->numParameters);
+    this->fort13->nodalData.resize(this->fort13->numParameters);
+
+    idx = 0;
+
+    for(i=0;i<this->fort13->numParameters;i++)
+    {
+        idx = idx + 1;
+        name = nodalMetadataList.value(idx);
+        idx = idx + 1;
+        units = nodalMetadataList.value(idx);
+        idx = idx + 1;
+        nvalueString = nodalMetadataList.value(idx);
+        nvalues = nvalueString.toInt();
+        idx = idx + 1;
+        defaultValueString = nodalMetadataList.value(idx);
+        defaultValueList = defaultValueString.simplified().split(" ");
+
+        defaultValues.clear();
+        defaultValues.resize(nvalues);
+        for(j=0;j<nvalues;j++)
+        {
+            temp = defaultValueList.value(j);
+            defaultValues[i] = temp.toDouble();
+        }
+
+        //...Generate the nodal parameter objects
+        this->fort13->nodalParameters[i] = new adcirc_nodalparameter(this->mesh->numNodes,name,units,nvalues,this);
+        this->fort13->nodalParameters[i]->setDefaultValues(defaultValues);
+
+        //...Generate the nodal attribute objects
+        this->fort13->nodalData[i].resize(this->fort13->numNodes);
+        for(j=0;j<this->fort13->numNodes;j++)
+            this->fort13->nodalData[i][j] = new adcirc_nodalattribute(this->fort13->nodalParameters[i],this);
+
+    }
+
+    return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to read the partitioned nodal attributes and rectify to global adcirc_fort13
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to read the partitioned nodal attributes and rectify to global adcirc_fort13
+ *
+ * Method to read the partitioned nodal attributes and rectify to global adcirc_fort13
+ *
+ */
+//-----------------------------------------------------------------------------------------//
+int AdVersion::readNodalAttributesPartitions()
+{
+    int ierr,i,j;
+    QString file,fileName;
+    QFile thisFile;
+    QByteArray filedata;
+    QStringList filedataList;
+
+    for(i=0;i<this->fort13->numParameters;i++)
+    {
+        qDebug() << this->fort13->nodalParameters[i]->name;
+        for(j=0;j<this->nMeshPartitions;j++)
+        {
+
+            file.sprintf("partition_%4.4i.nodalAtt",i);
+            fileName = this->nodalAttributeDirectories[j].path()+"/"+file;
+
+            thisFile.setFileName(fileName);
+
+            if(!thisFile.open(QIODevice::ReadOnly))
+                return -1;
+
+            filedata = thisFile.readAll();
+            filedataList = QString(filedata).split("\n");
+            filedata.clear();
+
+            ierr = this->readNodalAttributeData(i,filedataList);
+            filedataList.clear();
+
+        }
+    }
+
+    return ERROR_NOERROR;
+}
+//-----------------------------------------------------------------------------------------//
+
+
+
+//-----------------------------------------------------------------------------------------//
+//...Method to read one of the nodal attributes partition files
+//-----------------------------------------------------------------------------------------//
+/**
+ * \brief Method to read one of the nodal attributes partition files
+ *
+ * @param[in] index Position in the nodal attributes array to read this data for
+ * @param[in] data  Data read from the partitioned nodal attributes file
+ *
+ * Method to read one of the nodal attributes partition files
+ *
+ */
+//-----------------------------------------------------------------------------------------//
+int AdVersion::readNodalAttributeData(int index, QStringList &data)
+{
+
+    int i,j,nLines,nodeIndex;
+    QString line,temp,nodeHash;
+    QStringList splitLine;
+    QVector<qreal> values;
+
+    line = data.value(0);
+    nLines = line.toInt();
+
+    values.resize(this->fort13->nodalParameters[index]->nValues);
+
+    for(i=1;i<nLines+1;i++)
+    {
+        line = data.value(i);
+
+        splitLine = line.split(" ");
+
+        nodeHash = splitLine.value(0);
+        nodeIndex = this->nodeMap[nodeHash]->id;
+
+        for(j=0;j<this->fort13->nodalParameters[index]->nValues;j++)
+        {
+            temp = splitLine.value(j+1);
+            values[j] = temp.toDouble();
+        }
+
+        this->fort13->nodalData[index][nodeIndex]->values = values;
+
+    }
 
     return ERROR_NOERROR;
 }

@@ -61,7 +61,7 @@ public:
 
     int setHashAlgorithm(QCryptographicHash::Algorithm algorithm);
 
-    int readPartitionedMesh(QString meshFolder);
+    int readPartitionedMesh(QString meshFolder, bool readNodalAttributes = false);
 
     int writeMesh(QString outputFile);
 
@@ -121,6 +121,14 @@ private:
     bool isNodalAttributeDefaultValue(QVector<qreal> nodeData, QVector<qreal> defaultValue);
 
     int writeNodalAttributeDefaultValues();
+
+    int readPartitionedNodalAttributes();
+
+    int readPartitionedNodalAttributesMetadata();
+
+    int readNodalAttributesPartitions();
+
+    int readNodalAttributeData(int index, QStringList &data);
 
     ///Number of partitions to create (or were found) for this mesh
     int                              nMeshPartitions;
@@ -188,7 +196,8 @@ private:
     ///Hash algorithm to use (MD5 or SHA1)
     QCryptographicHash::Algorithm    hashAlgorithm;
 
-
+    ///Mapping between an adcirc_node and its hash
+    QMap<QString,adcirc_node*> nodeMap;
 
 
     //...Comparison Methods

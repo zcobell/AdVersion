@@ -211,7 +211,7 @@ int AdVersion::writePartitionedMesh(QString meshFile, QString fort13File, QStrin
  *
  **/
 //-----------------------------------------------------------------------------------------//
-int AdVersion::readPartitionedMesh(QString meshFolder)
+int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
 {
     int i,j,nNodes,nNodesInMesh,nElements,nElementsInMesh;
     int nodeIndex,elementIndex,code,ierr;
@@ -224,7 +224,6 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
     QFile thisFile,openBoundFile,landBoundFile;
     QVector<QString> openBoundaryHashFilenames;
     QVector<QString> landBoundaryHashFilenames;
-    QMap<QString,adcirc_node*> nodeMap;
     adcirc_node *tempNode;
     adcirc_element *tempElement;
     adcirc_boundary *tempBoundary;
@@ -372,7 +371,7 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
         {
             this->mesh->nodes[nodeIndex] = nodeList[i].at(j);
             this->mesh->nodes[nodeIndex]->id = nodeIndex+1;
-            nodeMap[this->mesh->nodes[nodeIndex]->positionHash] = this->mesh->nodes[nodeIndex];
+            this->nodeMap[this->mesh->nodes[nodeIndex]->positionHash] = this->mesh->nodes[nodeIndex];
             nodeIndex = nodeIndex + 1;
         }
     }
@@ -505,6 +504,9 @@ int AdVersion::readPartitionedMesh(QString meshFolder)
     std::sort(this->mesh->landBC.begin(),this->mesh->landBC.end(),AdVersion::boundaryPositionLessThan);
 
     this->renumber();
+
+    if(readNodalAttributes)
+        this->readPartitionedNodalAttributes();
 
     return ERROR_NOERROR;
 }

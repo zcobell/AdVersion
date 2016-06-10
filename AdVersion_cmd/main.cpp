@@ -36,7 +36,7 @@ using namespace std;
 int generateCommandLineParse(QCommandLineParser *p);
 
 int writeAdv(QString inputMesh, QString inputFort13, QString outputAdv, int nPart, QCryptographicHash::Algorithm hashType);
-int writeMesh(QString input, QString output, bool naming);
+int writeMesh(QString input, QString output, QString output13, bool naming);
 
 #ifdef EBUG
 int main(int argc, char *argv[])
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
     if(mode==1)
         ierr = writeAdv(inputMesh,inputFort13,outputAdv,nPartitions,hashType);
     else if(mode==2)
-        ierr = writeMesh(inputAdv,outputMesh,isDisableAutonameSet);
+        ierr = writeMesh(inputAdv,outputMesh,outputFort13,isDisableAutonameSet);
 
     return 0;
 }
@@ -315,14 +315,16 @@ int writeAdv(QString inputMesh, QString inputFort13, QString outputAdv, int nPar
 }
 
 
-
-int writeMesh(QString input, QString output, bool naming)
+#include <QDebug>
+int writeMesh(QString input, QString output, QString output13, bool naming)
 {
     QTextStream out(stdout,QIODevice::WriteOnly);
     int ierr;
     QString version;
     QFileInfo fileInfo(output);
+    QFileInfo fort13fileInfo(output13);
     AdVersion versioning;
+    bool do13 = false;
 
     //...Check if the ADV exists
     QFile inputAdv(input);
@@ -332,6 +334,16 @@ int writeMesh(QString input, QString output, bool naming)
         return -1;
     }
 
+    //...If retrieving the fort13, make sure it has been written
+    inputAdv.setFileName(input+"/system/nodalAttributes.control");
+    if(!inputAdv.exists() && !output13.isEmpty())
+    {
+        out << "ERROR: The nodal attributes are not available from this repository.\n";
+        return -1;
+    }
+    else
+        do13 = true;
+
     //...Get the Git version
     AdVersion::getGitVersion(input,version);
 
@@ -339,15 +351,26 @@ int writeMesh(QString input, QString output, bool naming)
     if(fileInfo.suffix()!="grd" || fileInfo.suffix()!="14")
         fileInfo.setFile(output+".grd");
 
+    if(do13 && fort13fileInfo.suffix()!=".13")
+        fort13fileInfo.setFile(output13+".13");
+
     //...Create the output filename with the git version included
     if(version != "" && !naming)
+    {
         output = fileInfo.absoluteDir().path()+"/"+fileInfo.baseName()+"-"+version+"."+fileInfo.suffix();
+        if(do13)
+            output13 = fort13fileInfo.absoluteDir().path()+"/"+fort13fileInfo.baseName()+"-"+version+"."+fileInfo.suffix();
+    }
     else
+    {
         output = fileInfo.absoluteDir().path()+"/"+fileInfo.baseName()+"."+fileInfo.suffix();
+        if(do13)
+            output13 = fileInfo.absoluteDir().path()+"/"+fileInfo.baseName()+"."+fileInfo.suffix();
+    }
 
     //...Read the partitioned mesh
     out << "Reading the partitioned mesh...";
-    ierr = versioning.readPartitionedMesh(input);
+    ierr = versioning.readPartitionedMesh(input,do13);
     if(ierr!=ERROR_NOERROR)
         out << "ERROR!\n";
     else
