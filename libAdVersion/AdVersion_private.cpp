@@ -1443,7 +1443,6 @@ int AdVersion::writeNodalAttributeDefaultValues()
  *
  */
 //-----------------------------------------------------------------------------------------//
-#include <QDebug>
 int AdVersion::readPartitionedNodalAttributes()
 {
     int ierr;
@@ -1582,7 +1581,6 @@ int AdVersion::readNodalAttributesPartitions()
 
     for(i=0;i<this->fort13->numParameters;i++)
     {
-        qDebug() << this->fort13->nodalParameters[i]->name << i << this->fort13->nodalParameters[i]->nValues;
         for(j=0;j<this->nMeshPartitions;j++)
         {
 

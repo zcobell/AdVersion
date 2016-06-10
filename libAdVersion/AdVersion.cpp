@@ -526,7 +526,6 @@ int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
  *
  **/
 //-----------------------------------------------------------------------------------------//
-#include <QDebug>
 int AdVersion::writeMesh(QString outputFile, QString output13)
 {
 
@@ -539,8 +538,6 @@ int AdVersion::writeMesh(QString outputFile, QString output13)
 
     if(ierr!=ERROR_NOERROR)
         return ierr;
-
-    qDebug() << output13;
 
     if(!output13.isNull())
     {
