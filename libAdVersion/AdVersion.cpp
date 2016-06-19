@@ -355,7 +355,7 @@ int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
             tempNode->position.setX(x);
             tempNode->position.setY(y);
             tempNode->position.setZ(z);
-            tempNode->positionHash = nodeHash;
+            tempNode->positionHash = nodeHash.toUtf8();
             this->nodeList[i].append(tempNode);
             nNodesInMesh = nNodesInMesh + 1;
         }
@@ -371,7 +371,7 @@ int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
         {
             this->mesh->nodes[nodeIndex] = nodeList[i].at(j);
             this->mesh->nodes[nodeIndex]->id = nodeIndex+1;
-            this->nodeMap[this->mesh->nodes[nodeIndex]->positionHash.toUtf8()] = this->mesh->nodes[nodeIndex];
+            this->nodeMap[this->mesh->nodes[nodeIndex]->positionHash] = this->mesh->nodes[nodeIndex];
             nodeIndex = nodeIndex + 1;
         }
     }
@@ -404,7 +404,7 @@ int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
             nodeHash3   = tempList2.value(3);
             tempElement = new adcirc_element(this);
 
-            tempElement->hash = elementHash;
+            tempElement->hash = elementHash.toUtf8();
             tempElement->connections[0] = nodeMap[nodeHash1.toUtf8()];
             tempElement->connections[1] = nodeMap[nodeHash2.toUtf8()];
             tempElement->connections[2] = nodeMap[nodeHash3.toUtf8()];

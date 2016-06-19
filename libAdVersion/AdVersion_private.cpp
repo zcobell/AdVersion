@@ -187,37 +187,38 @@ QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
 {
 
     QString line;
-    QString crest,super,sub,pipeht,pipediam,pipecoef;
+    QString hash1,hash2,crest,super,sub,pipeht,pipediam,pipecoef;
 
     if(boundary->code==3 || boundary->code==13 || boundary->code==23)
     {
+        hash1.fromLatin1(boundary->n1[index]->positionHash);
         crest.sprintf("%+018.12e",boundary->crest[index]);
         super.sprintf("%+018.12e",boundary->supercritical[index]);
-        line = QString("%1 %2 %3 \n").arg(boundary->n1[index]->positionHash)
-                                  .arg(crest)
-                                  .arg(super);
+        line = QString("%1 %2 %3 \n").arg(hash1).arg(crest).arg(super);
     }
     else if(boundary->code==4 || boundary->code == 24)
     {
+        hash1.fromLatin1(boundary->n1[index]->positionHash);
+        hash2.fromLatin1(boundary->n2[index]->positionHash);
         crest.sprintf("%+018.12e",boundary->crest[index]);
         super.sprintf("%+018.12e",boundary->supercritical[index]);
         sub.sprintf("%+018.12e",boundary->supercritical[index]);
-        line = QString("%1 %2 %3 %4 %5 \n").arg(boundary->n1[index]->positionHash)
-                                        .arg(boundary->n2[index]->positionHash)
+        line = QString("%1 %2 %3 %4 %5 \n").arg(hash1).arg(hash2)
                                         .arg(crest)
                                         .arg(sub)
                                         .arg(super);
     }
     else if(boundary->code==5 || boundary->code == 25)
     {
+        hash1.fromLatin1(boundary->n1[index]->positionHash);
+        hash2.fromLatin1(boundary->n2[index]->positionHash);
         crest.sprintf("%+018.12e",boundary->crest[index]);
         super.sprintf("%+018.12e",boundary->supercritical[index]);
         sub.sprintf("%+018.12e",boundary->supercritical[index]);
         pipeht.sprintf("%+018.12e",boundary->pipeHeight[index]);
         pipediam.sprintf("%+018.12e",boundary->pipeDiam[index]);
         pipecoef.sprintf("%+018.12e",boundary->pipeCoef[index]);
-        line = QString("%1 %2 %3 %4 %5 %6 %7 %8 \n").arg(boundary->n1[index]->positionHash)
-                                                 .arg(boundary->n2[index]->positionHash)
+        line = QString("%1 %2 %3 %4 %5 %6 %7 %8 \n").arg(hash1).arg(hash2)
                                                  .arg(crest)
                                                  .arg(sub)
                                                  .arg(super)
@@ -226,7 +227,10 @@ QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
                                                  .arg(pipediam);
     }
     else
-        line = QString("%1 \n").arg(boundary->n1[index]->positionHash);
+    {
+        hash1.fromLatin1(boundary->n1[index]->positionHash);
+        line = QString("%1 \n").arg(hash1);
+    }
 
     return line;
 }
@@ -896,6 +900,7 @@ int AdVersion::writeNodeFiles()
 int AdVersion::writeElementFiles()
 {
     int i,j;
+    QString hash1,hash2,hash3,hash4;
     QString file,fileName,line;
     QFile thisFile;
 
@@ -917,11 +922,12 @@ int AdVersion::writeElementFiles()
 
         for(j=0;j<this->elementList[i].length();j++)
         {
-            line = QString("%1 %2 %3 %4 \n")
-                    .arg(this->elementList[i].value(j)->hash)
-                    .arg(this->elementList[i].value(j)->connections[0]->positionHash)
-                    .arg(this->elementList[i].value(j)->connections[1]->positionHash)
-                    .arg(this->elementList[i].value(j)->connections[2]->positionHash);
+            hash1.fromLatin1(this->elementList[i].value(j)->hash);
+            hash2.fromLatin1(this->elementList[i].value(j)->connections[0]->positionHash);
+            hash3.fromLatin1(this->elementList[i].value(j)->connections[1]->positionHash);
+            hash4.fromLatin1(this->elementList[i].value(j)->connections[2]->positionHash);
+
+            line = QString("%1 %2 %3 %4 \n").arg(hash1).arg(hash2).arg(hash3).arg(hash4);
             thisFile.write(line.toUtf8());
         }
         thisFile.close();
@@ -946,7 +952,7 @@ int AdVersion::writeElementFiles()
 int AdVersion::writeBoundaryFiles()
 {
     int i,j;
-    QString fileName,line;
+    QString fileName,line,hash1;
     QFile thisFile;
     QVector<adcirc_boundary*> openBCSort,landBCSort;
 
@@ -979,7 +985,8 @@ int AdVersion::writeBoundaryFiles()
     fileOpenBC.write(QString(QString::number(this->mesh->numOpenBoundaries)+"\n").toUtf8());
     for(i=0;i<this->mesh->numOpenBoundaries;i++)
     {
-        line = QString("%1\n").arg(openBCSort[i]->hash);
+        hash1.fromLatin1(openBCSort[i]->hash);
+        line = QString("%1\n").arg(hash1);
         fileOpenBC.write(line.toUtf8());
     }
     fileOpenBC.close();
@@ -990,7 +997,8 @@ int AdVersion::writeBoundaryFiles()
     fileLandBC.write(QString(QString::number(this->mesh->numLandBoundaries)+"\n").toUtf8());
     for(i=0;i<this->mesh->numLandBoundaries;i++)
     {
-        line = QString("%1\n").arg(landBCSort[i]->hash);
+        hash1.fromLatin1(landBCSort[i]->hash);
+        line = QString("%1\n").arg(hash1);
         fileLandBC.write(line.toUtf8());
      }
     fileLandBC.close();
@@ -1008,7 +1016,8 @@ int AdVersion::writeBoundaryFiles()
             return -1;
 
         //...Write the boundary
-        line = QString("%1 %2 \n").arg(this->mesh->openBC[i]->hash).arg(this->mesh->openBC[i]->numNodes);
+        hash1.fromLatin1(this->mesh->openBC[i]->hash);
+        line = QString("%1 %2 \n").arg(hash1).arg(this->mesh->openBC[i]->numNodes);
         thisFile.write(line.toUtf8());
         for(j=0;j<this->mesh->openBC[i]->numNodes;j++)
         {
@@ -1032,7 +1041,8 @@ int AdVersion::writeBoundaryFiles()
             return -1;
 
         //...Write the boundary
-        line = QString("%1 %2 %3 \n").arg(this->mesh->landBC[i]->hash)
+        hash1.fromLatin1(this->mesh->landBC[i]->hash);
+        line = QString("%1 %2 %3 \n").arg(hash1)
                                      .arg(this->mesh->landBC[i]->numNodes)
                                      .arg(this->mesh->landBC[i]->code);
         thisFile.write(line.toUtf8());
