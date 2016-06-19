@@ -478,8 +478,8 @@ int AdVersion::buildRectangles()
     for(i=0;i<this->mesh->numNodes;i++)
     {
         partition = this->nodePartitionList[i];
-        x = this->mesh->nodes[i]->position.x();
-        y = this->mesh->nodes[i]->position.y();
+        x = this->mesh->nodes[i]->position.x;
+        y = this->mesh->nodes[i]->position.y;
         if(x<xmin[partition])
             xmin[partition] = x;
         if(x>xmax[partition])
@@ -625,12 +625,12 @@ int AdVersion::partitionMesh()
     elementCenters.resize(this->mesh->numElements);
     for(i=0;i<this->mesh->numElements;i++)
     {
-        x1 = this->mesh->elements[i]->connections[0]->position.x();
-        y1 = this->mesh->elements[i]->connections[0]->position.y();
-        x2 = this->mesh->elements[i]->connections[1]->position.x();
-        y2 = this->mesh->elements[i]->connections[1]->position.y();
-        x3 = this->mesh->elements[i]->connections[2]->position.x();
-        y3 = this->mesh->elements[i]->connections[2]->position.y();
+        x1 = this->mesh->elements[i]->connections[0]->position.x;
+        y1 = this->mesh->elements[i]->connections[0]->position.y;
+        x2 = this->mesh->elements[i]->connections[1]->position.x;
+        y2 = this->mesh->elements[i]->connections[1]->position.y;
+        x3 = this->mesh->elements[i]->connections[2]->position.x;
+        y3 = this->mesh->elements[i]->connections[2]->position.y;
         x  = (x1+x2+x3)/3.0;
         y  = (y1+y2+y3)/3.0;
         elementCenters[i].setX(x);
@@ -869,9 +869,9 @@ int AdVersion::writeNodeFiles()
         for(j=0;j<this->nodeList[i].length();j++)
         {
             hash = this->nodeList[i].value(j)->positionHash;
-            x.sprintf("%+018.12e",this->nodeList[i].value(j)->position.x());
-            y.sprintf("%+018.12e",this->nodeList[i].value(j)->position.y());
-            z.sprintf("%+018.12e",this->nodeList[i].value(j)->position.z());
+            x.sprintf("%+018.12e",this->nodeList[i].value(j)->position.x);
+            y.sprintf("%+018.12e",this->nodeList[i].value(j)->position.y);
+            z.sprintf("%+018.12e",this->nodeList[i].value(j)->position.z);
             line = QString("%1 %2 %3 %4 \n").arg(hash).arg(x).arg(y).arg(z);
             thisFile.write(line.toUtf8());
         }

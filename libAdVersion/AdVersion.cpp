@@ -352,9 +352,9 @@ int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
             y          = tempY.toDouble();
             z          = tempZ.toDouble();
             tempNode   = new adcirc_node(this);
-            tempNode->position.setX(x);
-            tempNode->position.setY(y);
-            tempNode->position.setZ(z);
+            tempNode->position.x = x;
+            tempNode->position.y = y;
+            tempNode->position.z = z;
             tempNode->positionHash = nodeHash.toUtf8();
             this->nodeList[i].append(tempNode);
             nNodesInMesh = nNodesInMesh + 1;
