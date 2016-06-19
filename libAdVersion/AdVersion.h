@@ -115,7 +115,7 @@ private:
 
     QStringList buildNonDefaultNodeList(int partition, int index);
 
-    int readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QMap<QString, adcirc_node *> &map);
+    int readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QHash<QByteArray, adcirc_node *> &map);
 
     bool isNodalAttributeDefaultValue(QVector<qreal> nodeData, QVector<qreal> defaultValue);
 
@@ -196,7 +196,7 @@ private:
     QCryptographicHash::Algorithm    hashAlgorithm;
 
     ///Mapping between an adcirc_node and its hash
-    QMap<QString,adcirc_node*> nodeMap;
+    QHash<QByteArray,adcirc_node*> nodeMap;
 
 
     //...Comparison Methods

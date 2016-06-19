@@ -247,7 +247,7 @@ QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
  *
  **/
 //-----------------------------------------------------------------------------------------//
-int AdVersion::readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QMap<QString,adcirc_node*> &map)
+int AdVersion::readBoundaryHashLine(QString &line, adcirc_boundary *boundary, int index, QHash<QByteArray,adcirc_node*> &map)
 {
     qreal   crest,super,sub,pipeht,pipediam,pipecoef;
     QString crestS,superS,subS,pipehtS,pipediamS,pipecoefS;
@@ -264,7 +264,7 @@ int AdVersion::readBoundaryHashLine(QString &line, adcirc_boundary *boundary, in
         superS    = tempList.value(2);
         crest     = crestS.toDouble();
         super     = superS.toDouble();
-        boundary->n1[index]            = map[nodeHash1];
+        boundary->n1[index]            = map[nodeHash1.toUtf8()];
         boundary->crest[index]         = crest;
         boundary->supercritical[index] = super;
     }
@@ -278,8 +278,8 @@ int AdVersion::readBoundaryHashLine(QString &line, adcirc_boundary *boundary, in
         crest     = crestS.toDouble();
         sub       = subS.toDouble();
         super     = superS.toDouble();
-        boundary->n1[index]            = map[nodeHash1];
-        boundary->n2[index]            = map[nodeHash2];
+        boundary->n1[index]            = map[nodeHash1.toUtf8()];
+        boundary->n2[index]            = map[nodeHash2.toUtf8()];
         boundary->crest[index]         = crest;
         boundary->subcritical[index]   = sub;
         boundary->supercritical[index] = super;
@@ -301,8 +301,8 @@ int AdVersion::readBoundaryHashLine(QString &line, adcirc_boundary *boundary, in
         pipeht    = pipehtS.toDouble();
         pipecoef  = pipecoefS.toDouble();
         pipediam  = pipediamS.toDouble();
-        boundary->n1[index]            = map[nodeHash1];
-        boundary->n2[index]            = map[nodeHash2];
+        boundary->n1[index]            = map[nodeHash1.toUtf8()];
+        boundary->n2[index]            = map[nodeHash2.toUtf8()];
         boundary->crest[index]         = crest;
         boundary->subcritical[index]   = sub;
         boundary->supercritical[index] = super;
@@ -310,7 +310,7 @@ int AdVersion::readBoundaryHashLine(QString &line, adcirc_boundary *boundary, in
     else
     {
         nodeHash1 = tempList.value(0);
-        boundary->n1[index] = map[nodeHash1];
+        boundary->n1[index] = map[nodeHash1.toUtf8()];
     }
 
     return 0;
@@ -1643,7 +1643,7 @@ int AdVersion::readNodalAttributeData(int index, QStringList &data)
         splitLine = line.simplified().split(" ");
 
         nodeHash  = splitLine.value(0);
-        nodeIndex = this->nodeMap[nodeHash]->id-1;
+        nodeIndex = this->nodeMap[nodeHash.toUtf8()]->id-1;
 
         for(j=0;j<this->fort13->nodalParameters[index]->nValues;j++)
         {

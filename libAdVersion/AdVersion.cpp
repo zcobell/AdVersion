@@ -371,7 +371,7 @@ int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
         {
             this->mesh->nodes[nodeIndex] = nodeList[i].at(j);
             this->mesh->nodes[nodeIndex]->id = nodeIndex+1;
-            this->nodeMap[this->mesh->nodes[nodeIndex]->positionHash] = this->mesh->nodes[nodeIndex];
+            this->nodeMap[this->mesh->nodes[nodeIndex]->positionHash.toUtf8()] = this->mesh->nodes[nodeIndex];
             nodeIndex = nodeIndex + 1;
         }
     }
@@ -405,9 +405,9 @@ int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
             tempElement = new adcirc_element(this);
 
             tempElement->hash = elementHash;
-            tempElement->connections[0] = nodeMap[nodeHash1];
-            tempElement->connections[1] = nodeMap[nodeHash2];
-            tempElement->connections[2] = nodeMap[nodeHash3];
+            tempElement->connections[0] = nodeMap[nodeHash1.toUtf8()];
+            tempElement->connections[1] = nodeMap[nodeHash2.toUtf8()];
+            tempElement->connections[2] = nodeMap[nodeHash3.toUtf8()];
             nElementsInMesh = nElementsInMesh + 1;
 
             this->elementList[i].append(tempElement);
@@ -452,7 +452,7 @@ int AdVersion::readPartitionedMesh(QString meshFolder,bool readNodalAttributes)
         for(j=0;j<tempBoundary->numNodes;j++)
         {
             tempLine = thisFile.readLine().simplified();
-            ierr     = this->readBoundaryHashLine(tempLine,tempBoundary,j,nodeMap);
+            ierr     = this->readBoundaryHashLine(tempLine,tempBoundary,j,this->nodeMap);
         }
 
         thisFile.close();
