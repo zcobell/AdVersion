@@ -1554,7 +1554,7 @@ int AdVersion::readPartitionedNodalAttributesMetadata()
         }
 
         //...Generate the nodal parameter objects
-        this->fort13->nodalParameters[i] = new adcirc_nodalparameter(this->mesh->numNodes,name,units,nvalues,this);
+        this->fort13->nodalParameters[i] = new adcirc_nodalparameter(name,units,nvalues,this);
         this->fort13->nodalParameters[i]->setDefaultValues(defaultValues);
 
         //...Generate the nodal attribute objects
