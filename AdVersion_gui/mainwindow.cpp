@@ -367,7 +367,9 @@ void MainWindow::on_button_retrieveMesh_clicked()
     outputFort13 = ui->text_outputFort13File->text();
 
     outputFile   = outputFolder + "/" + outputFile;
-    outputFort13 = outputFolder + "/" + outputFort13;
+
+    if(!outputFort13.isEmpty())
+        outputFort13 = outputFolder + "/" + outputFort13;
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
