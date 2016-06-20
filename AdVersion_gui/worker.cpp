@@ -90,6 +90,11 @@ void Worker::retrievePartitionMesh()
 
     emit processingStep("Reading partitioned mesh...");
     ierr = versioning.readPartitionedMesh(this->partitionedMeshFolder,doFort13);
+    if(ierr!=ERROR_NOERROR)
+    {
+        emit finished();
+        return;
+    }
 
     emit processingStep("Writing ADCIRC formatted mesh...");
     ierr = versioning.writeMesh(this->outputFile,this->output13File);

@@ -191,15 +191,15 @@ QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
 
     if(boundary->code==3 || boundary->code==13 || boundary->code==23)
     {
-        hash1.fromLatin1(boundary->n1[index]->positionHash);
+        hash1 = QString(boundary->n1[index]->positionHash);
         crest.sprintf("%+018.12e",boundary->crest[index]);
         super.sprintf("%+018.12e",boundary->supercritical[index]);
         line = QString("%1 %2 %3 \n").arg(hash1).arg(crest).arg(super);
     }
     else if(boundary->code==4 || boundary->code == 24)
     {
-        hash1.fromLatin1(boundary->n1[index]->positionHash);
-        hash2.fromLatin1(boundary->n2[index]->positionHash);
+        hash1 = QString(boundary->n1[index]->positionHash);
+        hash2 = QString(boundary->n2[index]->positionHash);
         crest.sprintf("%+018.12e",boundary->crest[index]);
         super.sprintf("%+018.12e",boundary->supercritical[index]);
         sub.sprintf("%+018.12e",boundary->supercritical[index]);
@@ -210,8 +210,8 @@ QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
     }
     else if(boundary->code==5 || boundary->code == 25)
     {
-        hash1.fromLatin1(boundary->n1[index]->positionHash);
-        hash2.fromLatin1(boundary->n2[index]->positionHash);
+        hash1 = QString(boundary->n1[index]->positionHash);
+        hash2 = QString(boundary->n2[index]->positionHash);
         crest.sprintf("%+018.12e",boundary->crest[index]);
         super.sprintf("%+018.12e",boundary->supercritical[index]);
         sub.sprintf("%+018.12e",boundary->supercritical[index]);
@@ -228,7 +228,7 @@ QString AdVersion::formatBoundaryHashLine(adcirc_boundary *boundary, int index)
     }
     else
     {
-        hash1.fromLatin1(boundary->n1[index]->positionHash);
+        hash1 = QString(boundary->n1[index]->positionHash);
         line = QString("%1 \n").arg(hash1);
     }
 
@@ -868,7 +868,7 @@ int AdVersion::writeNodeFiles()
 
         for(j=0;j<this->nodeList[i].length();j++)
         {
-            hash = this->nodeList[i].value(j)->positionHash;
+            hash = QString(this->nodeList[i].value(j)->positionHash);
             x.sprintf("%+018.12e",this->nodeList[i].value(j)->position.x);
             y.sprintf("%+018.12e",this->nodeList[i].value(j)->position.y);
             z.sprintf("%+018.12e",this->nodeList[i].value(j)->position.z);
@@ -922,10 +922,10 @@ int AdVersion::writeElementFiles()
 
         for(j=0;j<this->elementList[i].length();j++)
         {
-            hash1.fromLatin1(this->elementList[i].value(j)->hash);
-            hash2.fromLatin1(this->elementList[i].value(j)->connections[0]->positionHash);
-            hash3.fromLatin1(this->elementList[i].value(j)->connections[1]->positionHash);
-            hash4.fromLatin1(this->elementList[i].value(j)->connections[2]->positionHash);
+            hash1 = QString(this->elementList[i].value(j)->hash);
+            hash2 = QString(this->elementList[i].value(j)->connections[0]->positionHash);
+            hash3 = QString(this->elementList[i].value(j)->connections[1]->positionHash);
+            hash4 = QString(this->elementList[i].value(j)->connections[2]->positionHash);
 
             line = QString("%1 %2 %3 %4 \n").arg(hash1).arg(hash2).arg(hash3).arg(hash4);
             thisFile.write(line.toUtf8());
@@ -985,7 +985,7 @@ int AdVersion::writeBoundaryFiles()
     fileOpenBC.write(QString(QString::number(this->mesh->numOpenBoundaries)+"\n").toUtf8());
     for(i=0;i<this->mesh->numOpenBoundaries;i++)
     {
-        hash1.fromLatin1(openBCSort[i]->hash);
+        hash1 = QString(openBCSort[i]->hash);
         line = QString("%1\n").arg(hash1);
         fileOpenBC.write(line.toUtf8());
     }
@@ -997,7 +997,7 @@ int AdVersion::writeBoundaryFiles()
     fileLandBC.write(QString(QString::number(this->mesh->numLandBoundaries)+"\n").toUtf8());
     for(i=0;i<this->mesh->numLandBoundaries;i++)
     {
-        hash1.fromLatin1(landBCSort[i]->hash);
+        hash1 = QString(landBCSort[i]->hash);
         line = QString("%1\n").arg(hash1);
         fileLandBC.write(line.toUtf8());
      }
@@ -1007,7 +1007,7 @@ int AdVersion::writeBoundaryFiles()
     for(i=0;i<this->mesh->numOpenBoundaries;i++)
     {
         //...Create a new file using the hash as the name
-        fileName = this->openBoundDir.path()+"/"+this->mesh->openBC[i]->hash+".bnd";
+        fileName = this->openBoundDir.path()+"/"+QString(this->mesh->openBC[i]->hash)+".bnd";
         thisFile.setFileName(fileName);
         if(thisFile.exists())
             thisFile.remove();
@@ -1016,7 +1016,7 @@ int AdVersion::writeBoundaryFiles()
             return -1;
 
         //...Write the boundary
-        hash1.fromLatin1(this->mesh->openBC[i]->hash);
+        hash1 = QString(this->mesh->openBC[i]->hash);
         line = QString("%1 %2 \n").arg(hash1).arg(this->mesh->openBC[i]->numNodes);
         thisFile.write(line.toUtf8());
         for(j=0;j<this->mesh->openBC[i]->numNodes;j++)
@@ -1032,7 +1032,7 @@ int AdVersion::writeBoundaryFiles()
     for(i=0;i<this->mesh->numLandBoundaries;i++)
     {
         //...Create a new file using the hash as the name
-        fileName = this->landBoundDir.path()+"/"+this->mesh->landBC[i]->hash+".bnd";
+        fileName = this->landBoundDir.path()+"/"+QString(this->mesh->landBC[i]->hash)+".bnd";
         thisFile.setFileName(fileName);
         if(thisFile.exists())
             thisFile.remove();
@@ -1041,7 +1041,7 @@ int AdVersion::writeBoundaryFiles()
             return -1;
 
         //...Write the boundary
-        hash1.fromLatin1(this->mesh->landBC[i]->hash);
+        hash1 = QString(this->mesh->landBC[i]->hash);
         line = QString("%1 %2 %3 \n").arg(hash1)
                                      .arg(this->mesh->landBC[i]->numNodes)
                                      .arg(this->mesh->landBC[i]->code);
@@ -1360,7 +1360,7 @@ QStringList AdVersion::buildNonDefaultNodeList(int partition, int index)
         if(!this->isNodalAttributeDefaultValue(this->nodeList[partition].value(i)->nodalData[index]->values,
                                                this->fort13->nodalParameters[index]->defaultValue))
         {
-            list.append(this->nodeList[partition].value(i)->positionHash+" "+
+            list.append(QString(this->nodeList[partition].value(i)->positionHash)+" "+
                         this->formatNodalAttLine(this->nodeList[partition].value(i)->nodalData[index]));
         }
     }
