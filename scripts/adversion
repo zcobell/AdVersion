@@ -1,0 +1,35 @@
+#!/bin/bash
+#-------------------------------GPL-------------------------------------# 
+#
+# AdVersion - Efficeint Versioning for ADCIRC meshes
+# Copyright (C) 2016  Zach Cobell
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#-----------------------------------------------------------------------#
+
+#...This is the run script for Linux machines
+#   It sets the location of the Qt 5.6 shared objects
+#   and then runs the executable
+export LD_LIBRARY_PATH=/opt/AdVersion/lib:$LD_LIBRARY_PATH
+adv_exe=/opt/AdVersion/bin/adversion
+
+if [ -e $adv_exe ] ; then
+    $adv_exe
+else
+    echo "ERROR: The AdVersion executable does not exist."
+    exit 1
+fi
+
+exit $?
