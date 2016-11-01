@@ -1357,11 +1357,11 @@ QStringList AdVersion::buildNonDefaultNodeList(int partition, int index)
 
     for(int i=0;i<this->nodeList[partition].length();i++)
     {
-        if(!this->isNodalAttributeDefaultValue(this->nodeList[partition].value(i)->nodalData[index]->values,
+        if(!this->isNodalAttributeDefaultValue(this->nodeList[partition].value(i)->nodalData[this->nodeList[partition].value(i)->id-1][index]->values,
                                                this->fort13->nodalParameters[index]->defaultValue))
         {
             list.append(QString(this->nodeList[partition].value(i)->positionHash)+" "+
-                        this->formatNodalAttLine(this->nodeList[partition].value(i)->nodalData[index]));
+                        this->formatNodalAttLine(this->nodeList[partition].value(i)->nodalData[this->nodeList[partition].value(i)->id-1][index]));
         }
     }
     return list;
