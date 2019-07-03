@@ -106,7 +106,7 @@ EXECUTE_PROCESS( COMMAND git describe --always --tags
 IF( NOT "${GIT_RETURN_VALUE}" STREQUAL "0" )
     SET(GIT_VERSION "${ADVERSION_VERSION_STRING}.cv")
 ENDIF()
-MESSAGE(STATUS "ADCIRCModules Version: ${GIT_VERSION}")
+MESSAGE(STATUS "AdVersion Version: ${GIT_VERSION}")
 ###########################################################################
 
 
@@ -226,19 +226,19 @@ ADD_SUBDIRECTORY(${CMAKE_SOURCE_DIR}/thirdparty/metis-5.1.0 EXCLUDE_FROM_ALL )
 # ADCIRCModules
 ###########################################################################
 IF(NOT "${ADCIRCMODULESHOME}" STREQUAL "")
-    SET(ADCIRCMODULES_ROOT_DIR "${ADCIRCMODULESHOME}" CACHE STRING "ADCIRCModules Home Directory")
+    SET(ADCIRCMODULES_DIR "${ADCIRCMODULESHOME}" CACHE STRING "ADCIRCModules Home Directory")
 ELSEIF(NOT $ENV{ADCIRCMODULESHOME} STREQUAL "")
-    SET(ADCIRCMODULES_ROOT_DIR $ENV{ADCIRCMODULESHOME} CACHE STRING "ADCIRCModules Home Directory")
+    SET(ADCIRCMODULES_DIR $ENV{ADCIRCMODULESHOME} CACHE STRING "ADCIRCModules Home Directory")
 ENDIF(NOT "${ADCIRCMODULESHOME}" STREQUAL "")
-SET(ADCIRCMODULES_LIB_DIR ${ADCIRCMODULES_ROOT_DIR}/lib)
-SET(ADCIRCMODULES_INCLUDE_DIR ${ADCIRCMODULES_ROOT_DIR}/include)
-LINK_DIRECTORIES( ${ADCIRCMODULES_LIB_DIR} )
+Find_Package(ADCIRCModules)
 ###########################################################################
 
 ###########################################################################
 #  adversion    
 ###########################################################################
-ADD_LIBRARY( adversion SHARED ${CMAKE_SOURCE_DIR}/libraries/libadversion/adversion.cpp )
+ADD_LIBRARY( adversion SHARED ${CMAKE_SOURCE_DIR}/libraries/libadversion/adversion.cpp 
+                              ${CMAKE_SOURCE_DIR}/libraries/libadversion/adversionimpl.cpp
+                              ${CMAKE_SOURCE_DIR}/libraries/libadversion/partition.cpp )
 IF(WIN32)
     INSTALL(TARGETS adversion LIBRARY DESTINATION bin RUNTIME DESTINATION lib PUBLIC_HEADER DESTINATION ${HEADER_DEST})
 ELSEIF(CYGWIN)
@@ -251,8 +251,7 @@ TARGET_INCLUDE_DIRECTORIES( adversion PRIVATE ${CMAKE_SOURCE_DIR}/thirdparty/lib
                                               ${CMAKE_SOURCE_DIR}/thirdparty/metis-5.1.0/include 
                                               ${ADCIRCMODULES_INCLUDE_DIR}
                                               ${Boost_INCLUDE_DIRS} ${NETCDF_INCLUDE_DIRS} )
-
-TARGET_LINK_LIBRARIES( adversion git2 metis adcircmodules ${NETCDF_LIBRARIES} )
+TARGET_LINK_LIBRARIES( adversion git2 metis ${ADCIRCMODULES_LIBRARY} ${NETCDF_LIBRARIES} )
 
 IF(WIN32)
     LINK_DIRECTORIES( ${CMAKE_SOURCE_DIR}/thirdparty/netcdf/libs_vc64 )
@@ -274,3 +273,10 @@ IF(USE_GOOGLE_FLAT_MAP)
 ENDIF(USE_GOOGLE_FLAT_MAP)
 ###########################################################################
 
+###########################################################################
+# Test Case
+###########################################################################
+ADD_EXECUTABLE( testCase ${CMAKE_SOURCE_DIR}/testing/main.cpp )
+TARGET_INCLUDE_DIRECTORIES(testCase PRIVATE ${CMAKE_SOURCE_DIR}/libraries/libadversion)
+TARGET_LINK_LIBRARIES(testCase adversion ${NETCDF_LIBRARIES})
+###########################################################################
