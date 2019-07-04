@@ -68,6 +68,9 @@ void AdversionImpl::partitionMesh(size_t nPartitions) {
   std::cout << "Writing..." << std::endl;
   this->writePartitionedMesh(this->m_rootDirectory, partitions);
 
+  std::cout << "Initializing git structure..." << std::endl;
+  this->gitInit();
+
   return;
 }
 
@@ -382,5 +385,17 @@ void AdversionImpl::writePartitionedMesh(const std::string& rootPath,
         boost::format("%s/elements/partition_%06i.element") % rootPath % i);
     partitions[i].write(nodesFile, elementsFile);
   }
+  return;
+}
+
+void AdversionImpl::gitInit() {
+  std::string gitdir = this->m_rootDirectory + "/.git";
+  if (boost::filesystem::exists(gitdir)) return;
+
+  git_repository* repo;
+  git_libgit2_init();
+  git_repository_init(&repo, gitdir.c_str(), 0);
+  git_repository_free(repo);
+  git_libgit2_shutdown();
   return;
 }

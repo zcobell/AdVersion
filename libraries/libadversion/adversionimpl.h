@@ -47,6 +47,8 @@ class AdversionImpl {
   void writePartitionedMesh(const std::string &rootPath,
                             std::vector<Partition> &partitions);
 
+  void gitInit();
+
   std::unique_ptr<Adcirc::Geometry::Mesh> m_mesh;
 
   size_t m_numPartitions;
