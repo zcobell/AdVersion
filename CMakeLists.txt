@@ -75,6 +75,22 @@ ENDIF(COMPILER_SUPPORTS_CXX11)
 
 
 ###########################################################################
+# OpenMP
+###########################################################################
+OPTION(ENABLE_OPENMP "Enable OpenMP Multithreading" ON)
+IF(ENABLE_OPENMP)
+    IF(APPLE)
+        Find_Package(OpenMPApple REQUIRED)
+    ELSE()
+        Find_Package(OpenMP REQUIRED)
+    ENDIF()
+ELSE(ENABLE_OPENMP)
+
+ENDIF(ENABLE_OPENMP)
+###########################################################################
+
+
+###########################################################################
 #  Compiler flags 
 ###########################################################################
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -238,7 +254,8 @@ Find_Package(ADCIRCModules)
 ###########################################################################
 ADD_LIBRARY( adversion SHARED ${CMAKE_SOURCE_DIR}/libraries/libadversion/adversion.cpp 
                               ${CMAKE_SOURCE_DIR}/libraries/libadversion/adversionimpl.cpp
-                              ${CMAKE_SOURCE_DIR}/libraries/libadversion/partition.cpp )
+                              ${CMAKE_SOURCE_DIR}/libraries/libadversion/partition.cpp 
+                              ${CMAKE_SOURCE_DIR}/libraries/libadversion/rectangle.cpp ) 
 IF(WIN32)
     INSTALL(TARGETS adversion LIBRARY DESTINATION bin RUNTIME DESTINATION lib PUBLIC_HEADER DESTINATION ${HEADER_DEST})
 ELSEIF(CYGWIN)
@@ -271,6 +288,11 @@ IF(USE_GOOGLE_FLAT_MAP)
     ADD_DEPENDENCIES(adversion absl::base absl::container absl::hash)
     TARGET_COMPILE_DEFINITIONS( adversion PRIVATE USE_GOOGLE_FLAT_MAP )
 ENDIF(USE_GOOGLE_FLAT_MAP)
+
+IF(OPENMP_FOUND)
+    #    TARGET_COMPILE_OPTIONS( adversion PRIVATE ${OpenMP_CXX_FLAGS})
+    TARGET_LINK_LIBRARIES(  adversion OpenMP::OpenMP )
+ENDIF(OPENMP_FOUND)
 ###########################################################################
 
 ###########################################################################

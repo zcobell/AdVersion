@@ -28,11 +28,15 @@ ADCIRCMODULESHOME = /Users/zcobell/software/adcircmodules
 
 SOURCES += adversion.cpp \
     adversionimpl.cpp \
-    partition.cpp
+    partition.cpp \
+    rectangle.cpp \
+    rectangleimpl.cpp
 
 HEADERS += adversion.h \
     adversionimpl.h \
-    partition.h
+    partition.h \
+    rectangle.h \
+    rectangleimpl.h
 
 INCLUDEPATH += $$BOOSTPATH $$ABSEILPATH $$LIBGIT2PATH/include
 INCLUDEPATH += $$NETCDFPATH/include $$METISPATH/include

@@ -1,5 +1,7 @@
 #include "adversionimpl.h"
+#include <algorithm>
 #include <iostream>
+#include <numeric>
 
 AdversionImpl::AdversionImpl(const std::string& filename)
     : m_meshFilename(filename),
@@ -38,7 +40,18 @@ void AdversionImpl::partitionMesh(size_t nPartitions) {
   std::vector<size_t> elemPartition;
 
   std::cout << "Partitioning..." << std::endl;
-  this->metisPartition(this->m_numPartitions, nodePartition, elemPartition);
+  this->metisPartition(nodePartition, elemPartition);
+
+  std::cout << "Building regions..." << std::endl;
+  std::vector<Rectangle> rectangles;
+  this->buildRectangles(nodePartition, rectangles);
+
+  std::cout << "Placing nodes..." << std::endl;
+  std::vector<Partition> partitions(this->m_numPartitions);
+  this->placeNodesInRegions(rectangles, partitions);
+
+  std::cout << "Placing elements..." << std::endl;
+  this->placeElementsInRegions(rectangles, partitions);
 
   return;
 }
@@ -73,8 +86,7 @@ AdversionImpl::generateWeirConnectingElements() {
   return connections;
 }
 
-void AdversionImpl::metisPartition(size_t nPartitions,
-                                   std::vector<size_t>& nodePartition,
+void AdversionImpl::metisPartition(std::vector<size_t>& nodePartition,
                                    std::vector<size_t>& elementPartition) {
   std::vector<std::unique_ptr<Adcirc::Geometry::Element>> addedElements =
       generateWeirConnectingElements();
@@ -83,7 +95,7 @@ void AdversionImpl::metisPartition(size_t nPartitions,
   idx_t ne =
       static_cast<idx_t>(this->m_mesh->numElements() + addedElements.size());
   idx_t numflag = 0;
-  idx_t numPartitions = static_cast<idx_t>(nPartitions);
+  idx_t numPartitions = static_cast<idx_t>(this->m_numPartitions);
 
   idx_t* eptr = new idx_t[ne + 1];
   idx_t* eind = new idx_t[ne * 3];
@@ -143,4 +155,144 @@ size_t AdversionImpl::numPartitions() const { return m_numPartitions; }
 
 void AdversionImpl::setNumPartitions(const size_t& numPartitions) {
   this->m_numPartitions = numPartitions;
+}
+
+void AdversionImpl::buildRectangles(std::vector<size_t>& nodePartition,
+                                    std::vector<Rectangle>& rectangles) {
+  struct minmax {
+    double xmin = std::numeric_limits<double>::max();
+    double xmax = -std::numeric_limits<double>::max();
+    double ymin = std::numeric_limits<double>::max();
+    double ymax = -std::numeric_limits<double>::max();
+  };
+
+  std::vector<minmax> bounds;
+  bounds.resize(this->m_numPartitions);
+
+  for (size_t i = 0; i < this->m_mesh->numNodes(); ++i) {
+    size_t p = nodePartition[i];
+    double x = this->m_mesh->node(i)->x();
+    double y = this->m_mesh->node(i)->y();
+    if (x < bounds[p].xmin) bounds[p].xmin = x;
+    if (x > bounds[p].xmax) bounds[p].xmax = x;
+    if (y < bounds[p].ymin) bounds[p].ymin = y;
+    if (y > bounds[p].ymax) bounds[p].ymax = y;
+  }
+
+  rectangles.resize(this->m_numPartitions);
+  for (size_t i = 0; i < this->m_numPartitions; ++i) {
+    rectangles[i].setRectangle(bounds[i].xmin, bounds[i].ymax, bounds[i].xmax,
+                               bounds[i].ymin);
+  }
+
+  std::sort(rectangles.begin(), rectangles.end(), Rectangle::areaLessThan);
+
+  return;
+}
+
+void AdversionImpl::placeNodesInRegions(std::vector<Rectangle>& rectangles,
+                                        std::vector<Partition>& partitions) {
+  std::vector<unsigned short> found(this->m_mesh->numNodes());
+  std::fill(found.begin(), found.end(), 0);
+
+  for (size_t i = 0; i < this->m_numPartitions; ++i) {
+    partitions[i].guessSizeNodes(
+        2 * (this->m_mesh->numNodes() / this->m_numPartitions));
+  }
+
+#pragma omp parallel for shared(rectangles, partitions, found, m_mesh)
+  for (size_t i = 0; i < this->m_mesh->numNodes(); ++i) {
+    for (size_t j = 0; j < this->m_numPartitions; ++j) {
+      if (rectangles[j].isInside(this->m_mesh->node(i)->x(),
+                                 this->m_mesh->node(i)->y())) {
+#pragma omp critical
+        partitions[j].addNode(this->m_mesh->node(i));
+        found[i] = 1;
+        break;
+      }
+    }
+  }
+
+  //...We need to account for funky geometries here
+  if (std::accumulate(found.begin(), found.end(), 0) !=
+      this->m_mesh->numNodes()) {
+    Kdtree k;
+    this->generateRectangleKdtree(rectangles, k);
+    for (size_t i = 0; i < this->m_mesh->numNodes(); ++i) {
+      if (found[i] == 0) {
+        size_t idx = k.findNearest(this->m_mesh->node(i)->x(),
+                                   this->m_mesh->node(i)->y());
+        partitions[idx].addElement(this->m_mesh->element(i));
+        std::cout << this->m_mesh->node(i)->x() << " "
+                  << this->m_mesh->node(i)->y() << " " << idx << std::endl;
+      }
+    }
+  }
+  return;
+}
+
+void AdversionImpl::generateRectangleKdtree(std::vector<Rectangle>& rectangles,
+                                            Kdtree& k) {
+  std::vector<double> x, y;
+  x.reserve(this->m_numPartitions);
+  y.reserve(this->m_numPartitions);
+
+  for (auto& r : rectangles) {
+    x.push_back((r.topLeft().first + r.topRight().first) / 2.0);
+    y.push_back((r.topLeft().second + r.bottomLeft().second) / 2.0);
+  }
+  k.build(x, y);
+  return;
+}
+
+void AdversionImpl::placeElementsInRegions(std::vector<Rectangle>& rectangles,
+                                           std::vector<Partition>& partitions) {
+  std::vector<unsigned short> found(this->m_mesh->numElements());
+  std::fill(found.begin(), found.end(), 0);
+
+  for (size_t i = 0; i < this->m_numPartitions; ++i) {
+    partitions[i].guessSizeElements(
+        2 * (this->m_mesh->numElements() / this->m_numPartitions));
+  }
+
+#pragma omp parallel for shared(rectangles, partitions, found, m_mesh)
+  for (size_t i = 0; i < this->m_mesh->numElements(); ++i) {
+    double x, y;
+    this->m_mesh->element(i)->getElementCenter(x, y);
+    for (size_t j = 0; j < this->m_numPartitions; ++j) {
+      if (rectangles[j].isInside(x, y)) {
+#pragma omp critical
+        partitions[j].addElement(this->m_mesh->element(i));
+        found[i] = 1;
+        break;
+      }
+    }
+  }
+
+  //...We need to account for funky geometries here
+  if (std::accumulate(found.begin(), found.end(), 0) !=
+      this->m_mesh->numElements()) {
+    size_t n = std::min(200ul, this->m_mesh->numElements());
+    this->m_mesh->buildElementalSearchTree();
+    Kdtree* k = this->m_mesh->elementalSearchTree();
+    for (size_t i = 0; i < this->m_mesh->numElements(); ++i) {
+      if (found[i] == 0) {
+        double xc, yc;
+        this->m_mesh->element(i)->getElementCenter(xc, yc);
+        std::vector<size_t> near = k->findXNearest(xc, yc, n);
+        for (size_t j = 1; j < this->m_mesh->numElements(); ++j) {
+          if (found[near[j]] == 1) {
+            partitions[near[j]].addElement(this->m_mesh->element(i));
+          }
+        }
+      }
+    }
+  }
+
+  if (std::accumulate(found.begin(), found.end(), 0) !=
+      this->m_mesh->numElements()) {
+    std::cerr << "fuck really?" << std::endl;
+  }
+
+  return;
 }

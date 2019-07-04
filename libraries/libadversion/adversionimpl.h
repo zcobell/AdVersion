@@ -6,6 +6,9 @@
 #include "adcircmodules.h"
 #include "git2.h"
 #include "metis.h"
+#include "partition.h"
+#include "rectangle.h"
+#include "kdtree.h"
 
 class AdversionImpl {
  public:
@@ -22,9 +25,18 @@ class AdversionImpl {
   size_t numPartitions() const;
   void setNumPartitions(const size_t &numPartitions);
 
-private:
-  void metisPartition(size_t nPartitions, std::vector<size_t> &nodePartition,
+ private:
+  void metisPartition(std::vector<size_t> &nodePartition,
                       std::vector<size_t> &elementPartition);
+
+  void buildRectangles(std::vector<size_t> &nodePartition,
+                       std::vector<Rectangle> &rectangles);
+
+  void placeNodesInRegions(std::vector<Rectangle> &rectangles,
+                           std::vector<Partition> &partitions);
+
+  void placeElementsInRegions(std::vector<Rectangle> &rectangles,
+                              std::vector<Partition> &partitions);
 
   std::unique_ptr<Adcirc::Geometry::Mesh> m_mesh;
 
@@ -34,6 +46,7 @@ private:
 
   std::vector<std::unique_ptr<Adcirc::Geometry::Element>>
   generateWeirConnectingElements();
+  void generateRectangleKdtree(std::vector<Rectangle> &rectangles, Kdtree &k);
 };
 
 #endif  // ADVERSIONIMPL_H

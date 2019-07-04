@@ -11,6 +11,9 @@ public:
     void addElement(Adcirc::Geometry::Element *e);
     void addBoundary(Adcirc::Geometry::Boundary *b);
     void write();
+    void guessSizeNodes(size_t size);
+    void guessSizeElements(size_t size);
+    void guessSizeBoundaries(size_t size);
 private:
 
     std::vector<Adcirc::Geometry::Node*> m_nodes;
