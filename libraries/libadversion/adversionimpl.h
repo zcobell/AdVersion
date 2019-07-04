@@ -5,14 +5,15 @@
 #include <vector>
 #include "adcircmodules.h"
 #include "git2.h"
+#include "kdtree.h"
 #include "metis.h"
 #include "partition.h"
 #include "rectangle.h"
-#include "kdtree.h"
 
 class AdversionImpl {
  public:
-  AdversionImpl(const std::string &filename = std::string());
+  AdversionImpl(const std::string &meshFilename,
+                const std::string &rootDirectory);
 
   void partitionMesh(size_t nPartitions = 0);
 
@@ -24,6 +25,9 @@ class AdversionImpl {
 
   size_t numPartitions() const;
   void setNumPartitions(const size_t &numPartitions);
+
+  std::string rootDirectory() const;
+  void setRootDirectory(const std::string &rootDirectory);
 
  private:
   void metisPartition(std::vector<size_t> &nodePartition,
@@ -38,15 +42,29 @@ class AdversionImpl {
   void placeElementsInRegions(std::vector<Rectangle> &rectangles,
                               std::vector<Partition> &partitions);
 
+  void makeDirectoryStructure(const std::string &rootPath);
+
+  void writePartitionedMesh(const std::string &rootPath,
+                            std::vector<Partition> &partitions);
+
   std::unique_ptr<Adcirc::Geometry::Mesh> m_mesh;
 
   size_t m_numPartitions;
   std::string m_meshFilename;
   std::string m_nodalAttributesFilename;
+  std::string m_rootDirectory;
 
   std::vector<std::unique_ptr<Adcirc::Geometry::Element>>
   generateWeirConnectingElements();
   void generateRectangleKdtree(std::vector<Rectangle> &rectangles, Kdtree &k);
+
+  void placeMissingNodes(std::vector<unsigned short> &found,
+                         std::vector<size_t> &part,
+                         std::vector<Partition> &partitions);
+
+  void placeMissingElements(std::vector<unsigned short> &found,
+                            std::vector<size_t> &part,
+                            std::vector<Partition> &partitions);
 };
 
 #endif  // ADVERSIONIMPL_H

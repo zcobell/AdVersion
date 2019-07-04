@@ -81,7 +81,15 @@ void Rectangle::setBottomRight(double x, double y) {
 }
 
 bool Rectangle::isInside(double x, double y) {
+#if 1
+    double xmin = this->topLeft().first;
+    double ymin = this->bottomLeft().second;
+    double xmax = this->topRight().first;
+    double ymax = this->topRight().second;
+    return x <= xmax && x >= xmin && y <= ymax && y>=ymin;
+#else
   return boost::geometry::covered_by(point_t(x, y), this->m_polygon);
+#endif
 }
 
 double Rectangle::area() { return boost::geometry::area(this->m_polygon); }

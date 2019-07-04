@@ -2,9 +2,13 @@
 #include <algorithm>
 #include <iostream>
 #include <numeric>
+#include "boost/filesystem.hpp"
+#include "boost/format.hpp"
 
-AdversionImpl::AdversionImpl(const std::string& filename)
-    : m_meshFilename(filename),
+AdversionImpl::AdversionImpl(const std::string& meshFilename,
+                             const std::string& rootDirectory)
+    : m_meshFilename(meshFilename),
+      m_rootDirectory(rootDirectory),
       m_nodalAttributesFilename(std::string()),
       m_mesh(nullptr) {}
 
@@ -52,6 +56,17 @@ void AdversionImpl::partitionMesh(size_t nPartitions) {
 
   std::cout << "Placing elements..." << std::endl;
   this->placeElementsInRegions(rectangles, partitions);
+
+  std::cout << "Sorting..." << std::endl;
+  for (auto& p : partitions) {
+    p.sort();
+  }
+
+  std::cout << "Developing directory structure..." << std::endl;
+  this->makeDirectoryStructure(this->m_rootDirectory);
+
+  std::cout << "Writing..." << std::endl;
+  this->writePartitionedMesh(this->m_rootDirectory, partitions);
 
   return;
 }
@@ -193,21 +208,24 @@ void AdversionImpl::buildRectangles(std::vector<size_t>& nodePartition,
 void AdversionImpl::placeNodesInRegions(std::vector<Rectangle>& rectangles,
                                         std::vector<Partition>& partitions) {
   std::vector<unsigned short> found(this->m_mesh->numNodes());
+  std::vector<size_t> part(this->m_mesh->numNodes());
   std::fill(found.begin(), found.end(), 0);
+  std::fill(part.begin(), part.end(), std::numeric_limits<size_t>::max());
 
   for (size_t i = 0; i < this->m_numPartitions; ++i) {
     partitions[i].guessSizeNodes(
         2 * (this->m_mesh->numNodes() / this->m_numPartitions));
   }
 
-#pragma omp parallel for shared(rectangles, partitions, found, m_mesh)
+  //#pragma omp parallel for shared(rectangles, partitions, found, m_mesh)
   for (size_t i = 0; i < this->m_mesh->numNodes(); ++i) {
     for (size_t j = 0; j < this->m_numPartitions; ++j) {
       if (rectangles[j].isInside(this->m_mesh->node(i)->x(),
                                  this->m_mesh->node(i)->y())) {
-#pragma omp critical
+        //#pragma omp critical
         partitions[j].addNode(this->m_mesh->node(i));
         found[i] = 1;
+        part[i] = j;
         break;
       }
     }
@@ -216,17 +234,7 @@ void AdversionImpl::placeNodesInRegions(std::vector<Rectangle>& rectangles,
   //...We need to account for funky geometries here
   if (std::accumulate(found.begin(), found.end(), 0) !=
       this->m_mesh->numNodes()) {
-    Kdtree k;
-    this->generateRectangleKdtree(rectangles, k);
-    for (size_t i = 0; i < this->m_mesh->numNodes(); ++i) {
-      if (found[i] == 0) {
-        size_t idx = k.findNearest(this->m_mesh->node(i)->x(),
-                                   this->m_mesh->node(i)->y());
-        partitions[idx].addElement(this->m_mesh->element(i));
-        std::cout << this->m_mesh->node(i)->x() << " "
-                  << this->m_mesh->node(i)->y() << " " << idx << std::endl;
-      }
-    }
+    this->placeMissingNodes(found, part, partitions);
   }
   return;
 }
@@ -245,25 +253,80 @@ void AdversionImpl::generateRectangleKdtree(std::vector<Rectangle>& rectangles,
   return;
 }
 
+void AdversionImpl::placeMissingNodes(std::vector<unsigned short>& found,
+                                      std::vector<size_t>& part,
+                                      std::vector<Partition>& partitions) {
+  size_t n = std::min(1000ul, this->m_mesh->numNodes());
+
+  if (!this->m_mesh->nodalSearchTreeInitialized())
+    this->m_mesh->buildNodalSearchTree();
+
+  Kdtree* k = this->m_mesh->nodalSearchTree();
+  for (size_t i = 0; i < this->m_mesh->numNodes(); ++i) {
+    if (found[i] == 0) {
+      Adcirc::Geometry::Node* nd = this->m_mesh->node(i);
+      std::vector<size_t> near = k->findXNearest(nd->x(), nd->y(), n);
+      for (size_t j = 1; j < n; ++j) {
+        if (found[near[j]] == 1) {
+          partitions[part[near[j]]].addNode(nd);
+          found[i] = 1;
+          break;
+        }
+      }
+    }
+  }
+  return;
+}
+
+void AdversionImpl::placeMissingElements(std::vector<unsigned short>& found,
+                                         std::vector<size_t>& part,
+                                         std::vector<Partition>& partitions) {
+  size_t n = std::min(1000ul, this->m_mesh->numElements());
+
+  if (!this->m_mesh->elementalSearchTreeInitialized())
+    this->m_mesh->buildElementalSearchTree();
+
+  Kdtree* k = this->m_mesh->elementalSearchTree();
+  for (size_t i = 0; i < this->m_mesh->numElements(); ++i) {
+    if (found[i] == 0) {
+      double xc, yc;
+      Adcirc::Geometry::Element* e = this->m_mesh->element(i);
+      e->getElementCenter(xc, yc);
+      std::vector<size_t> near = k->findXNearest(xc, yc, n);
+      for (size_t j = 1; j < n; ++j) {
+        if (found[near[j]] == 1) {
+          partitions[part[near[j]]].addElement(e);
+          found[i] = 1;
+          break;
+        }
+      }
+    }
+  }
+  return;
+}
+
 void AdversionImpl::placeElementsInRegions(std::vector<Rectangle>& rectangles,
                                            std::vector<Partition>& partitions) {
   std::vector<unsigned short> found(this->m_mesh->numElements());
+  std::vector<size_t> part(this->m_mesh->numElements());
   std::fill(found.begin(), found.end(), 0);
+  std::fill(part.begin(), part.end(), std::numeric_limits<size_t>::max());
 
   for (size_t i = 0; i < this->m_numPartitions; ++i) {
     partitions[i].guessSizeElements(
         2 * (this->m_mesh->numElements() / this->m_numPartitions));
   }
 
-#pragma omp parallel for shared(rectangles, partitions, found, m_mesh)
+  //#pragma omp parallel for shared(rectangles, partitions, found, m_mesh)
   for (size_t i = 0; i < this->m_mesh->numElements(); ++i) {
     double x, y;
     this->m_mesh->element(i)->getElementCenter(x, y);
     for (size_t j = 0; j < this->m_numPartitions; ++j) {
       if (rectangles[j].isInside(x, y)) {
-#pragma omp critical
+        //#pragma omp critical
         partitions[j].addElement(this->m_mesh->element(i));
         found[i] = 1;
+        part[i] = j;
         break;
       }
     }
@@ -272,27 +335,52 @@ void AdversionImpl::placeElementsInRegions(std::vector<Rectangle>& rectangles,
   //...We need to account for funky geometries here
   if (std::accumulate(found.begin(), found.end(), 0) !=
       this->m_mesh->numElements()) {
-    size_t n = std::min(200ul, this->m_mesh->numElements());
-    this->m_mesh->buildElementalSearchTree();
-    Kdtree* k = this->m_mesh->elementalSearchTree();
-    for (size_t i = 0; i < this->m_mesh->numElements(); ++i) {
-      if (found[i] == 0) {
-        double xc, yc;
-        this->m_mesh->element(i)->getElementCenter(xc, yc);
-        std::vector<size_t> near = k->findXNearest(xc, yc, n);
-        for (size_t j = 1; j < this->m_mesh->numElements(); ++j) {
-          if (found[near[j]] == 1) {
-            partitions[near[j]].addElement(this->m_mesh->element(i));
-          }
-        }
-      }
-    }
+    this->placeMissingElements(found, part, partitions);
   }
 
-  if (std::accumulate(found.begin(), found.end(), 0) !=
-      this->m_mesh->numElements()) {
-    std::cerr << "fuck really?" << std::endl;
-  }
+  return;
+}
 
+void AdversionImpl::makeDirectoryStructure(const std::string& rootPath) {
+  std::string nodeFolder = rootPath + "/nodes";
+  std::string elementFolder = rootPath + "/elements";
+  std::string boundaryFolder = rootPath + "/boundaries";
+  std::string systemFolder = rootPath + "/system";
+
+  if (!boost::filesystem::exists(rootPath)) {
+    boost::filesystem::create_directory(rootPath);
+  }
+  if (!boost::filesystem::exists(nodeFolder)) {
+    boost::filesystem::create_directory(nodeFolder);
+  }
+  if (!boost::filesystem::exists(elementFolder)) {
+    boost::filesystem::create_directory(elementFolder);
+  }
+  if (!boost::filesystem::exists(boundaryFolder)) {
+    boost::filesystem::create_directory(boundaryFolder);
+  }
+  if (!boost::filesystem::exists(systemFolder)) {
+    boost::filesystem::create_directory(systemFolder);
+  }
+  return;
+}
+
+std::string AdversionImpl::rootDirectory() const {
+  return this->m_rootDirectory;
+}
+
+void AdversionImpl::setRootDirectory(const std::string& rootDirectory) {
+  this->m_rootDirectory = rootDirectory;
+}
+
+void AdversionImpl::writePartitionedMesh(const std::string& rootPath,
+                                         std::vector<Partition>& partitions) {
+  for (size_t i = 0; i < this->m_numPartitions; ++i) {
+    std::string nodesFile = boost::str(
+        boost::format("%s/nodes/partition_%06i.node") % rootPath % i);
+    std::string elementsFile = boost::str(
+        boost::format("%s/elements/partition_%06i.element") % rootPath % i);
+    partitions[i].write(nodesFile, elementsFile);
+  }
   return;
 }

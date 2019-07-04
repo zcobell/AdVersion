@@ -1,8 +1,9 @@
 #include "adversion.h"
 #include "adversionimpl.h"
 
-AdVersion::AdVersion(std::string filename)
-    : m_impl(new AdversionImpl(filename)) {}
+AdVersion::AdVersion(const std::string &meshFilename,
+                     const std::string &rootDirectory)
+    : m_impl(new AdversionImpl(meshFilename, rootDirectory)) {}
 
 AdVersion::~AdVersion() {}
 

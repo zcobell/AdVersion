@@ -75,22 +75,6 @@ ENDIF(COMPILER_SUPPORTS_CXX11)
 
 
 ###########################################################################
-# OpenMP
-###########################################################################
-OPTION(ENABLE_OPENMP "Enable OpenMP Multithreading" ON)
-IF(ENABLE_OPENMP)
-    IF(APPLE)
-        Find_Package(OpenMPApple REQUIRED)
-    ELSE()
-        Find_Package(OpenMP REQUIRED)
-    ENDIF()
-ELSE(ENABLE_OPENMP)
-
-ENDIF(ENABLE_OPENMP)
-###########################################################################
-
-
-###########################################################################
 #  Compiler flags 
 ###########################################################################
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -152,11 +136,7 @@ ENDIF(NOT CYGWIN)
 ###########################################################################
 # Boost
 ###########################################################################
-FIND_PACKAGE( Boost 1.60.0 )
-IF( NOT Boost_FOUND OR PACKAGE_VERSION_UNSUITABLE )
-    MESSAGE( STATUS "Using included Boost Version: 1.66.0")
-    SET( Boost_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/boost_1_66_0 )
-ENDIF()
+FIND_PACKAGE( Boost 1.60.0 COMPONENTS filesystem REQUIRED )
 ###########################################################################
 
 ###########################################################################
@@ -177,39 +157,39 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/CMakeFiles)
 IF(WIN32)
     SET(NETCDF_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/thirdparty/netcdf/include" ) 
 ELSE(WIN32)
-	IF(NOT "${NETCDFHOME}" STREQUAL "")
-		SET(NETCDF_DIR "${NETCDFHOME}")
-	ELSEIF(NOT $ENV{NETCDFHOME} STREQUAL "")
-		SET(NETCDF_DIR $ENV{NETCDFHOME})
-	ENDIF(NOT "${NETCDFHOME}" STREQUAL "")
+    IF(NOT "${NETCDFHOME}" STREQUAL "")
+        SET(NETCDF_DIR "${NETCDFHOME}")
+    ELSEIF(NOT $ENV{NETCDFHOME} STREQUAL "")
+        SET(NETCDF_DIR $ENV{NETCDFHOME})
+    ENDIF(NOT "${NETCDFHOME}" STREQUAL "")
 
-	FIND_PACKAGE(NetCDF)
+    FIND_PACKAGE(NetCDF)
 
-	SET(NETCDF_AdditionalLibs "" CACHE STRING "Additional libraries that may be required for netCDF")
+    SET(NETCDF_AdditionalLibs "" CACHE STRING "Additional libraries that may be required for netCDF")
 
-	IF(NOT NETCDF_FOUND)
-		MESSAGE(SEND_ERROR "Specify the netCDF path on the following screen")
-	ELSE(NOT NETCDF_FOUND)
-		
-		SET(netcdf_c_code
-	"
-		#include <netcdf.h>
-		int main(){
-			int ncid,varid;
-			int ierr = nc_def_var_deflate(ncid,varid,1,2,2);
-			return 0;
-		}
-	"
-		)
-		FILE(WRITE "${CMAKE_BINARY_DIR}/CMakeFiles/netcdf_c_check.c" "${netcdf_c_code}")
-		TRY_COMPILE(NC_DEFLATE_FOUND "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/netcdf_c_check.c" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${NETCDF_INCLUDE_DIRS}" LINK_LIBRARIES "${NETCDF_LIBRARIES}" LINK_LIBRARIES "${NETCDF_AdditionalLibs}" OUTPUT_VARIABLE LOG1)
-			
-		IF(NC_DEFLATE_FOUND)
-			SET(NETCDF_LINKER_FLAG "${NETCDF_LIBRARIES}")
-		ELSE(NC_DEFLATE_FOUND)
-			MESSAGE(SEND_ERROR "The netCDF library is not functional.")
-		ENDIF(NC_DEFLATE_FOUND)
-	ENDIF(NOT NETCDF_FOUND)
+    IF(NOT NETCDF_FOUND)
+        MESSAGE(SEND_ERROR "Specify the netCDF path on the following screen")
+    ELSE(NOT NETCDF_FOUND)
+        
+        SET(netcdf_c_code
+    "
+        #include <netcdf.h>
+        int main(){
+            int ncid,varid;
+            int ierr = nc_def_var_deflate(ncid,varid,1,2,2);
+            return 0;
+        }
+    "
+        )
+        FILE(WRITE "${CMAKE_BINARY_DIR}/CMakeFiles/netcdf_c_check.c" "${netcdf_c_code}")
+        TRY_COMPILE(NC_DEFLATE_FOUND "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/netcdf_c_check.c" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${NETCDF_INCLUDE_DIRS}" LINK_LIBRARIES "${NETCDF_LIBRARIES}" LINK_LIBRARIES "${NETCDF_AdditionalLibs}" OUTPUT_VARIABLE LOG1)
+            
+        IF(NC_DEFLATE_FOUND)
+            SET(NETCDF_LINKER_FLAG "${NETCDF_LIBRARIES}")
+        ELSE(NC_DEFLATE_FOUND)
+            MESSAGE(SEND_ERROR "The netCDF library is not functional.")
+        ENDIF(NC_DEFLATE_FOUND)
+    ENDIF(NOT NETCDF_FOUND)
 ENDIF(WIN32)
 ###########################################################################
 
@@ -268,7 +248,7 @@ TARGET_INCLUDE_DIRECTORIES( adversion PRIVATE ${CMAKE_SOURCE_DIR}/thirdparty/lib
                                               ${CMAKE_SOURCE_DIR}/thirdparty/metis-5.1.0/include 
                                               ${ADCIRCMODULES_INCLUDE_DIR}
                                               ${Boost_INCLUDE_DIRS} ${NETCDF_INCLUDE_DIRS} )
-TARGET_LINK_LIBRARIES( adversion git2 metis ${ADCIRCMODULES_LIBRARY} ${NETCDF_LIBRARIES} )
+TARGET_LINK_LIBRARIES( adversion git2 metis ${Boost_FILESYSTEM_LIBRARY}  ${ADCIRCMODULES_LIBRARY} ${NETCDF_LIBRARIES} )
 
 IF(WIN32)
     LINK_DIRECTORIES( ${CMAKE_SOURCE_DIR}/thirdparty/netcdf/libs_vc64 )
@@ -288,11 +268,6 @@ IF(USE_GOOGLE_FLAT_MAP)
     ADD_DEPENDENCIES(adversion absl::base absl::container absl::hash)
     TARGET_COMPILE_DEFINITIONS( adversion PRIVATE USE_GOOGLE_FLAT_MAP )
 ENDIF(USE_GOOGLE_FLAT_MAP)
-
-IF(OPENMP_FOUND)
-    #    TARGET_COMPILE_OPTIONS( adversion PRIVATE ${OpenMP_CXX_FLAGS})
-    TARGET_LINK_LIBRARIES(  adversion OpenMP::OpenMP )
-ENDIF(OPENMP_FOUND)
 ###########################################################################
 
 ###########################################################################
