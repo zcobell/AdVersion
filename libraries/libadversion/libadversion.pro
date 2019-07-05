@@ -39,7 +39,7 @@ HEADERS += adversion.h \
     rectangleimpl.h
 
 INCLUDEPATH += $$BOOSTPATH $$ABSEILPATH $$LIBGIT2PATH/include
-INCLUDEPATH += $$NETCDFPATH/include $$METISPATH/include
+INCLUDEPATH += $$NETCDFPATH $$METISPATH/include
 INCLUDEPATH += $$ADCIRCMODULESHOME/include
 
 LIBS += -lnetcdf 

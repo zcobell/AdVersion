@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include "boost/format.hpp"
+#include "netcdf.h"
 
 bool nodeHashLessThan(Adcirc::Geometry::Node *n1, Adcirc::Geometry::Node *n2) {
   return n1->positionHash() < n2->positionHash();
@@ -68,18 +69,34 @@ void Partition::sortBoundaries() {
             boundaryHashLessThan);
 }
 
-void Partition::write(const std::string &nodesFilename,
+void Partition::write(Format writeFormat, const std::string &nodesFilename,
                       const std::string &elementsFilename) {
-  this->writeNodes(nodesFilename);
-  this->writeElements(elementsFilename);
+  if (writeFormat == NETCDF) {
+    this->writeNetCDF(nodesFilename, elementsFilename);
+  } else if (writeFormat == ASCII) {
+    this->writeAscii(nodesFilename, elementsFilename);
+  }
   return;
 }
 
-void Partition::writeNodes(const std::string &filename) {
+void Partition::writeAscii(const std::string &nodesFilename,
+                           const std::string &elementsFilename) {
+  this->writeNodesAscii(nodesFilename);
+  this->writeElementsAscii(elementsFilename);
+  return;
+}
+
+void Partition::writeNetCDF(const std::string &nodeFilename,
+                            const std::string &elementsFilename) {
+  this->writeNodesNetCDF(nodeFilename);
+  this->writeElementsNetCDF(elementsFilename);
+}
+
+void Partition::writeNodesAscii(const std::string &filename) {
   std::ofstream f;
   f.open(filename.c_str(), std::ios::out);
-  std::string n = boost::str(boost::format("%i\n")%this->numNodes());
-  f.write(n.c_str(),n.size());
+  std::string n = boost::str(boost::format("%i\n") % this->numNodes());
+  f.write(n.c_str(), n.size());
   for (auto &n : this->m_nodes) {
     std::string line =
         boost::str(boost::format("%s %+018.12e %+018.12e %+018.12e\n") %
@@ -89,11 +106,11 @@ void Partition::writeNodes(const std::string &filename) {
   f.close();
 }
 
-void Partition::writeElements(const std::string &filename) {
+void Partition::writeElementsAscii(const std::string &filename) {
   std::ofstream f;
   f.open(filename.c_str(), std::ios::out);
-  std::string n = boost::str(boost::format("%i\n")%this->numElements());
-  f.write(n.c_str(),n.size());
+  std::string n = boost::str(boost::format("%i\n") % this->numElements());
+  f.write(n.c_str(), n.size());
   for (auto &e : this->m_elements) {
     std::string line =
         boost::str(boost::format("%s %s %s %s\n") % e->hash() %
@@ -102,4 +119,104 @@ void Partition::writeElements(const std::string &filename) {
     f.write(line.c_str(), line.size());
   }
   f.close();
+}
+
+void Partition::writeNodesNetCDF(const std::string &filename) {
+  int ncid, dimid_numnodes, dimid_hashlen;
+  int varid_x, varid_y, varid_z, varid_hash;
+  const size_t hashsize = this->m_nodes[0]->positionHash().size();
+  int ierr = nc_create(filename.c_str(), NC_NETCDF4, &ncid);
+  ierr = nc_def_dim(ncid, "numNodes", this->numNodes(), &dimid_numnodes);
+  ierr = nc_def_dim(ncid, "hashlength", hashsize, &dimid_hashlen);
+  ierr = nc_def_var(ncid, "x", NC_DOUBLE, 1, &dimid_numnodes, &varid_x);
+  ierr = nc_def_var(ncid, "y", NC_DOUBLE, 1, &dimid_numnodes, &varid_y);
+  ierr = nc_def_var(ncid, "z", NC_DOUBLE, 1, &dimid_numnodes, &varid_z);
+  const int dims[2] = {dimid_numnodes, dimid_hashlen};
+  ierr = nc_def_var(ncid, "hash", NC_CHAR, 2, dims, &varid_hash);
+  ierr = nc_def_var_deflate(ncid, varid_x, 1, 1, 2);
+  ierr = nc_def_var_deflate(ncid, varid_y, 1, 1, 2);
+  ierr = nc_def_var_deflate(ncid, varid_z, 1, 1, 2);
+  ierr = nc_def_var_deflate(ncid, varid_hash, 1, 1, 2);
+  ierr = nc_enddef(ncid);
+
+  double *x = new double[this->numNodes()];
+  double *y = new double[this->numNodes()];
+  double *z = new double[this->numNodes()];
+
+  for (size_t i = 0; i < this->numNodes(); ++i) {
+    x[i] = this->m_nodes[i]->x();
+    y[i] = this->m_nodes[i]->y();
+    z[i] = this->m_nodes[i]->z();
+  }
+
+  ierr = nc_put_var_double(ncid, varid_x, x);
+  ierr = nc_put_var_double(ncid, varid_y, y);
+  ierr = nc_put_var_double(ncid, varid_z, z);
+
+  delete[] x;
+  delete[] y;
+  delete[] z;
+
+  char *buf = new char[this->numNodes() * hashsize];
+  memset(buf, '\0', this->numNodes() * hashsize);
+
+  for (size_t i = 0; i < this->numNodes(); ++i) {
+    strncpy(&buf[i * hashsize], this->m_nodes[i]->positionHash().c_str(),
+            hashsize);
+  }
+  ierr = nc_put_var_text(ncid, varid_hash, buf);
+
+  delete[] buf;
+
+  ierr = nc_close(ncid);
+}
+
+void Partition::writeElementsNetCDF(const std::string &filename) {
+  int ncid, dimid_numelements, dimid_hashlen;
+  int varid_hash, varid_n1, varid_n2, varid_n3;
+  const size_t hashsize = this->m_elements[0]->hash().size();
+  int ierr = nc_create(filename.c_str(), NC_NETCDF4, &ncid);
+  ierr =
+      nc_def_dim(ncid, "numElements", this->numElements(), &dimid_numelements);
+  ierr = nc_def_dim(ncid, "hashlength", hashsize, &dimid_hashlen);
+  const int dims[2] = {dimid_numelements, dimid_hashlen};
+  ierr = nc_def_var(ncid, "hash", NC_CHAR, 2, dims, &varid_hash);
+  ierr = nc_def_var(ncid, "n1", NC_CHAR, 2, dims, &varid_n1);
+  ierr = nc_def_var(ncid, "n2", NC_CHAR, 2, dims, &varid_n2);
+  ierr = nc_def_var(ncid, "n3", NC_CHAR, 2, dims, &varid_n3);
+  ierr = nc_def_var_deflate(ncid, varid_hash, 1, 1, 2);
+  ierr = nc_def_var_deflate(ncid, varid_n1, 1, 1, 2);
+  ierr = nc_def_var_deflate(ncid, varid_n2, 1, 1, 2);
+  ierr = nc_def_var_deflate(ncid, varid_n3, 1, 1, 2);
+  ierr = nc_enddef(ncid);
+
+  char *buf = new char[this->numElements() * hashsize];
+  memset(buf, '\0', this->numElements() * hashsize);
+
+  for (size_t i = 0; i < this->numElements(); ++i) {
+    strncpy(&buf[i * hashsize], this->m_elements[i]->hash().c_str(), hashsize);
+  }
+  ierr = nc_put_var_text(ncid, varid_hash, buf);
+
+  for (size_t i = 0; i < this->numElements(); ++i) {
+    strncpy(&buf[i * hashsize],
+            this->m_elements[i]->node(0)->positionHash().c_str(), hashsize);
+  }
+  ierr = nc_put_var_text(ncid, varid_n1, buf);
+
+  for (size_t i = 0; i < this->numElements(); ++i) {
+    strncpy(&buf[i * hashsize],
+            this->m_elements[i]->node(1)->positionHash().c_str(), hashsize);
+  }
+  ierr = nc_put_var_text(ncid, varid_n2, buf);
+
+  for (size_t i = 0; i < this->numElements(); ++i) {
+    strncpy(&buf[i * hashsize],
+            this->m_elements[i]->node(2)->positionHash().c_str(), hashsize);
+  }
+  ierr = nc_put_var_text(ncid, varid_n3, buf);
+
+  delete[] buf;
+
+  nc_close(ncid);
 }

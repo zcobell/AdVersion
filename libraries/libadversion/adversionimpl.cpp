@@ -5,6 +5,8 @@
 #include "boost/filesystem.hpp"
 #include "boost/format.hpp"
 
+#define WRITE_NC 1
+
 AdversionImpl::AdversionImpl(const std::string& meshFilename,
                              const std::string& rootDirectory)
     : m_meshFilename(meshFilename),
@@ -67,6 +69,7 @@ void AdversionImpl::partitionMesh(size_t nPartitions) {
 
   std::cout << "Writing..." << std::endl;
   this->writePartitionedMesh(this->m_rootDirectory, partitions);
+  this->writeSystemInformation(this->m_rootDirectory, rectangles);
 
   std::cout << "Initializing git structure..." << std::endl;
   this->gitInit();
@@ -378,12 +381,17 @@ void AdversionImpl::setRootDirectory(const std::string& rootDirectory) {
 
 void AdversionImpl::writePartitionedMesh(const std::string& rootPath,
                                          std::vector<Partition>& partitions) {
+#if WRITE_NC == 1
+  Partition::Format f = Partition::Format::NETCDF;
+#else
+  Partition::Format f = Partition::Format::ASCII;
+#endif
   for (size_t i = 0; i < this->m_numPartitions; ++i) {
     std::string nodesFile = boost::str(
         boost::format("%s/nodes/partition_%06i.node") % rootPath % i);
     std::string elementsFile = boost::str(
         boost::format("%s/elements/partition_%06i.element") % rootPath % i);
-    partitions[i].write(nodesFile, elementsFile);
+    partitions[i].write(f, nodesFile, elementsFile);
   }
   return;
 }
@@ -397,5 +405,48 @@ void AdversionImpl::gitInit() {
   git_repository_init(&repo, gitdir.c_str(), 0);
   git_repository_free(repo);
   git_libgit2_shutdown();
+  return;
+}
+
+void AdversionImpl::writeSystemInformation(const std::string& rootPath,
+                                           std::vector<Rectangle>& rect) {
+  std::string partitionFile = rootPath + "/system/partitions.control";
+  std::string metaFile = rootPath + "/system/metadata.control";
+
+  std::ofstream pFile;
+  pFile.open(partitionFile, std::ios::out);
+  std::string nDomains =
+      boost::str(boost::format("%12i\n") % this->m_numPartitions);
+  pFile.write(nDomains.c_str(), nDomains.size());
+
+  for (size_t i = 0; i < rect.size(); ++i) {
+    Rectangle* r = &rect[i];
+    std::string line = boost::str(
+        boost::format("%6i %+018.12e %+018.12e %+018.12e %+018.12e\n") % i %
+        r->topLeft().first % r->topLeft().second % r->bottomRight().first %
+        r->bottomRight().second);
+    pFile.write(line.c_str(), line.size());
+  }
+
+  pFile.close();
+
+  std::ofstream mFile;
+  mFile.open(metaFile, std::ios::out);
+  std::string header = this->m_mesh->meshHeaderString() + "\n";
+  mFile.write(header.c_str(), header.size());
+
+#if WRITE_NC == 1
+  mFile.write("NETCDF\n",7);
+#else
+  mFile.write("ASCII\n",6);
+#endif
+
+  std::string nodes =
+      boost::str(boost::format("%12i\n") % this->m_mesh->numNodes());
+  std::string elements =
+      boost::str(boost::format("%12i\n") % this->m_mesh->numElements());
+  mFile.write(nodes.c_str(), nodes.size());
+  mFile.write(elements.c_str(), elements.size());
+  mFile.close();
   return;
 }

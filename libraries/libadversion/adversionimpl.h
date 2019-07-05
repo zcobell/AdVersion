@@ -47,6 +47,9 @@ class AdversionImpl {
   void writePartitionedMesh(const std::string &rootPath,
                             std::vector<Partition> &partitions);
 
+  void writeSystemInformation(const std::string &rootPath,
+                              std::vector<Rectangle> &rect);
+
   void gitInit();
 
   std::unique_ptr<Adcirc::Geometry::Mesh> m_mesh;
