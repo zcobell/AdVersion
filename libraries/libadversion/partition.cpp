@@ -142,6 +142,7 @@ void Partition::writeElementsAscii(const std::string &filename) {
 }
 
 void Partition::writeNodesNetCDF(const std::string &filename) {
+#if 0
   int ncid, dimid_numnodes, dimid_hashlen;
   int varid_x, varid_y, varid_z, varid_hash;
   const size_t hashsize = this->m_nodes[0]->positionHash().size();
@@ -189,9 +190,11 @@ void Partition::writeNodesNetCDF(const std::string &filename) {
   delete[] buf;
 
   ierr = nc_close(ncid);
+#endif
 }
 
 void Partition::writeElementsNetCDF(const std::string &filename) {
+#if 0
   int ncid, dimid_numelements, dimid_hashlen;
   int varid_hash, varid_n1, varid_n2, varid_n3;
   const size_t hashsize = this->m_elements[0]->hash().size();
@@ -239,6 +242,7 @@ void Partition::writeElementsNetCDF(const std::string &filename) {
   delete[] buf;
 
   nc_close(ncid);
+#endif
 }
 
 void Partition::writeAdcircBoundaryAscii(const std::string &rootDirectory,

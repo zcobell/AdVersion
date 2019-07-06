@@ -154,43 +154,43 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/CMakeFiles)
 ###########################################################################
 #  NETCDF
 ###########################################################################
-IF(WIN32)
-    SET(NETCDF_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/thirdparty/netcdf/include" ) 
-ELSE(WIN32)
-    IF(NOT "${NETCDFHOME}" STREQUAL "")
-        SET(NETCDF_DIR "${NETCDFHOME}")
-    ELSEIF(NOT $ENV{NETCDFHOME} STREQUAL "")
-        SET(NETCDF_DIR $ENV{NETCDFHOME})
-    ENDIF(NOT "${NETCDFHOME}" STREQUAL "")
-
-    FIND_PACKAGE(NetCDF)
-
-    SET(NETCDF_AdditionalLibs "" CACHE STRING "Additional libraries that may be required for netCDF")
-
-    IF(NOT NETCDF_FOUND)
-        MESSAGE(SEND_ERROR "Specify the netCDF path on the following screen")
-    ELSE(NOT NETCDF_FOUND)
-        
-        SET(netcdf_c_code
-    "
-        #include <netcdf.h>
-        int main(){
-            int ncid,varid;
-            int ierr = nc_def_var_deflate(ncid,varid,1,2,2);
-            return 0;
-        }
-    "
-        )
-        FILE(WRITE "${CMAKE_BINARY_DIR}/CMakeFiles/netcdf_c_check.c" "${netcdf_c_code}")
-        TRY_COMPILE(NC_DEFLATE_FOUND "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/netcdf_c_check.c" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${NETCDF_INCLUDE_DIRS}" LINK_LIBRARIES "${NETCDF_LIBRARIES}" LINK_LIBRARIES "${NETCDF_AdditionalLibs}" OUTPUT_VARIABLE LOG1)
-            
-        IF(NC_DEFLATE_FOUND)
-            SET(NETCDF_LINKER_FLAG "${NETCDF_LIBRARIES}")
-        ELSE(NC_DEFLATE_FOUND)
-            MESSAGE(SEND_ERROR "The netCDF library is not functional.")
-        ENDIF(NC_DEFLATE_FOUND)
-    ENDIF(NOT NETCDF_FOUND)
-ENDIF(WIN32)
+#IF(WIN32)
+#    SET(NETCDF_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/thirdparty/netcdf/include" ) 
+#ELSE(WIN32)
+#    IF(NOT "${NETCDFHOME}" STREQUAL "")
+#        SET(NETCDF_DIR "${NETCDFHOME}")
+#    ELSEIF(NOT $ENV{NETCDFHOME} STREQUAL "")
+#        SET(NETCDF_DIR $ENV{NETCDFHOME})
+#    ENDIF(NOT "${NETCDFHOME}" STREQUAL "")
+#
+#    FIND_PACKAGE(NetCDF)
+#
+#    SET(NETCDF_AdditionalLibs "" CACHE STRING "Additional libraries that may be required for netCDF")
+#
+#    IF(NOT NETCDF_FOUND)
+#        MESSAGE(SEND_ERROR "Specify the netCDF path on the following screen")
+#    ELSE(NOT NETCDF_FOUND)
+#        
+#        SET(netcdf_c_code
+#    "
+#        #include <netcdf.h>
+#        int main(){
+#            int ncid,varid;
+#            int ierr = nc_def_var_deflate(ncid,varid,1,2,2);
+#            return 0;
+#        }
+#    "
+#        )
+#        FILE(WRITE "${CMAKE_BINARY_DIR}/CMakeFiles/netcdf_c_check.c" "${netcdf_c_code}")
+#        TRY_COMPILE(NC_DEFLATE_FOUND "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/netcdf_c_check.c" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${NETCDF_INCLUDE_DIRS}" LINK_LIBRARIES "${NETCDF_LIBRARIES}" LINK_LIBRARIES "${NETCDF_AdditionalLibs}" OUTPUT_VARIABLE LOG1)
+#            
+#        IF(NC_DEFLATE_FOUND)
+#            SET(NETCDF_LINKER_FLAG "${NETCDF_LIBRARIES}")
+#        ELSE(NC_DEFLATE_FOUND)
+#            MESSAGE(SEND_ERROR "The netCDF library is not functional.")
+#        ENDIF(NC_DEFLATE_FOUND)
+#    ENDIF(NOT NETCDF_FOUND)
+#ENDIF(WIN32)
 ###########################################################################
 
 SET(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries")
@@ -249,14 +249,14 @@ TARGET_INCLUDE_DIRECTORIES( adversion PRIVATE ${CMAKE_SOURCE_DIR}/thirdparty/lib
                                               ${CMAKE_SOURCE_DIR}/thirdparty/metis-5.1.0/include 
                                               ${ADCIRCMODULES_INCLUDE_DIR}
                                               ${Boost_INCLUDE_DIRS} ${NETCDF_INCLUDE_DIRS} )
-TARGET_LINK_LIBRARIES( adversion git2 metis ${Boost_FILESYSTEM_LIBRARY}  ${ADCIRCMODULES_LIBRARY} ${NETCDF_LIBRARIES} )
+TARGET_LINK_LIBRARIES( adversion git2 metis ${Boost_FILESYSTEM_LIBRARY}  ${ADCIRCMODULES_LIBRARY} )
 
-IF(WIN32)
-    LINK_DIRECTORIES( ${CMAKE_SOURCE_DIR}/thirdparty/netcdf/libs_vc64 )
-    TARGET_LINK_LIBRARIES( adversion netcdf hdf5 hdf5_hl )
-ELSE(WIN32)
-    TARGET_LINK_LIBRARIES( adversion ${NETCDF_LIBRARIES} )
-ENDIF(WIN32)
+#IF(WIN32)
+#    LINK_DIRECTORIES( ${CMAKE_SOURCE_DIR}/thirdparty/netcdf/libs_vc64 )
+#    TARGET_LINK_LIBRARIES( adversion netcdf hdf5 hdf5_hl )
+#ELSE(WIN32)
+#    TARGET_LINK_LIBRARIES( adversion ${NETCDF_LIBRARIES} )
+#ENDIF(WIN32)
 
 IF(APPLE)
     SET(CMAKE_MACOSX_RPATH 0)
@@ -276,5 +276,5 @@ ENDIF(USE_GOOGLE_FLAT_MAP)
 ###########################################################################
 ADD_EXECUTABLE( testCase ${CMAKE_SOURCE_DIR}/testing/main.cpp )
 TARGET_INCLUDE_DIRECTORIES(testCase PRIVATE ${CMAKE_SOURCE_DIR}/libraries/libadversion)
-TARGET_LINK_LIBRARIES(testCase adversion ${NETCDF_LIBRARIES})
+TARGET_LINK_LIBRARIES(testCase adversion)
 ###########################################################################
