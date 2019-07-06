@@ -200,6 +200,7 @@ void AdversionImpl::partitionMesh(size_t nPartitions) {
   std::cout << "Writing..." << std::endl;
   this->writePartitionedMesh(this->m_rootDirectory, partitions);
   this->writeSystemInformation(this->m_rootDirectory, this->m_rectangles);
+  this->writeBoundaries(this->m_rootDirectory);
 
   std::cout << "Initializing git structure..." << std::endl;
   this->gitInit();
@@ -577,12 +578,64 @@ void AdversionImpl::writeSystemInformation(const std::string& rootPath,
       boost::str(boost::format("%12i\n") % this->m_mesh->numNodes());
   std::string elements =
       boost::str(boost::format("%12i\n") % this->m_mesh->numElements());
+  std::string openBoundaries =
+      boost::str(boost::format("%12i\n") % this->m_mesh->numOpenBoundaries());
+  std::string landBoundaries =
+      boost::str(boost::format("%12i\n") % this->m_mesh->numLandBoundaries());
   mFile.write(nodes.c_str(), nodes.size());
   mFile.write(elements.c_str(), elements.size());
+  mFile.write(openBoundaries.c_str(), openBoundaries.size());
+  mFile.write(landBoundaries.c_str(), landBoundaries.size());
   mFile.close();
   return;
 }
 
 void AdversionImpl::writeAdcircMesh(const std::string& filename) {
   this->m_mesh->write(filename, Adcirc::Geometry::MeshAdcirc);
+}
+
+void AdversionImpl::writeBoundaries(const std::string& rootPath) {
+  std::string openBoundariesControl =
+      rootPath + "/boundaries/openBoundaries.control";
+  std::string landBoundariesControl =
+      rootPath + "/boundaries/landBoundaries.control";
+
+  Partition obp;
+  for (size_t i = 0; i < this->m_mesh->numOpenBoundaries(); ++i) {
+    obp.addBoundary(this->m_mesh->openBoundary(i));
+  }
+  obp.sort();
+
+  Partition lbp;
+  for (size_t i = 0; i < this->m_mesh->numLandBoundaries(); ++i) {
+    lbp.addBoundary(this->m_mesh->landBoundary(i));
+  }
+  lbp.sort();
+
+  std::ofstream obc;
+  obc.open(openBoundariesControl);
+  std::string nob =
+      boost::str(boost::format("%12i\n") % this->m_mesh->numOpenBoundaries());
+  obc.write(nob.c_str(), nob.size());
+  for (size_t i = 0; i < this->m_mesh->numOpenBoundaries(); ++i) {
+    std::string line =
+        boost::str(boost::format("%s\n") % obp.boundary(i)->hash());
+    obc.write(line.c_str(), line.size());
+  }
+  obc.close();
+  obp.writeBoundariesAscii(this->m_rootDirectory);
+
+  std::ofstream lbc;
+  lbc.open(landBoundariesControl);
+  std::string nlb =
+      boost::str(boost::format("%12i\n") % this->m_mesh->numLandBoundaries());
+  lbc.write(nlb.c_str(), nlb.size());
+  for (size_t i = 0; i < this->m_mesh->numLandBoundaries(); ++i) {
+    std::string line =
+        boost::str(boost::format("%s\n") % lbp.boundary(i)->hash());
+    lbc.write(line.c_str(), line.size());
+  }
+  lbc.close();
+  lbp.writeBoundariesAscii(this->m_rootDirectory);
+  return;
 }

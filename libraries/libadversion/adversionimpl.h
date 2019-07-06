@@ -23,7 +23,6 @@ using adunordered_map = absl::flat_hash_map<T1, T2>;
 using adunordered_map = std::unordered_map<T1, T2>;
 #endif
 
-
 class AdversionImpl {
  public:
   AdversionImpl(const std::string &meshFilename,
@@ -64,14 +63,18 @@ class AdversionImpl {
   void writePartitionedMesh(const std::string &rootPath,
                             std::vector<Partition> &partitions);
 
+  void writeBoundaries(const std::string &rootPath);
+
+  void writeAdcircBoundary(Adcirc::Geometry::Boundary *b);
+
   void writeSystemInformation(const std::string &rootPath,
                               std::vector<Rectangle> &rect);
 
   void readSystemInformation(Partition::Format &fmt, size_t &numNodes,
                              size_t &numElements, std::string &meshHeader);
 
-  void readMeshNodes(adunordered_map<std::string,size_t> &nodeTable);
-  void readMeshElements(adunordered_map<std::string,size_t> &nodeTable);
+  void readMeshNodes(adunordered_map<std::string, size_t> &nodeTable);
+  void readMeshElements(adunordered_map<std::string, size_t> &nodeTable);
 
   void gitInit();
 

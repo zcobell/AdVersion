@@ -51,8 +51,21 @@ size_t Partition::numElements() const { return this->m_elements.size(); }
 size_t Partition::numBoundaries() const { return this->m_boundaries.size(); }
 
 void Partition::sort() {
-  this->sortNodes();
-  this->sortElements();
+  if (this->numNodes() != 0) this->sortNodes();
+  if (this->numElements() != 0) this->sortElements();
+  if (this->numBoundaries() != 0) this->sortBoundaries();
+}
+
+Adcirc::Geometry::Boundary *Partition::boundary(size_t index) {
+  return this->m_boundaries[index];
+}
+
+Adcirc::Geometry::Element *Partition::element(size_t index) {
+  return this->m_elements[index];
+}
+
+Adcirc::Geometry::Node *Partition::node(size_t index) {
+  return this->m_nodes[index];
 }
 
 void Partition::sortNodes() {
@@ -83,6 +96,13 @@ void Partition::writeAscii(const std::string &nodesFilename,
                            const std::string &elementsFilename) {
   this->writeNodesAscii(nodesFilename);
   this->writeElementsAscii(elementsFilename);
+  return;
+}
+
+void Partition::writeBoundariesAscii(const std::string &rootDirectory) {
+  for (size_t i = 0; i < this->m_boundaries.size(); ++i) {
+    this->writeAdcircBoundaryAscii(rootDirectory, this->m_boundaries[i]);
+  }
   return;
 }
 
@@ -219,4 +239,43 @@ void Partition::writeElementsNetCDF(const std::string &filename) {
   delete[] buf;
 
   nc_close(ncid);
+}
+
+void Partition::writeAdcircBoundaryAscii(const std::string &rootDirectory,
+                                         Adcirc::Geometry::Boundary *b) {
+  std::string fname = rootDirectory + "/boundaries/" + b->hash() + ".bnd";
+  std::ofstream f;
+  f.open(fname, std::ios::out);
+  std::string header =
+      boost::str(boost::format("%12i %12i\n") % b->size() % b->boundaryCode());
+  f.write(header.c_str(), header.size());
+
+  for (size_t i = 0; i < b->length(); ++i) {
+    std::string line;
+    if (b->boundaryCode() == -1 || b->isSingleNodeBoundary()) {
+      line = boost::str(boost::format("%s\n") % b->node1(i)->positionHash());
+    } else if (b->isExternalWeir()) {
+      line = boost::str(boost::format("%s %6.3f %6.3f\n") %
+                        b->node1(i)->positionHash() % b->crestElevation(i) %
+                        b->supercriticalWeirCoefficient(i));
+    } else if (b->isInternalWeirWithoutPipes()) {
+      line =
+          boost::str(boost::format("%s %s %6.3f %6.3f %6.3f\n") %
+                     b->node1(i)->positionHash() % b->node2(i)->positionHash() %
+                     b->crestElevation(i) % b->subcriticalWeirCoefficient(i) %
+                     b->supercriticalWeirCoefficient(i));
+    } else if (b->isInternalWeirWithPipes()) {
+      line = boost::str(
+          boost::format("%s %s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f\n") %
+          b->node1(i)->positionHash() % b->node2(i)->positionHash() %
+          b->crestElevation(i) % b->subcriticalWeirCoefficient(i) %
+          b->supercriticalWeirCoefficient(i) % b->pipeHeight(i) %
+          b->pipeCoefficient(i) % b->pipeDiameter(i));
+    } else {
+      line = boost::str(boost::format("%s\n") % b->node1(i)->hash());
+    }
+    f.write(line.c_str(), line.size());
+  }
+  f.close();
+  return;
 }

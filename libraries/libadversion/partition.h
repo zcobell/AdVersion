@@ -13,6 +13,7 @@ class Partition {
   void addBoundary(Adcirc::Geometry::Boundary *b);
   void write(Format writeFormat, const std::string &nodesFilename,
              const std::string &elementsFilename);
+  void writeBoundariesAscii(const std::string &rootDirectory);
   void guessSizeNodes(size_t size);
   void guessSizeElements(size_t size);
   void guessSizeBoundaries(size_t size);
@@ -20,6 +21,10 @@ class Partition {
   size_t numElements() const;
   size_t numBoundaries() const;
   void sort();
+
+  Adcirc::Geometry::Boundary *boundary(size_t index);
+  Adcirc::Geometry::Element *element(size_t index);
+  Adcirc::Geometry::Node *node(size_t index);
 
  private:
   void sortNodes();
@@ -33,6 +38,8 @@ class Partition {
                   const std::string &elementsFilename);
   void writeNetCDF(const std::string &nodeFilename,
                    const std::string &elementsFilename);
+  void writeAdcircBoundaryAscii(const std::string &rootDirectory,
+                                Adcirc::Geometry::Boundary *b);
 
   std::vector<Adcirc::Geometry::Node *> m_nodes;
   std::vector<Adcirc::Geometry::Element *> m_elements;
