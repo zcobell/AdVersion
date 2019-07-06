@@ -36,12 +36,15 @@ void AdversionImpl::setNodalAttributesFilename(
 void AdversionImpl::readPartitionedMesh() {
   std::string meshHeader;
   Partition::Format fmt;
-  size_t numNodes, numElements;
+  size_t numNodes, numElements, numOpenBoundaries, numLandBoundaries;
   this->m_mesh.reset(new Adcirc::Geometry::Mesh());
 
   std::cout << "Reading system data..." << std::endl;
-  this->readSystemInformation(fmt, numNodes, numElements, meshHeader);
+  this->readSystemInformation(fmt, numNodes, numElements, numOpenBoundaries,
+                              numLandBoundaries, meshHeader);
   std::cout << numNodes << " " << numElements << std::endl;
+
+  this->m_mesh->setMeshHeaderString(meshHeader);
 
   this->m_mesh->setNumNodes(numNodes);
   adunordered_map<std::string, size_t> nodeTable;
@@ -53,9 +56,13 @@ void AdversionImpl::readPartitionedMesh() {
   this->m_mesh->setNumElements(numElements);
   this->readMeshElements(nodeTable);
 
-  this->m_mesh->setMeshHeaderString(meshHeader);
-  this->m_mesh->setNumOpenBoundaries(0);
-  this->m_mesh->setNumLandBoundaries(0);
+  std::cout << "Reading open boundaries..." << std::endl;
+  this->m_mesh->setNumOpenBoundaries(numOpenBoundaries);
+  this->readOpenBoundaries(nodeTable);
+
+  std::cout << "Reading land boundaries..." << std::endl;
+  this->m_mesh->setNumLandBoundaries(numLandBoundaries);
+  this->readLandBoundaries(nodeTable);
 
   return;
 }
@@ -118,6 +125,8 @@ void AdversionImpl::readMeshElements(
 
 void AdversionImpl::readSystemInformation(Partition::Format& fmt,
                                           size_t& numNodes, size_t& numElements,
+                                          size_t& numOpenBoundaries,
+                                          size_t& numLandBoundaries,
                                           std::string& meshHeader) {
   std::string systemPath = this->m_rootDirectory + "/system";
   std::string metadataPath = systemPath + "/metadata.control";
@@ -139,6 +148,12 @@ void AdversionImpl::readSystemInformation(Partition::Format& fmt,
 
   std::getline(m, line);
   numElements = stoull(line);
+
+  std::getline(m,line);
+  numOpenBoundaries = stoull(line);
+
+  std::getline(m,line);
+  numLandBoundaries = stoull(line);
 
   m.close();
 
@@ -638,4 +653,119 @@ void AdversionImpl::writeBoundaries(const std::string& rootPath) {
   lbc.close();
   lbp.writeBoundariesAscii(this->m_rootDirectory);
   return;
+}
+
+void AdversionImpl::readOpenBoundaries(
+    adunordered_map<std::string, size_t>& nodeTable) {
+  std::ifstream obc;
+  obc.open(this->m_rootDirectory + "/boundaries/openBoundaries.control",
+           std::ios::in);
+  std::string header;
+  std::getline(obc, header);
+  size_t nobc = stoull(header);
+  if (nobc != this->m_mesh->numOpenBoundaries()) {
+    std::cerr << "Wrong number of boundaries" << std::endl;
+    std::cerr << nobc << " " << this->m_mesh->numOpenBoundaries() << std::endl;
+    return;
+  }
+  for (size_t i = 0; i < this->m_mesh->numOpenBoundaries(); ++i) {
+    std::string hash;
+    std::getline(obc, hash);
+    std::string filename =
+        this->m_rootDirectory + "/boundaries/" + hash + ".bnd";
+    std::ifstream file;
+    file.open(filename, std::ios::in);
+    std::string line;
+    std::getline(file, line);
+
+    int boundaryCode;
+    size_t boundarySize;
+    BoostIO::readBoundaryHeader(line, boundaryCode, boundarySize);
+    Adcirc::Geometry::Boundary b(boundaryCode, boundarySize);
+
+    for (size_t j = 0; j < boundarySize; ++j) {
+      std::getline(file, line);
+      Adcirc::Geometry::Node* n = this->m_mesh->node(nodeTable[line]);
+      b.setNode1(j, n);
+    }
+    file.close();
+    this->m_mesh->addOpenBoundary(i, b);
+  }
+  return;
+}
+
+void AdversionImpl::readLandBoundaries(
+    adunordered_map<std::string, size_t>& nodeTable) {
+  std::ifstream lbc;
+  lbc.open(this->m_rootDirectory + "/boundaries/landBoundaries.control",
+           std::ios::in);
+  std::string header;
+  std::getline(lbc, header);
+  size_t nlbc = stoull(header);
+  if (nlbc != this->m_mesh->numLandBoundaries()) {
+    std::cerr << "Wrong number of boundaries" << std::endl;
+    return;
+  }
+  for (size_t i = 0; i < this->m_mesh->numLandBoundaries(); ++i) {
+    std::string hash;
+    std::getline(lbc, hash);
+    std::string filename =
+        this->m_rootDirectory + "/boundaries/" + hash + ".bnd";
+    std::ifstream file;
+    file.open(filename, std::ios::in);
+    std::string line;
+    std::getline(file, line);
+
+    int boundaryCode;
+    size_t boundarySize;
+    BoostIO::readBoundaryHeader(line, boundaryCode, boundarySize);
+    Adcirc::Geometry::Boundary b(boundaryCode, boundarySize);
+
+    for (size_t j = 0; j < boundarySize; ++j) {
+      std::getline(file, line);
+      if (b.isExternalWeir()) {
+        std::string n1;
+        double crest, super;
+        BoostIO::readBoundaryExternalWeirBoundary(line, n1, crest, super);
+        Adcirc::Geometry::Node* n = this->m_mesh->node(nodeTable[n1]);
+        b.setNode1(j, n);
+        b.setCrestElevation(j, crest);
+        b.setSupercriticalWeirCoefficient(j, super);
+      } else if (b.isInternalWeirWithoutPipes()) {
+        std::string n1, n2;
+        double crest, super, sub;
+        BoostIO::readBoundaryInternalWeirBoundary(line, n1, n2, crest, super,
+                                                  sub);
+        Adcirc::Geometry::Node* nfront = this->m_mesh->node(nodeTable[n1]);
+        Adcirc::Geometry::Node* nback = this->m_mesh->node(nodeTable[n2]);
+        b.setNode1(j, nfront);
+        b.setNode2(j, nback);
+        b.setCrestElevation(j, crest);
+        b.setSupercriticalWeirCoefficient(j, super);
+        b.setSubcriticalWeirCoefficient(j, sub);
+      } else if (b.isInternalWeirWithPipes()) {
+        std::string n1, n2;
+        double crest, super, sub, diam, coef, ht;
+        BoostIO::readBoundaryInternalWeirWithPipes(line, n1, n2, crest, super,
+                                                   sub, diam, coef, ht);
+        Adcirc::Geometry::Node* nfront = this->m_mesh->node(nodeTable[n1]);
+        Adcirc::Geometry::Node* nback = this->m_mesh->node(nodeTable[n2]);
+        b.setNode1(j, nfront);
+        b.setNode2(j, nback);
+        b.setCrestElevation(j, crest);
+        b.setSupercriticalWeirCoefficient(j, super);
+        b.setSubcriticalWeirCoefficient(j, sub);
+        b.setPipeHeight(j, ht);
+        b.setPipeDiameter(j, diam);
+        b.setPipeCoefficient(j, coef);
+      } else {
+        std::string n1;
+        BoostIO::readBoundarySingleNode(line, n1);
+        Adcirc::Geometry::Node* n = this->m_mesh->node(nodeTable[n1]);
+        b.setNode1(j, n);
+      }
+    }
+    file.close();
+    this->m_mesh->addLandBoundary(i, b);
+  }
 }

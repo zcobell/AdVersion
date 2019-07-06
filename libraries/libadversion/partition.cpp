@@ -255,22 +255,23 @@ void Partition::writeAdcircBoundaryAscii(const std::string &rootDirectory,
     if (b->boundaryCode() == -1 || b->isSingleNodeBoundary()) {
       line = boost::str(boost::format("%s\n") % b->node1(i)->positionHash());
     } else if (b->isExternalWeir()) {
-      line = boost::str(boost::format("%s %6.3f %6.3f\n") %
+      line = boost::str(boost::format("%s %+018.12e %+018.12e\n") %
                         b->node1(i)->positionHash() % b->crestElevation(i) %
                         b->supercriticalWeirCoefficient(i));
     } else if (b->isInternalWeirWithoutPipes()) {
       line =
-          boost::str(boost::format("%s %s %6.3f %6.3f %6.3f\n") %
+          boost::str(boost::format("%s %s %+018.12e %+018.12e %+018.12e\n") %
                      b->node1(i)->positionHash() % b->node2(i)->positionHash() %
                      b->crestElevation(i) % b->subcriticalWeirCoefficient(i) %
                      b->supercriticalWeirCoefficient(i));
     } else if (b->isInternalWeirWithPipes()) {
-      line = boost::str(
-          boost::format("%s %s %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f\n") %
-          b->node1(i)->positionHash() % b->node2(i)->positionHash() %
-          b->crestElevation(i) % b->subcriticalWeirCoefficient(i) %
-          b->supercriticalWeirCoefficient(i) % b->pipeHeight(i) %
-          b->pipeCoefficient(i) % b->pipeDiameter(i));
+      line =
+          boost::str(boost::format("%s %s %+018.12e %+018.12e %+018.12e "
+                                   "%+018.12e %+018.12e %+018.12e\n") %
+                     b->node1(i)->positionHash() % b->node2(i)->positionHash() %
+                     b->crestElevation(i) % b->subcriticalWeirCoefficient(i) %
+                     b->supercriticalWeirCoefficient(i) % b->pipeHeight(i) %
+                     b->pipeCoefficient(i) % b->pipeDiameter(i));
     } else {
       line = boost::str(boost::format("%s\n") % b->node1(i)->hash());
     }

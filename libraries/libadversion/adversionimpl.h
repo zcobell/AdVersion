@@ -71,10 +71,14 @@ class AdversionImpl {
                               std::vector<Rectangle> &rect);
 
   void readSystemInformation(Partition::Format &fmt, size_t &numNodes,
-                             size_t &numElements, std::string &meshHeader);
+                             size_t &numElements, size_t &numOpenBoundaries,
+                             size_t &numLandBoundaries,
+                             std::string &meshHeader);
 
   void readMeshNodes(adunordered_map<std::string, size_t> &nodeTable);
   void readMeshElements(adunordered_map<std::string, size_t> &nodeTable);
+  void readOpenBoundaries(adunordered_map<std::string,size_t> &nodeTable);
+  void readLandBoundaries(adunordered_map<std::string,size_t> &nodeTable);
 
   void gitInit();
 

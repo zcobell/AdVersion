@@ -40,3 +40,49 @@ bool BoostIO::readElementLine(const std::string &line, std::string &hash,
                     +~qi::char_(' ') >> ' ' >> +~qi::char_(' ')),
                    hash, n1, n2, n3);
 }
+
+bool BoostIO::readBoundaryHeader(const std::string &line, int &code,
+                                 size_t &size) {
+  return qi::phrase_parse(line.begin(), line.end(),
+                          (qi::ulong_[phoenix::ref(size) = qi::_1] >>
+                           qi::int_[phoenix::ref(code) = qi::_1]),
+                          ascii::space);
+}
+
+bool BoostIO::readBoundarySingleNode(const std::string &line, std::string &n1) {
+  n1 = line;
+  return true;
+}
+
+bool BoostIO::readBoundaryExternalWeirBoundary(const std::string &line,
+                                               std::string &n1, double &crest,
+                                               double &supercritical) {
+  return qi::parse(
+      line.begin(), line.end(),
+      (+~qi::char_(' ') >> ' ' >> qi::double_ >> ' ' >> qi::double_), n1, crest,
+      supercritical);
+}
+
+bool BoostIO::readBoundaryInternalWeirBoundary(const std::string &line,
+                                               std::string &n1, std::string &n2,
+                                               double &crest,
+                                               double &supercritical,
+                                               double &subcritical) {
+  return qi::parse(line.begin(), line.end(),
+                   (+~qi::char_(' ') >> ' ' >> +~qi::char_(' ') >> " " >>
+                    qi::double_ >> " " >> qi::double_ >> " " >> qi::double_),
+                   n1, n2, crest, subcritical, supercritical);
+}
+
+bool BoostIO::readBoundaryInternalWeirWithPipes(
+    const std::string &line, std::string &n1, std::string &n2, double &crest,
+    double &supercritical, double &subcritical, double &pipeDiam,
+    double &pipeCoef, double &pipeHeight) {
+  return qi::parse(
+      line.begin(), line.end(),
+      (+~qi::char_(' ') >> ' ' >> +~qi::char_(' ') >> ' ' >> qi::double_ >>
+       ' ' >> qi::double_ >> ' ' >> qi::double_ >> ' ' >> qi::double_ >> ' ' >>
+       qi::double_ >> ' ' >> qi::double_),
+      n1, n2, crest, subcritical, supercritical, pipeHeight, pipeCoef,
+      pipeDiam);
+}
