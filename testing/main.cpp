@@ -11,7 +11,11 @@ int main(int argc, char *argv[]) {
 //      "sl18_2007storm_v1_20190506_chk.grd";
   std::string rootDirectory = "/Users/zcobell/Documents/Code/AdVersion2/build/cpra";
   AdVersion adv(filename,rootDirectory);
-  adv.partitionMesh(256);
+  adv.partitionMesh(1024);
+
+  AdVersion rd(filename,rootDirectory);
+  rd.readPartitionedMesh();
+  rd.writeAdcircMesh("/Users/zcobell/Documents/Code/ADCIRCModules/build/test.grd");
 
   return 0;
 }

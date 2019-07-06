@@ -28,12 +28,14 @@ ADCIRCMODULESHOME = /Users/zcobell/software/adcircmodules
 
 SOURCES += adversion.cpp \
     adversionimpl.cpp \
+    boostio.cpp \
     partition.cpp \
     rectangle.cpp \
     rectangleimpl.cpp
 
 HEADERS += adversion.h \
     adversionimpl.h \
+    boostio.h \
     partition.h \
     rectangle.h \
     rectangleimpl.h

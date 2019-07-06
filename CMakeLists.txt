@@ -235,7 +235,8 @@ Find_Package(ADCIRCModules)
 ADD_LIBRARY( adversion SHARED ${CMAKE_SOURCE_DIR}/libraries/libadversion/adversion.cpp 
                               ${CMAKE_SOURCE_DIR}/libraries/libadversion/adversionimpl.cpp
                               ${CMAKE_SOURCE_DIR}/libraries/libadversion/partition.cpp 
-                              ${CMAKE_SOURCE_DIR}/libraries/libadversion/rectangle.cpp ) 
+                              ${CMAKE_SOURCE_DIR}/libraries/libadversion/rectangle.cpp 
+                              ${CMAKE_SOURCE_DIR}/libraries/libadversion/boostio.cpp ) 
 IF(WIN32)
     INSTALL(TARGETS adversion LIBRARY DESTINATION bin RUNTIME DESTINATION lib PUBLIC_HEADER DESTINATION ${HEADER_DEST})
 ELSEIF(CYGWIN)

@@ -32,3 +32,9 @@ size_t AdVersion::numPartitions() const {
 void AdVersion::setNumPartitions(const size_t &numPartitions) {
   this->m_impl->setNumPartitions(numPartitions);
 }
+
+void AdVersion::readPartitionedMesh() { this->m_impl->readPartitionedMesh(); }
+
+void AdVersion::writeAdcircMesh(const std::string &filename){
+    this->m_impl->writeAdcircMesh(filename);
+}

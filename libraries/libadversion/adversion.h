@@ -13,6 +13,7 @@ class AdVersion {
   ~AdVersion();
 
   void partitionMesh(size_t nPartitions = 0);
+  void readPartitionedMesh();
 
   std::string meshFilename() const;
   void setMeshFilename(const std::string &meshFilename);
@@ -22,6 +23,8 @@ class AdVersion {
 
   size_t numPartitions() const;
   void setNumPartitions(const size_t &numPartitions);
+
+  void writeAdcircMesh(const std::string &filename);
 
  private:
   std::unique_ptr<AdversionImpl> m_impl;

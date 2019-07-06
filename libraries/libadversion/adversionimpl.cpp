@@ -4,8 +4,12 @@
 #include <numeric>
 #include "boost/filesystem.hpp"
 #include "boost/format.hpp"
+#include "boostio.h"
+#include "git2.h"
+#include "kdtree.h"
+#include "metis.h"
 
-#define WRITE_NC 1
+#define WRITE_NC 0
 
 AdversionImpl::AdversionImpl(const std::string& meshFilename,
                              const std::string& rootDirectory)
@@ -29,6 +33,133 @@ void AdversionImpl::setNodalAttributesFilename(
   m_nodalAttributesFilename = nodalAttributesFilename;
 }
 
+void AdversionImpl::readPartitionedMesh() {
+  std::string meshHeader;
+  Partition::Format fmt;
+  size_t numNodes, numElements;
+  this->m_mesh.reset(new Adcirc::Geometry::Mesh());
+
+  std::cout << "Reading system data..." << std::endl;
+  this->readSystemInformation(fmt, numNodes, numElements, meshHeader);
+  std::cout << numNodes << " " << numElements << std::endl;
+
+  this->m_mesh->setNumNodes(numNodes);
+  adunordered_map<std::string, size_t> nodeTable;
+  nodeTable.reserve(numNodes);
+  std::cout << "Reading nodes..." << std::endl;
+  this->readMeshNodes(nodeTable);
+
+  std::cout << "Reading elements..." << std::endl;
+  this->m_mesh->setNumElements(numElements);
+  this->readMeshElements(nodeTable);
+
+  this->m_mesh->setMeshHeaderString(meshHeader);
+  this->m_mesh->setNumOpenBoundaries(0);
+  this->m_mesh->setNumLandBoundaries(0);
+
+  return;
+}
+
+void AdversionImpl::readMeshNodes(
+    adunordered_map<std::string, size_t>& nodeTable) {
+  size_t id = 0;
+  for (size_t i = 0; i < this->m_numPartitions; ++i) {
+    std::string filename =
+        boost::str(boost::format("%s/nodes/partition_%06i.node") %
+                   this->m_rootDirectory % i);
+    std::ifstream f;
+    f.open(filename, std::ios::in);
+    std::string line;
+    std::getline(f, line);
+    size_t nn = stoull(line);
+    for (size_t i = 0; i < nn; ++i) {
+      std::getline(f, line);
+      double x, y, z;
+      std::string hash;
+      bool r = BoostIO::readNodeLine(line, hash, x, y, z);
+      Adcirc::Geometry::Node nd(id + 1, x, y, z);
+      this->m_mesh->addNode(id, nd);
+      nodeTable[hash] = id;
+      id++;
+    }
+    f.close();
+  }
+  return;
+}
+
+void AdversionImpl::readMeshElements(
+    adunordered_map<std::string, size_t>& nodeTable) {
+  size_t id = 0;
+  for (size_t i = 0; i < this->m_numPartitions; ++i) {
+    std::string filename =
+        boost::str(boost::format("%s/elements/partition_%06i.element") %
+                   this->m_rootDirectory % i);
+    std::ifstream f;
+    f.open(filename, std::ios::in);
+    std::string line;
+    std::getline(f, line);
+    size_t nn = stoull(line);
+    for (size_t i = 0; i < nn; ++i) {
+      std::getline(f, line);
+      std::string hash, n1, n2, n3;
+      bool r = BoostIO::readElementLine(line, hash, n1, n2, n3);
+      Adcirc::Geometry::Node* nn1 = this->m_mesh->node(nodeTable[n1]);
+      Adcirc::Geometry::Node* nn2 = this->m_mesh->node(nodeTable[n2]);
+      Adcirc::Geometry::Node* nn3 = this->m_mesh->node(nodeTable[n3]);
+      Adcirc::Geometry::Element el(id + 1, nn1, nn2, nn3);
+      this->m_mesh->addElement(id, el);
+      id++;
+    }
+    f.close();
+  }
+
+  return;
+}
+
+void AdversionImpl::readSystemInformation(Partition::Format& fmt,
+                                          size_t& numNodes, size_t& numElements,
+                                          std::string& meshHeader) {
+  std::string systemPath = this->m_rootDirectory + "/system";
+  std::string metadataPath = systemPath + "/metadata.control";
+  std::string partitionPath = systemPath + "/partitions.control";
+
+  std::ifstream m;
+  std::string line;
+  m.open(metadataPath.c_str(), std::ios::in);
+  std::getline(m, meshHeader);
+  std::getline(m, line);
+  if (line == "ASCII") {
+    fmt = Partition::Format::ASCII;
+  } else if (line == "NETCDF") {
+    fmt = Partition::Format::NETCDF;
+  }
+
+  std::getline(m, line);
+  numNodes = stoull(line);
+
+  std::getline(m, line);
+  numElements = stoull(line);
+
+  m.close();
+
+  std::ifstream p;
+  p.open(partitionPath.c_str(), std::ios::in);
+  std::getline(p, line);
+  this->m_numPartitions = stoull(line);
+
+  this->m_rectangles.clear();
+  this->m_rectangles.reserve(this->m_numPartitions);
+
+  for (size_t i = 0; i < this->m_numPartitions; ++i) {
+    std::string l;
+    std::getline(p, l);
+    this->m_rectangles.push_back(BoostIO::readRectangle(l));
+  }
+  p.close();
+
+  return;
+}
+
 void AdversionImpl::partitionMesh(size_t nPartitions) {
   if (this->m_meshFilename == std::string()) return;
 
@@ -49,15 +180,14 @@ void AdversionImpl::partitionMesh(size_t nPartitions) {
   this->metisPartition(nodePartition, elemPartition);
 
   std::cout << "Building regions..." << std::endl;
-  std::vector<Rectangle> rectangles;
-  this->buildRectangles(nodePartition, rectangles);
+  this->buildRectangles(nodePartition, this->m_rectangles);
 
   std::cout << "Placing nodes..." << std::endl;
   std::vector<Partition> partitions(this->m_numPartitions);
-  this->placeNodesInRegions(rectangles, partitions);
+  this->placeNodesInRegions(this->m_rectangles, partitions);
 
   std::cout << "Placing elements..." << std::endl;
-  this->placeElementsInRegions(rectangles, partitions);
+  this->placeElementsInRegions(this->m_rectangles, partitions);
 
   std::cout << "Sorting..." << std::endl;
   for (auto& p : partitions) {
@@ -69,7 +199,7 @@ void AdversionImpl::partitionMesh(size_t nPartitions) {
 
   std::cout << "Writing..." << std::endl;
   this->writePartitionedMesh(this->m_rootDirectory, partitions);
-  this->writeSystemInformation(this->m_rootDirectory, rectangles);
+  this->writeSystemInformation(this->m_rootDirectory, this->m_rectangles);
 
   std::cout << "Initializing git structure..." << std::endl;
   this->gitInit();
@@ -276,6 +406,7 @@ void AdversionImpl::placeMissingNodes(std::vector<unsigned short>& found,
         if (found[near[j]] == 1) {
           partitions[part[near[j]]].addNode(nd);
           found[i] = 1;
+          part[i] = part[near[j]];
           break;
         }
       }
@@ -303,6 +434,7 @@ void AdversionImpl::placeMissingElements(std::vector<unsigned short>& found,
         if (found[near[j]] == 1) {
           partitions[part[near[j]]].addElement(e);
           found[i] = 1;
+          part[i] = part[near[j]];
           break;
         }
       }
@@ -436,9 +568,9 @@ void AdversionImpl::writeSystemInformation(const std::string& rootPath,
   mFile.write(header.c_str(), header.size());
 
 #if WRITE_NC == 1
-  mFile.write("NETCDF\n",7);
+  mFile.write("NETCDF\n", 7);
 #else
-  mFile.write("ASCII\n",6);
+  mFile.write("ASCII\n", 6);
 #endif
 
   std::string nodes =
@@ -449,4 +581,8 @@ void AdversionImpl::writeSystemInformation(const std::string& rootPath,
   mFile.write(elements.c_str(), elements.size());
   mFile.close();
   return;
+}
+
+void AdversionImpl::writeAdcircMesh(const std::string& filename) {
+  this->m_mesh->write(filename, Adcirc::Geometry::MeshAdcirc);
 }

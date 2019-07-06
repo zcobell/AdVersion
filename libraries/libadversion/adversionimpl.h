@@ -4,11 +4,25 @@
 #include <string>
 #include <vector>
 #include "adcircmodules.h"
-#include "git2.h"
-#include "kdtree.h"
-#include "metis.h"
 #include "partition.h"
 #include "rectangle.h"
+
+#ifdef USE_GOOGLE_FLAT_MAP
+#include "absl/container/flat_hash_map.h"
+#else
+#include <unordered_map>
+#endif
+
+//...Alias for using the Google hashtable if
+//   available. Prevents using ifdefs throughout
+//   source files
+template <typename T1, typename T2>
+#ifdef USE_GOOGLE_FLAT_MAP
+using adunordered_map = absl::flat_hash_map<T1, T2>;
+#else
+using adunordered_map = std::unordered_map<T1, T2>;
+#endif
+
 
 class AdversionImpl {
  public:
@@ -16,6 +30,7 @@ class AdversionImpl {
                 const std::string &rootDirectory);
 
   void partitionMesh(size_t nPartitions = 0);
+  void readPartitionedMesh();
 
   std::string meshFilename() const;
   void setMeshFilename(const std::string &meshFilename);
@@ -28,6 +43,8 @@ class AdversionImpl {
 
   std::string rootDirectory() const;
   void setRootDirectory(const std::string &rootDirectory);
+
+  void writeAdcircMesh(const std::string &filename);
 
  private:
   void metisPartition(std::vector<size_t> &nodePartition,
@@ -50,9 +67,16 @@ class AdversionImpl {
   void writeSystemInformation(const std::string &rootPath,
                               std::vector<Rectangle> &rect);
 
+  void readSystemInformation(Partition::Format &fmt, size_t &numNodes,
+                             size_t &numElements, std::string &meshHeader);
+
+  void readMeshNodes(adunordered_map<std::string,size_t> &nodeTable);
+  void readMeshElements(adunordered_map<std::string,size_t> &nodeTable);
+
   void gitInit();
 
   std::unique_ptr<Adcirc::Geometry::Mesh> m_mesh;
+  std::vector<Rectangle> m_rectangles;
 
   size_t m_numPartitions;
   std::string m_meshFilename;
