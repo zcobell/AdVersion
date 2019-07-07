@@ -136,6 +136,7 @@ ENDIF(NOT CYGWIN)
 ###########################################################################
 # Boost
 ###########################################################################
+SET( BOOST_DIR "" CACHE STRING "Boost root directory")
 FIND_PACKAGE( Boost 1.60.0 COMPONENTS filesystem REQUIRED )
 ###########################################################################
 
@@ -198,10 +199,11 @@ SET(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries")
 ###########################################################################
 # OpenSSL
 ###########################################################################
+SET(OPENSSL_ROOT_DIR "" CACHE STRING "OpenSSL Root Directory" )
 IF(NOT "${OPENSSLHOME}" STREQUAL "")
-    SET(OPENSSL_ROOT_DIR "${OPENSSLHOME}" CACHE STRING "OpenSSL Directory")
+    SET(OPENSSL_ROOT_DIR "${OPENSSLHOME}" CACHE STRING "OpenSSL Root Directory")
 ELSEIF(NOT $ENV{OPENSSLHOME} STREQUAL "")
-    SET(OPENSSL_ROOT_DIR $ENV{OPENSSLHOME} CACHE STRING "OpenSSL Directory")
+    SET(OPENSSL_ROOT_DIR $ENV{OPENSSLHOME} CACHE STRING "OpenSSL Root Directory")
 ENDIF(NOT "${OPENSSLHOME}" STREQUAL "")
 ###########################################################################
 
@@ -277,4 +279,17 @@ ENDIF(USE_GOOGLE_FLAT_MAP)
 ADD_EXECUTABLE( testCase ${CMAKE_SOURCE_DIR}/testing/main.cpp )
 TARGET_INCLUDE_DIRECTORIES(testCase PRIVATE ${CMAKE_SOURCE_DIR}/libraries/libadversion)
 TARGET_LINK_LIBRARIES(testCase adversion)
+###########################################################################
+
+###########################################################################
+#  Mark advanced options
+###########################################################################
+MARK_AS_ADVANCED( ABSL_RUN_TESTS ABSL_STD_CXX_FLAG ABSL_USE_GOOGLETEST_HEAD ASSERT ASSERT2 BIN_INSTALL_DIR BUILD_CLAR
+                  BUILD_EXAMPLES BUILD_FUZZERS BUILD_SHARED_LIBS BUILD_TESTS DEBUG DEBUG_POOL DEPRECATE_HARD ENABLE_REPRODUCIBLE_BUILDS
+                  ENABLE_TRACE ENABLE_WERROR GDB GKLIB_PATH GKRAND GKREGEX GPROF INCLUDE_INSTALL_DIR LIBGIT2_FILENAME LIB_INSTALL_DIR
+                  OPENMP PCRE PCRE_INCLUDE_DIR PCRE_LIBRARY PCRE_POSIX_LIBRARY PROFILE REGEX_BACKEND SHARED SONAME 
+                  TAGS THREADSAFE USE_BUNDLED_ZLIB USE_GSSAPI USE_HTTPS USE_HTTP_PARSER USE_NSEC USE_NTLMCLIENT USE_SHA1
+                  USE_SSH USE_STANDALONE_FUZZERS VALGRIND pkgcfg_lib__OPENSSL_crypto pkgcfg_lib__OPENSSL_ssl  USE_ICONV 
+                  iconv_lib )
+
 ###########################################################################
