@@ -2,7 +2,10 @@
 #include <algorithm>
 #include <fstream>
 #include "boost/format.hpp"
+
+#if 0 
 #include "netcdf.h"
+#endif
 
 bool nodeHashLessThan(Adcirc::Geometry::Node *n1, Adcirc::Geometry::Node *n2) {
   return n1->positionHash() < n2->positionHash();

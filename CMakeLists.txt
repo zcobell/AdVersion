@@ -136,7 +136,7 @@ ENDIF(NOT CYGWIN)
 ###########################################################################
 # Boost
 ###########################################################################
-SET( BOOST_DIR "" CACHE STRING "Boost root directory")
+SET( BOOST_ROOT "" CACHE STRING "Boost root directory")
 FIND_PACKAGE( Boost 1.60.0 COMPONENTS filesystem REQUIRED )
 ###########################################################################
 

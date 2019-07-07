@@ -7,11 +7,11 @@ Rectangle::Rectangle(double xTopLeft, double yTopLeft, double xBottomRight,
   this->generatePolygon(xTopLeft, yTopLeft, xBottomRight, yBottomRight);
 }
 
-bool Rectangle::areaLessThan(Rectangle &r1, Rectangle &r2) {
+bool Rectangle::areaLessThan(const Rectangle &r1, const Rectangle &r2) {
   return r1.area() < r2.area();
 }
 
-bool Rectangle::areaGreaterThan(Rectangle &r1, Rectangle &r2) {
+bool Rectangle::areaGreaterThan(const Rectangle &r1, const Rectangle &r2) {
   return r1.area() > r2.area();
 }
 
@@ -37,6 +37,7 @@ void Rectangle::buildPolygon() {
   boost::geometry::append(this->m_polygon, this->m_bottomRight);
   boost::geometry::append(this->m_polygon, this->m_bottomLeft);
   boost::geometry::append(this->m_polygon, this->m_topLeft);
+  this->calculateArea();
   return;
 }
 
@@ -92,7 +93,11 @@ bool Rectangle::isInside(double x, double y) {
 #endif
 }
 
-double Rectangle::area() { return boost::geometry::area(this->m_polygon); }
+double Rectangle::area() const { return this->m_area; }
+
+void Rectangle::calculateArea(){
+    this->m_area = boost::geometry::area(this->m_polygon);
+}
 
 std::pair<double, double> Rectangle::centroid() {
   double x = (this->topLeft().first + this->topRight().first) / 2.0;

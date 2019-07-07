@@ -13,8 +13,8 @@ class Rectangle {
                     double yBottomRight);
 
 
-  static bool areaLessThan(Rectangle &r1, Rectangle &r2);
-  static bool areaGreaterThan(Rectangle &r1, Rectangle &r2);
+  static bool areaLessThan(const Rectangle &r1, const Rectangle &r2);
+  static bool areaGreaterThan(const Rectangle &r1, const Rectangle &r2);
 
   std::pair<double, double> topLeft();
   std::pair<double, double> topRight();
@@ -30,18 +30,20 @@ class Rectangle {
 
   bool isInside(double x, double y);
 
-  double area();
+  double area() const;
 
  private:
   void generatePolygon(double xTopLeft, double yTopLeft, double xBottomRight,
                        double yBottomRight);
   void buildPolygon();
+  void calculateArea();
 
   typedef boost::geometry::model::point<double, 2,
                                         boost::geometry::cs::cartesian>
       point_t;
   typedef boost::geometry::model::polygon<point_t> polygon_t;
 
+  double m_area;
   point_t m_topLeft;
   point_t m_topRight;
   point_t m_bottomLeft;
