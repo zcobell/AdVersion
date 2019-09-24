@@ -92,7 +92,7 @@ class AdversionImpl {
 
   std::vector<std::unique_ptr<Adcirc::Geometry::Element>>
   generateWeirConnectingElements();
-  void generateRectangleKdtree(std::vector<Rectangle> &rectangles, Kdtree &k);
+  void generateRectangleKdtree(std::vector<Rectangle> &rectangles, Adcirc::Kdtree &k);
 
   void placeMissingNodes(std::vector<unsigned short> &found,
                          std::vector<size_t> &part,

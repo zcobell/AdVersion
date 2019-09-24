@@ -392,7 +392,7 @@ void AdversionImpl::placeNodesInRegions(std::vector<Rectangle>& rectangles,
 }
 
 void AdversionImpl::generateRectangleKdtree(std::vector<Rectangle>& rectangles,
-                                            Kdtree& k) {
+                                            Adcirc::Kdtree& k) {
   std::vector<double> x, y;
   x.reserve(this->m_numPartitions);
   y.reserve(this->m_numPartitions);
@@ -413,7 +413,7 @@ void AdversionImpl::placeMissingNodes(std::vector<unsigned short>& found,
   if (!this->m_mesh->nodalSearchTreeInitialized())
     this->m_mesh->buildNodalSearchTree();
 
-  Kdtree* k = this->m_mesh->nodalSearchTree();
+  Adcirc::Kdtree* k = this->m_mesh->nodalSearchTree();
   for (size_t i = 0; i < this->m_mesh->numNodes(); ++i) {
     if (found[i] == 0) {
       Adcirc::Geometry::Node* nd = this->m_mesh->node(i);
@@ -439,7 +439,7 @@ void AdversionImpl::placeMissingElements(std::vector<unsigned short>& found,
   if (!this->m_mesh->elementalSearchTreeInitialized())
     this->m_mesh->buildElementalSearchTree();
 
-  Kdtree* k = this->m_mesh->elementalSearchTree();
+  Adcirc::Kdtree* k = this->m_mesh->elementalSearchTree();
   for (size_t i = 0; i < this->m_mesh->numElements(); ++i) {
     if (found[i] == 0) {
       double xc, yc;
@@ -721,8 +721,15 @@ void AdversionImpl::readLandBoundaries(
     BoostIO::readBoundaryHeader(line, boundaryCode, boundarySize);
     Adcirc::Geometry::Boundary b(boundaryCode, boundarySize);
 
+    std::cout << boundaryCode << " " << boundarySize << std::endl;
+    std::cout.flush();
+
     for (size_t j = 0; j < boundarySize; ++j) {
       std::getline(file, line);
+        
+      std::cout << j << " " << boundarySize << " " << b.boundaryLength() << std::endl;
+      std::cout.flush();
+      
       if (b.isExternalWeir()) {
         std::string n1;
         double crest, super;
@@ -738,6 +745,7 @@ void AdversionImpl::readLandBoundaries(
                                                   sub);
         Adcirc::Geometry::Node* nfront = this->m_mesh->node(nodeTable[n1]);
         Adcirc::Geometry::Node* nback = this->m_mesh->node(nodeTable[n2]);
+        
         b.setNode1(j, nfront);
         b.setNode2(j, nback);
         b.setCrestElevation(j, crest);
