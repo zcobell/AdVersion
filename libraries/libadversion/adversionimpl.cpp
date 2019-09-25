@@ -327,14 +327,18 @@ void AdversionImpl::setNumPartitions(const size_t& numPartitions) {
 void AdversionImpl::buildRectangles(std::vector<size_t>& nodePartition,
                                     std::vector<Rectangle>& rectangles) {
   struct minmax {
-    double xmin = std::numeric_limits<double>::max();
-    double xmax = -std::numeric_limits<double>::max();
-    double ymin = std::numeric_limits<double>::max();
-    double ymax = -std::numeric_limits<double>::max();
+    double xmin,xmax,ymin,ymax; 
   };
 
   std::vector<minmax> bounds;
   bounds.resize(this->m_numPartitions);
+  for(size_t i = 0 ; i< this->m_numPartitions; ++i){
+      bounds[i].xmin = std::numeric_limits<double>::max();
+      bounds[i].xmax = -std::numeric_limits<double>::max();
+      bounds[i].ymin = std::numeric_limits<double>::max();
+      bounds[i].ymax = -std::numeric_limits<double>::max();
+  }
+
 
   for (size_t i = 0; i < this->m_mesh->numNodes(); ++i) {
     size_t p = nodePartition[i];
@@ -721,15 +725,9 @@ void AdversionImpl::readLandBoundaries(
     BoostIO::readBoundaryHeader(line, boundaryCode, boundarySize);
     Adcirc::Geometry::Boundary b(boundaryCode, boundarySize);
 
-    std::cout << boundaryCode << " " << boundarySize << std::endl;
-    std::cout.flush();
-
     for (size_t j = 0; j < boundarySize; ++j) {
       std::getline(file, line);
         
-      std::cout << j << " " << boundarySize << " " << b.boundaryLength() << std::endl;
-      std::cout.flush();
-      
       if (b.isExternalWeir()) {
         std::string n1;
         double crest, super;
